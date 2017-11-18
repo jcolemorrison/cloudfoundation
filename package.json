@@ -1,0 +1,26 @@
+{
+  "name": "cloudfoundation",
+  "version": "1.0.0",
+  "description": "a tool and foundation for building production cloudformation templates",
+  "main": "index.js",
+  "author": "J Cole Morrison",
+  "preferGlobal": true,
+  "bin": {
+    "cfdn": "bin/cloudfoundation.js"
+  },
+  "license": "MIT",
+  "keywords": [
+    "aws",
+    "cloudformation",
+    "template",
+    "scaffolding",
+    "cli",
+    "node",
+    "node.js"
+  ],
+  "dependencies": {
+    "chalk": "^2.3.0",
+    "commander": "^2.11.0",
+    "inquirer": "^4.0.0"
+  }
+}
