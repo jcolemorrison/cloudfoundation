@@ -12,28 +12,17 @@ cmd
 
 cmd
   .command('build')
-  .description('build down all CloudFormation templates')
+  .description('build down all CloudFormation templates\n')
   .action(() => {
     console.log('building')
   })
 
-//  cmd
-//   .command('*')
-//   .action(() => {
-//     console.log('thedefault')
-//   })
-
 cmd.parse(process.argv)
 
 const validArgs = ['init', 'build']
-// console.log(cmd.args,  cmd._execs)
-console.log(cmd.args)
+console.log(cmd.args,  cmd._execs)
 
 
-if (cmd.args.length === 2) {
+if (cmd.args.length < 1 || cmd.args.length >= 1 && validArgs.indexOf(cmd.args[0]) === -1) {
   cmd.help()
-} else {
-  // console.log(cmd)
-  // console.log(cmd._execs)
-  // console.log(cmd.args)
 }
