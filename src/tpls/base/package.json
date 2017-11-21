@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "description": "A CloudFormation project - generated with CloudFoundation",
+  "main": "build-template.js",
+  "scripts": {
+    "build": "node build-template.js",
+    "copy": "yarn build && cp -R ./dist/ $PRODCFN"
+  },
+  "keywords": [
+    "aws",
+    "vpc",
+    "template",
+    "subnet",
+    "network-acl",
+    "route-table",
+    "readable"
+  ],
+  "author": "J Cole Morrison",
+  "license": "MIT",
+  "devDependencies": {
+    "glob": "^7.1.2"
+  }
+}

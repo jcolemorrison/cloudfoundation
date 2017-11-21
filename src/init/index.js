@@ -1,14 +1,15 @@
 const inq = require('inquirer')
 const chk = require('chalk')
+const fse = require('fs-extra')
 
 module.exports = async function init (env, options) {
-  console.log('executing')
   let answers, extras
+
   try {
     answers = await inq.prompt([
       {
         type: "input",
-        name: "stackname",
+        name: "projectname",
         message: "What is the name of your stack?",
       },
       {
