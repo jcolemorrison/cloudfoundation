@@ -1,10 +1,9 @@
 {
   "version": "1.0.0",
   "description": "A CloudFormation project - generated with CloudFoundation",
-  "main": "build-template.js",
+  "main": "index.js",
   "scripts": {
-    "build": "node build-template.js",
-    "copy": "yarn build && cp -R ./dist/ $PRODCFN"
+    "build": "node index.js"
   },
   "keywords": [
     "aws",
@@ -19,5 +18,6 @@
   "license": "MIT",
   "devDependencies": {
     "glob": "^7.1.2"
-  }
+  },
+  "cloudfoundation": true
 }
