@@ -1,0 +1,137 @@
+{
+  "NetworkAclPublic": {
+    "Type": "AWS::EC2::NetworkAcl",
+    "Properties": {
+      "VpcId": { "Ref": "VPC" },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-public-nacl"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "InboundHTTPNetworkAclPublic": {
+    "Type": "AWS::EC2::NetworkAclEntry",
+    "Properties": {
+      "NetworkAclId": { "Ref": "NetworkAclPublic" },
+      "RuleNumber": "100",
+      "Protocol": "6",
+      "RuleAction": "allow",
+      "Egress": false,
+      "CidrBlock": "0.0.0.0/0",
+      "PortRange": {
+        "From": 80,
+        "To": 80
+      }
+    }
+  },
+  "InboundHTTPSNetworkAclPublic": {
+    "Type": "AWS::EC2::NetworkAclEntry",
+    "Properties": {
+      "NetworkAclId": { "Ref": "NetworkAclPublic" },
+      "RuleNumber": "110",
+      "Protocol": "6",
+      "RuleAction": "allow",
+      "Egress": false,
+      "CidrBlock": "0.0.0.0/0",
+      "PortRange": {
+        "From": 443,
+        "To": 443
+      }
+    }
+  },
+  "InboundSSHNetworkAclPublic": {
+    "Type": "AWS::EC2::NetworkAclEntry",
+    "Properties": {
+      "NetworkAclId": { "Ref": "NetworkAclPublic" },
+      "RuleNumber": "120",
+      "Protocol": "6",
+      "RuleAction": "allow",
+      "Egress": false,
+      "CidrBlock": "0.0.0.0/0",
+      "PortRange": {
+        "From": 22,
+        "To": 22
+      }
+    }
+  },
+  "InboundReturnNetworkAclPublic": {
+    "Type": "AWS::EC2::NetworkAclEntry",
+    "Properties": {
+      "NetworkAclId": { "Ref": "NetworkAclPublic" },
+      "RuleNumber": "130",
+      "Protocol": "6",
+      "RuleAction": "allow",
+      "Egress": false,
+      "CidrBlock": "0.0.0.0/0",
+      "PortRange": {
+        "From": 1024,
+        "To": 65535
+      }
+    }
+  },
+  "OutboundNetworkAclPublic": {
+    "Type": "AWS::EC2::NetworkAclEntry",
+    "Properties": {
+      "NetworkAclId": { "Ref": "NetworkAclPublic" },
+      "RuleNumber": "100",
+      "Protocol": -1,
+      "RuleAction": "allow",
+      "Egress": true,
+      "CidrBlock": "0.0.0.0/0"
+    }
+  },
+  "PublicSubnetANetworkAclAssociation": {
+    "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+    "Properties": {
+      "SubnetId":  { "Ref": "PublicSubnetA" },
+      "NetworkAclId": { "Ref": "NetworkAclPublic" }
+    }
+  },
+  "PublicSubnetBNetworkAclAssociation": {
+    "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+    "Properties": {
+      "SubnetId":  { "Ref": "PublicSubnetB" },
+      "NetworkAclId": { "Ref": "NetworkAclPublic" }
+    }
+  },
+  "PublicSubnetCNetworkAclAssociation": {
+    "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+    "Condition": "ThreePlusAZs",
+    "Properties": {
+      "SubnetId":  { "Ref": "PublicSubnetC" },
+      "NetworkAclId": { "Ref": "NetworkAclPublic" }
+    }
+  },
+  "PublicSubnetDNetworkAclAssociation": {
+    "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId":  { "Ref": "PublicSubnetD" },
+      "NetworkAclId": { "Ref": "NetworkAclPublic" }
+    }
+  },
+  "PublicSubnetENetworkAclAssociation": {
+    "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId":  { "Ref": "PublicSubnetE" },
+      "NetworkAclId": { "Ref": "NetworkAclPublic" }
+    }
+  },
+  "PublicSubnetFNetworkAclAssociation": {
+    "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId":  { "Ref": "PublicSubnetF" },
+      "NetworkAclId": { "Ref": "NetworkAclPublic" }
+    }
+  }
+}

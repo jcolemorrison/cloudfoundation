@@ -1,0 +1,33 @@
+{
+  "Author": { "Ref": "ParamAuthorName" },
+  "AWS::CloudFormation::Interface": {
+    "ParameterGroups": [
+      {
+        "Label": { "default": "General Information" },
+        "Parameters": ["ParamAuthorName"]
+      },
+      {
+        "Label": { "default": "VPC Configuration" },
+        "Parameters": ["ParamVPCCidrRange", "ParamNatGateway"]
+      },
+      {
+        "Label": { "default": "Bastion Host Configuration" },
+        "Parameters": [
+          "ParamBastionInstanceType",
+          "ParamBastionKeyPair",
+          "ParamRetentionInDays",
+          "ParamAllowSSHFromRange"
+        ]
+      }
+    ],
+    "ParameterLabels": {
+      "ParamAuthorName": { "default": "Stack Author" },
+      "ParamVPCCidrRange": { "default": "VPC Class B Range Value" },
+      "ParamNatGateway": { "default": "Nat Gateway for Private Subnets" },
+      "ParamBastionInstanceType": { "default": "Bastion Instance Type" },
+      "ParamBastionKeyPair": { "default": "EC2 Key Pair for Bastion Access" },
+      "ParamRetentionInDays": { "default": "Bastion Log Retention (Days)" },
+      "ParamAllowSSHFromRange": { "default": "Bastion Access Allowed IP Range" }
+    }
+  }
+}

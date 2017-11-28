@@ -1,0 +1,77 @@
+{
+  "PublicRouteTable": {
+    "Type": "AWS::EC2::RouteTable",
+    "Properties": {
+      "VpcId": { "Ref": "VPC" },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-public-route-table"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "InternetRoute": {
+    "Type": "AWS::EC2::Route",
+    "DependsOn": "InternetGatewayAttachment",
+    "Properties": {
+      "RouteTableId": { "Ref": "PublicRouteTable" },
+      "DestinationCidrBlock": "0.0.0.0/0",
+      "GatewayId": {
+        "Ref": "InternetGateway"
+      }
+    }
+  },
+  "RouteAssociationPublicSubnetA": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Properties": {
+      "SubnetId": { "Ref": "PublicSubnetA" },
+      "RouteTableId": { "Ref": "PublicRouteTable" }
+    }
+  },
+  "RouteAssociationPublicSubnetB": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Properties": {
+      "SubnetId": { "Ref": "PublicSubnetB" },
+      "RouteTableId": { "Ref": "PublicRouteTable" }
+    }
+  },
+  "RouteAssociationPublicSubnetC": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Condition": "ThreePlusAZs",
+    "Properties": {
+      "SubnetId": { "Ref": "PublicSubnetC" },
+      "RouteTableId": { "Ref": "PublicRouteTable" }
+    }
+  },
+  "RouteAssociationPublicSubnetD": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId": { "Ref": "PublicSubnetD" },
+      "RouteTableId": { "Ref": "PublicRouteTable" }
+    }
+  },
+  "RouteAssociationPublicSubnetE": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId": { "Ref": "PublicSubnetE" },
+      "RouteTableId": { "Ref": "PublicRouteTable" }
+    }
+  },
+  "RouteAssociationPublicSubnetF": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId": { "Ref": "PublicSubnetF" },
+      "RouteTableId": { "Ref": "PublicRouteTable" }
+    }
+  }
+}

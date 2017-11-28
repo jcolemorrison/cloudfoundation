@@ -1,0 +1,78 @@
+{
+  "PrivateRouteTable": {
+    "Type": "AWS::EC2::RouteTable",
+    "Properties": {
+      "VpcId": { "Ref": "VPC" },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-private-route-table"
+         }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "NatRoute": {
+    "Type": "AWS::EC2::Route",
+    "Condition": "CreateNatGateway",
+    "DependsOn": "NatGateway",
+    "Properties": {
+      "RouteTableId": { "Ref": "PrivateRouteTable" },
+      "DestinationCidrBlock": "0.0.0.0/0",
+      "NatGatewayId": {
+        "Ref": "NatGateway"
+      }
+    }
+  },
+  "RouteAssociationPrivateSubnetA": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Properties": {
+      "SubnetId": { "Ref": "PrivateSubnetA" },
+      "RouteTableId": { "Ref": "PrivateRouteTable" }
+    }
+  },
+  "RouteAssociationPrivateSubnetB": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Properties": {
+      "SubnetId": { "Ref": "PrivateSubnetB" },
+      "RouteTableId": { "Ref": "PrivateRouteTable" }
+    }
+  },
+  "RouteAssociationPrivateSubnetC": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Condition": "ThreePlusAZs",
+    "Properties": {
+      "SubnetId": { "Ref": "PrivateSubnetC" },
+      "RouteTableId": { "Ref": "PrivateRouteTable" }
+    }
+  },
+  "RouteAssociationPrivateSubnetD": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId": { "Ref": "PrivateSubnetD" },
+      "RouteTableId": { "Ref": "PrivateRouteTable" }
+    }
+  },
+  "RouteAssociationPrivateSubnetE": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId": { "Ref": "PrivateSubnetE" },
+      "RouteTableId": { "Ref": "PrivateRouteTable" }
+    }
+  },
+  "RouteAssociationPrivateSubnetF": {
+    "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    "Condition": "SixAZs",
+    "Properties": {
+      "SubnetId": { "Ref": "PrivateSubnetF" },
+      "RouteTableId": { "Ref": "PrivateRouteTable" }
+    }
+  }
+}

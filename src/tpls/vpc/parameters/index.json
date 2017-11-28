@@ -1,0 +1,72 @@
+{
+  "ParamVPCCidrRange": {
+    "Type": "Number",
+    "Default": 0,
+    "Description": "The 'x' in 10.x.0.0/16 used to create the VPC's IPv4 Class B Network.  Means you can create 256 of these VPCs."
+  },
+  "ParamNatGateway": {
+    "Type": "String",
+    "Default": "true",
+    "AllowedValues": ["true", "false"],
+    "ConstraintDescription":"Whether to launch a NAT Gateway for the private subnets. true or false only."
+  },
+  "ParamAuthorName": {
+    "Type": "String",
+    "Default": "J Cole Morrison",
+    "Description": "This will be added as a tag called 'Owner' to every resource for easier management."
+  },
+  "ParamAllowSSHFromRange": {
+    "Type": "String",
+    "Description": "IP CidrBlock to allow SSH access into for Bastions.  Don't forget your subnet mask! i.e. 100.100.100.100/32"
+  },
+  "ParamBastionInstanceType": {
+    "Description":"Bastion EC2 instance type",
+    "Type":"String",
+    "Default":"t2.micro",
+    "AllowedValues":[
+      "t2.micro",
+      "t2.small",
+      "t2.medium",
+      "t2.large",
+      "m3.medium",
+      "m3.large",
+      "m3.xlarge",
+      "m3.2xlarge",
+      "m4.large",
+      "m4.xlarge",
+      "m4.2xlarge",
+      "m4.4xlarge",
+      "m4.10xlarge",
+      "c4.large",
+      "c4.xlarge",
+      "c4.2xlarge",
+      "c4.4xlarge",
+      "c4.8xlarge",
+      "c3.large",
+      "c3.xlarge",
+      "c3.2xlarge",
+      "c3.4xlarge",
+      "c3.8xlarge",
+      "r3.large",
+      "r3.xlarge",
+      "r3.2xlarge",
+      "r3.4xlarge",
+      "r3.8xlarge",
+      "i2.xlarge",
+      "i2.2xlarge",
+      "i2.4xlarge",
+      "i2.8xlarge"
+    ],
+    "ConstraintDescription":"Please choose a valid instance type."
+  },
+  "ParamBastionKeyPair": {
+    "Type": "AWS::EC2::KeyPair::KeyName",
+    "Description": "Name of an existing EC2 KeyPair to enable SSH access to the Bastion server."
+  },
+  "ParamRetentionInDays": {
+    "Type": "Number",
+    "Description": "The number of days Bastion logs are retained",
+    "Default": 7,
+    "AllowedValues": [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827] 
+  }
+}

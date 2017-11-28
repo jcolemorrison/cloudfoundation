@@ -1,0 +1,25 @@
+{
+  "VPC": {
+    "Type": "AWS::EC2::VPC",
+    "Properties":  {
+      "CidrBlock": {
+        "Fn::Sub": "10.${ParamVPCCidrRange}.0.0/16"
+      },
+      "EnableDnsSupport": true,
+      "EnableDnsHostnames": true,
+      "InstanceTenancy": "default",
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-VPC"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  }
+}

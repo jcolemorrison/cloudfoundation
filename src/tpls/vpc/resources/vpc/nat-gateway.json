@@ -1,0 +1,31 @@
+{
+  "NatGatewayEIP": {
+    "Type": "AWS::EC2::EIP",
+    "Condition": "CreateNatGateway",
+    "Properties": {
+      "Domain": "vpc"
+    }
+  },
+  "NatGateway": {
+    "Type": "AWS::EC2::NatGateway",
+    "Condition": "CreateNatGateway",
+    "Properties": {
+      "AllocationId": {
+        "Fn::GetAtt": ["NatGatewayEIP", "AllocationId"]
+      },
+      "SubnetId": { "Ref": "PublicSubnetA" },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-nat-gw"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  }
+}

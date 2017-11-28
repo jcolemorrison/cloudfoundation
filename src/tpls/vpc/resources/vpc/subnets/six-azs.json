@@ -1,0 +1,419 @@
+{
+  "PublicSubnetD": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "PubD"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "3",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "MapPublicIpOnLaunch": "true",
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-public-d"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "PrivateSubnetD": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "PrivD"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "3",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-private-d"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "DbSubnetD": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "DbD"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "3",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-db-d"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "PublicSubnetE": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "PubE"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "4",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "MapPublicIpOnLaunch": "true",
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-public-e"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "PrivateSubnetE": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "PrivE"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "4",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-private-e"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "DbSubnetE": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "DbE"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "4",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-db-e"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "PublicSubnetF": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "PubF"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "5",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "MapPublicIpOnLaunch": "true",
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-public-f"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "PrivateSubnetF": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "PrivF"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "5",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-private-f"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "DbSubnetF": {
+    "Type": "AWS::EC2::Subnet",
+    "Condition": "SixAZs",
+    "Properties": {
+      "VpcId": {
+        "Ref": "VPC"
+      },
+      "CidrBlock": {
+        "Fn::Join": [
+          "",
+          [
+            { "Fn::Sub": "10.${ParamVPCCidrRange}" },
+            {
+              "Fn::FindInMap": [
+                "MapSubnetCIDRs",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "DbF"
+              ]
+            }
+          ]
+        ]
+      },
+      "AvailabilityZone": {
+        "Fn::Select": [
+          "5",
+          {
+            "Fn::GetAZs": ""
+          }
+        ]
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-db-f"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  }
+}
