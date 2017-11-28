@@ -1,0 +1,48 @@
+{
+  "Author": { "Ref": "ParamAuthorName" },
+  "AWS::CloudFormation::Interface": {
+    "ParameterGroups": [
+      {
+        "Label": { "default": "General Information" },
+        "Parameters": ["ParamAuthorName"]
+      },
+      {
+        "Label": { "default": "Network CloudFormation Stack" },
+        "Parameters": ["ParamNetworkStackName"]
+      },
+      {
+        "Label": { "default": "Database Settings - Fill in this or the Database Snapshot section" },
+        "Parameters": [
+          "ParamDatabaseInstanceType",
+          "ParamDatabaseName",
+          "ParamDatabaseUsername",
+          "ParamDatabasePassword",
+          "ParamDatabaseBackupRetentionPeriod",
+          "ParamDBReadReplica",
+          "ParamKMSKeyArn"
+        ]
+      },
+      {
+        "Label": { "default": "Database Snapshot - Fill in this our the Database Settings section" },
+        "Parameters": ["ParamDBSnapshotArn"]
+      },
+      {
+        "Label": { "default": "Notifications" },
+        "Parameters": ["ParamDBNotificationEmail"]
+      }
+    ],
+    "ParameterLabels": {
+      "ParamAuthorName": { "default": "Stack Author" },
+      "ParamDatabaseInstanceType": { "default": "Database Instance Type" },
+      "ParamDatabaseName": { "default": "Database Name" },
+      "ParamDatabaseUsername": { "default": "Database Username" },
+      "ParamDatabasePassword": { "default": "Database Password" },
+      "ParamDatabaseBackupRetentionPeriod": { "default": "Backup Retention Period" },
+      "ParamNetworkStackName": { "default": "Network Stack Name" },
+      "ParamDBReadReplica": { "default": "Launch Read Replica" },
+      "ParamDBSnapshotArn": { "default": "Database Snapshot ARN" },
+      "ParamKMSKeyArn": { "default": "KMS Key ARN" },
+      "ParamDBNotificationEmail": { "default": "Notification Email" }
+    }
+  }
+}

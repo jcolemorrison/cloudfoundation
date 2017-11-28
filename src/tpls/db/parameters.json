@@ -1,0 +1,75 @@
+{
+  "ParamAuthorName": {
+    "Type": "String",
+    "Default": "J Cole Morrison",
+    "Description": "This will be added as a tag called 'Owner' to every resource for easier management."
+  },
+  "ParamDatabaseInstanceType": {
+    "Type": "String",
+    "Description": "Instance type to be used for the DB instance",
+    "Default": "db.r3.large",
+    "AllowedValues": [
+      "db.t2.small",
+      "db.t2.medium",
+      "db.r3.large",
+      "db.r3.xlarge",
+      "db.r3.2xlarge",
+      "db.r3.4xlarge",
+      "db.r3.8xlarge"
+    ]
+  },
+  "ParamDatabaseName": {
+    "Type": "String",
+    "Description": "Name of the database created in the cluster",
+    "Default": "default_aurora"
+  },
+  "ParamDatabaseUsername": {
+    "Type": "String",
+    "Description": "The database admin username",
+    "AllowedPattern": "[a-zA-Z0-9]+",
+    "ConstraintDescription": "Can contain only alphanumeric characters.",
+    "MaxLength": "16",
+    "MinLength": "4"
+  },
+  "ParamDatabasePassword": {
+    "Type": "String",
+    "Description": "The database admin password",
+    "AllowedPattern": "[a-zA-Z0-9]+",
+    "ConstraintDescription": "Can contain only alphanumeric characters and must be at least 8 characters long.",
+    "MaxLength": "41",
+    "MinLength": "8",
+    "NoEcho": "true"
+  },
+  "ParamDatabaseBackupRetentionPeriod": {
+    "Type": "Number",
+    "Description": "The number of days DB backups are retained",
+    "Default": 7,
+    "AllowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  },
+  "ParamNetworkStackName": {
+    "Type": "String",
+    "Description": "Name of an active CloudFormation stack that contains the networking / VPC resources",
+    "MinLength": 1,
+    "MaxLength": 255,
+    "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+  },
+  "ParamDBReadReplica": {
+    "Type": "String",
+    "Description": "Launch a read replica for ",
+    "Default": "true",
+    "AllowedValues": ["true", "false"],
+    "ConstraintDescription":"true or false only"
+  },
+  "ParamDBNotificationEmail": {
+    "Type": "String",
+    "Description": "Email address to send DB notifcations to"
+  },
+  "ParamDBSnapshotArn": {
+    "Type": "String",
+    "Description": "ARN of the RDS Snapshot to create the cluster from"
+  },
+  "ParamKMSKeyArn": {
+    "Type": "String",
+    "Description": "(Optional) The Key ARN for the KMS used to encrypt / decrypt RDS data at rest.\n  Make this key yourself in IAM -> EncryptedKeys.  If not specified, the default account KMS key will be used."
+  }
+}

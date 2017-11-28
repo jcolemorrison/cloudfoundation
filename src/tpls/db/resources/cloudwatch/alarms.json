@@ -1,0 +1,49 @@
+{
+  "DBInstance1CPUAlarm": {
+    "Type": "AWS::CloudWatch::Alarm",
+    "Properties": {
+      "AlarmDescription": "DB Instance 1 CPU over 80%",
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "Dimensions": [
+        {
+          "Name": "DBInstanceIdentifier",
+          "Value": { "Ref": "DBInstance1" }
+        }
+      ],
+      "EvaluationPeriods": "3",
+      "MetricName": "CPUUtilization",
+      "Namespace": "AWS/RDS",
+      "Period": "300",
+      "Statistic": "Average",
+      "Threshold": "80",
+      "Unit": "Percent",
+      "AlarmActions": [
+        { "Ref": "DBAlarmsTopic" }
+      ]
+    }
+  },
+  "DBInstance2CPUAlarm": {
+    "Type": "AWS::CloudWatch::Alarm",
+    "Condition": "CreateDBReadReplica",
+    "Properties": {
+      "AlarmDescription": "DB Instance 2 CPU over 80%",
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "Dimensions": [
+        {
+          "Name": "DBInstanceIdentifier",
+          "Value": { "Ref": "DBInstance2" }
+        }
+      ],
+      "EvaluationPeriods": "3",
+      "MetricName": "CPUUtilization",
+      "Namespace": "AWS/RDS",
+      "Period": "300",
+      "Statistic": "Average",
+      "Threshold": "80",
+      "Unit": "Percent",
+      "AlarmActions": [
+        { "Ref": "DBAlarmsTopic" }
+      ]
+    }
+  }
+}

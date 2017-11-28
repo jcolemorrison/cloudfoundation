@@ -1,0 +1,78 @@
+{
+  "DBCluster": {
+    "Type": "AWS::RDS::DBCluster",
+    "Properties": {
+      "BackupRetentionPeriod": { "Ref": "ParamDatabaseBackupRetentionPeriod" },
+      "DatabaseName": {
+        "Fn::If": [
+          "CreateFromDBSnapshot",
+          { "Ref": "AWS::NoValue" },
+          { "Ref": "ParamDatabaseName" }
+        ]
+      },
+      "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
+      "Engine": "aurora",
+      "KmsKeyId": {
+        "Fn::If": [
+          "CreateFromDBSnapshot",
+          { "Ref": "AWS::NoValue" },
+          {
+            "Fn::If": [
+              "HasCMK",
+              { "Ref": "ParamKMSKeyArn" },
+              { "Ref": "AWS::NoValue" }
+            ]
+          }
+        ]
+      },
+      "MasterUsername": {
+        "Fn::If": [
+          "CreateFromDBSnapshot",
+          { "Ref": "AWS::NoValue" },
+          { "Ref": "ParamDatabaseUsername" }
+        ]
+      },
+      "MasterUserPassword": {
+        "Fn::If": [
+          "CreateFromDBSnapshot",
+          { "Ref": "AWS::NoValue" },
+          { "Ref": "ParamDatabasePassword" }
+        ]
+      },
+      "PreferredBackupWindow": "07:00-07:59",
+      "PreferredMaintenanceWindow": "sun:08:00-sun:08:59",
+      "Port": 3306,
+      "SnapshotIdentifier": {
+        "Fn::If": [
+          "CreateFromDBSnapshot",
+          { "Ref": "ParamDBSnapshotArn" },
+          { "Ref": "AWS::NoValue" }
+        ]
+      },
+      "StorageEncrypted": {
+        "Fn::If": [
+          "CreateFromDBSnapshot",
+          { "Ref": "AWS::NoValue" },
+          true
+        ]
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-db-cluster"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ],
+      "VpcSecurityGroupIds": [
+        {
+          "Ref": "DBSecurityGroup"
+        }
+      ]
+    }
+  }
+}

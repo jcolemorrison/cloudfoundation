@@ -1,0 +1,25 @@
+{
+  "DBMonitoringRole": {
+    "Type": "AWS::IAM::Role",
+    "Properties": {
+      "AssumeRolePolicyDocument": {
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "monitoring.rds.amazonaws.com"
+              ]
+            },
+            "Action": [
+              "sts:AssumeRole"
+            ]
+          }
+        ]
+      },
+      "ManagedPolicyArns": [
+        "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+      ]
+    }
+  }
+}

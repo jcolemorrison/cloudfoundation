@@ -1,0 +1,28 @@
+{
+  "CreateDBReadReplica": {
+    "Fn::Equals": [
+      { "Ref": "ParamDBReadReplica" },
+      "true"
+    ]
+  },
+  "CreateFromDBSnapshot": {
+    "Fn::Not": [
+      {
+        "Fn::Equals": [
+          "",
+          { "Ref": "ParamDBSnapshotArn" }
+        ]
+      }
+    ]
+  },
+  "HasCMK": {
+    "Fn::Not": [
+      {
+        "Fn::Equals": [
+          "",
+          { "Ref": "ParamKMSKeyArn" }
+        ]
+      }
+    ]
+  }
+}

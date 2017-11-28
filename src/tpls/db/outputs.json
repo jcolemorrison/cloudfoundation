@@ -1,0 +1,55 @@
+{
+  "DBAccessSecurityGroup": {
+    "Description": "Security group for Access to the RDS Cluster",
+    "Value": { "Ref": "DBAccessSecurityGroup" },
+    "Export": {
+      "Name": {
+        "Fn::Sub": "${AWS::StackName}-DBAccessSecurityGroup"
+      }
+    }
+  },
+  "DBHost": {
+    "Description": "Endpoint for the Aurora DB Cluster",
+    "Value": {
+      "Fn::GetAtt": ["DBCluster", "Endpoint.Address"]
+    },
+    "Export": {
+      "Name": {
+        "Fn::Sub": "${AWS::StackName}-DBHost"
+      }
+    }
+  },
+  "DBReadHost": {
+    "Description": "Endpoint for the Aurora DB Cluster",
+    "Value": {
+      "Fn::GetAtt": ["DBCluster", "ReadEndpoint.Address"]
+    },
+    "Export": {
+      "Name": {
+        "Fn::Sub": "${AWS::StackName}-DBReadHost"
+      }
+    }
+  },
+  "DBName": {
+    "Description": "Name of DB in the Aurora DB Cluster",
+    "Value": {
+      "Ref": "ParamDatabaseName"
+    },
+    "Export": {
+      "Name": {
+        "Fn::Sub": "${AWS::StackName}-DBName"
+      }
+    }
+  },
+  "DBUser": {
+    "Description": "Master User for the Aurora DB Cluster",
+    "Value": {
+      "Ref": "ParamDatabaseUsername"
+    },
+    "Export": {
+      "Name": {
+        "Fn::Sub": "${AWS::StackName}-DBUser"
+      }
+    }
+  }
+}

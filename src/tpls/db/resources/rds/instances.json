@@ -1,0 +1,55 @@
+{
+  "DBInstance1": {
+    "Type": "AWS::RDS::DBInstance",
+    "Properties": {
+      "DBClusterIdentifier": { "Ref": "DBCluster" },
+      "DBInstanceClass": { "Ref": "ParamDatabaseInstanceType" },
+      "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
+      "Engine": "aurora",
+      "MonitoringInterval": "30",
+      "MonitoringRoleArn": {
+        "Fn::GetAtt": ["DBMonitoringRole", "Arn"]
+      },
+      "PubliclyAccessible": false,
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-db-instance"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "DBInstance2": {
+    "Type": "AWS::RDS::DBInstance",
+    "Condition": "CreateDBReadReplica",
+    "Properties": {
+      "DBClusterIdentifier": { "Ref": "DBCluster" },
+      "DBInstanceClass": { "Ref": "ParamDatabaseInstanceType" },
+      "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
+      "Engine": "aurora",
+      "MonitoringInterval": "30",
+      "MonitoringRoleArn": {
+        "Fn::GetAtt": ["DBMonitoringRole", "Arn"]
+      },
+      "PubliclyAccessible": false,
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-db-instance"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  }
+}

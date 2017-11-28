@@ -1,0 +1,30 @@
+{
+  "DBSubnetGroup": {
+    "Type": "AWS::RDS::DBSubnetGroup",
+    "Properties": {
+      "DBSubnetGroupDescription": "VPC Subnets for the RDS Aurora Cluster",
+      "SubnetIds": {
+        "Fn::Split": [
+          ",",
+          {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${ParamNetworkStackName}-DbSubnets"
+            }
+          }
+        ]
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": {
+            "Fn::Sub": "${AWS::StackName}-db-subnet-group"
+          }
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  }
+}

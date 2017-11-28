@@ -1,0 +1,66 @@
+{
+  "DBAlarmsTopic": {
+    "Type": "AWS::SNS::Topic",
+    "Properties": {
+      "DisplayName": {
+        "Fn::Sub": "${AWS::StackName} DB Alarms Topic"
+      }
+    }
+  },
+  "DBAlarmsTopicPolicy": {
+    "Type": "AWS::SNS::TopicPolicy",
+    "Properties": {
+      "Topics": [
+        { "Ref": "DBAlarmsTopic" }
+      ],
+      "PolicyDocument": {
+        "Id": "Pd1",
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "Sid1",
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "rds.amazonaws.com"
+              ]
+            },
+            "Action": [
+              "SNS:Publish"
+            ],
+            "Resource": { "Ref": "DBAlarmsTopic" },
+            "Condition": {
+              "StringEquals": {
+                "AWS:SourceOwner": { "Ref": "AWS::AccountId" }
+              }
+            }
+          },
+          {
+            "Sid": "Sid2",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "SNS:Publish"
+            ],
+            "Resource": { "Ref": "DBAlarmsTopic" },
+            "Condition": {
+              "StringEquals": {
+                "AWS:SourceOwner": { "Ref": "AWS::AccountId" }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "DBEmailSub" : {
+    "Type": "AWS::SNS::Subscription",
+    "Properties": {
+      "Endpoint": { "Ref": "ParamDBNotificationEmail" },
+      "Protocol": "email",
+      "TopicArn": { "Ref": "DBAlarmsTopic" }
+    }
+  }
+}

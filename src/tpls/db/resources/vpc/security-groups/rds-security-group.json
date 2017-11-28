@@ -1,0 +1,62 @@
+{
+  "DBAccessSecurityGroup": {
+    "Type": "AWS::EC2::SecurityGroup",
+    "Properties": {
+      "GroupDescription": "Security group for ACCESS to the RDS Cluster",
+      "VpcId": {
+        "Fn::ImportValue": {
+          "Fn::Sub": "${ParamNetworkStackName}-VPCId"
+        }
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": "RDS Aurora Cluster ACCESS Security Group"
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ]
+    }
+  },
+  "DBSecurityGroup": {
+    "Type": "AWS::EC2::SecurityGroup",
+    "Properties": {
+      "GroupDescription": "Security group for RDS Cluster",
+      "VpcId": {
+        "Fn::ImportValue": {
+          "Fn::Sub": "${ParamNetworkStackName}-VPCId"
+        }
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": "RDS Aurora Cluster Security Group"
+        },
+        {
+          "Key": "Owner",
+          "Value": { "Ref": "ParamAuthorName" }
+        }
+      ],
+      "SecurityGroupIngress": [
+        {
+          "IpProtocol":"tcp",
+          "FromPort":"3306",
+          "ToPort":"3306",
+          "SourceSecurityGroupId": {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${ParamNetworkStackName}-BastionSecurityGroup"
+            }
+          }
+        },
+        {
+          "IpProtocol":"tcp",
+          "FromPort":"3306",
+          "ToPort":"3306",
+          "SourceSecurityGroupId": { "Ref": "DBAccessSecurityGroup" }
+        }
+      ]
+    }
+  }
+}
