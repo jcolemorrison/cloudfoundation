@@ -5,7 +5,7 @@ const pkgTpl = require('../tpls/user/package.json')
 
 module.exports = async function init (env, options) {
   const cwd = process.cwd()
-  let answers, extras, files
+  let answers, extras, files, aws
 
   try {
     files = await fse.readdir(cwd)
@@ -52,6 +52,45 @@ module.exports = async function init (env, options) {
       return console.log(err)
     }
   }
+  if (answers) {
+    try {
+      aws = await inq.prompt([
+        {
+          type: 'confirm',
+          name: 'check',
+          message: 'Would you like to set up your project for deploys, updates, and validation with AWS?',
+          default: true,
+        }
+      ])
+    } catch (err) {
+      return console.log(err)
+    }
+  }
+
+  if (aws.check) {
+    try {
+      aws = await inq.prompt([
+        {
+          type: 'input',
+          name: 'accessKey',
+          message: 'What\'s your AWS ACCESS_KEY?',
+        },
+        {
+          type: 'input',
+          name: 'secretKey',
+          message: 'What\'s your AWS SECRET_KEY?',
+        },
+        {
+          type: 'input',
+          name: 'region',
+          message: 'What region do you want to do deploys, updates, and validations in?',
+          default: 'us-east-1'
+        }
+      ])
+    } catch (err) {
+      return console.log(err)
+    }
+  }
 
   const pkgjson = Object.assign({ name: answers.project }, pkgTpl)
   try {
@@ -60,6 +99,11 @@ module.exports = async function init (env, options) {
 
     if (answers.vpc) await fse.copy(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
     if (extras.rds) await fse.copy(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
+
+    if (aws && aws.accessKey) {
+      const envfile = `AWS_ACCESS_KEY=${aws.accessKey}\nAWS_SECRET_KEY=${aws.secretKey}\nAWS_REGION=${aws.region}`
+      await fse.appendFile(`${cwd}/.env`, envfile, { errorOnExist: true })
+    } 
 
   } catch (err) {
     return console.log(err)
