@@ -101,8 +101,13 @@ module.exports = async function init (env, options) {
     if (extras.rds) await fse.copy(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
 
     if (aws && aws.accessKey) {
-      const envfile = `AWS_ACCESS_KEY=${aws.accessKey}\nAWS_SECRET_KEY=${aws.secretKey}\nAWS_REGION=${aws.region}`
-      await fse.appendFile(`${cwd}/.env`, envfile, { errorOnExist: true })
+      const rcfile = {
+        AWS_ACCESS_KEY: aws.accessKey,
+        AWS_SECRET_KEY: aws.secretKey,
+        AWS_REGION: aws.region,
+      }
+      // const envfile = `AWS_ACCESS_KEY=${aws.accessKey}\nAWS_SECRET_KEY=${aws.secretKey}\nAWS_REGION=${aws.region}`
+      await fse.appendFile(`${cwd}/.cfdnrc`, JSON.stringify(rcfile, null, '  '), { errorOnExist: true })
     } 
 
   } catch (err) {

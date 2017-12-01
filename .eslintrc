@@ -1,0 +1,34 @@
+{
+  "extends": "airbnb-base",
+  "parserOptions": {
+    "ecmaVersion": 6
+  },
+  "rules": {
+    "import/no-dynamic-require": 0,
+    "global-require": 0,
+    "comma-dangle": [
+      "error",
+      "always-multiline"
+    ],
+    "semi": [
+      "error",
+      "never"
+    ],
+    "space-before-function-paren": [
+      "error",
+      "always"
+    ],
+    "max-len": [
+      "error",
+      150
+    ],
+    "strict": [
+      "error",
+      "global"
+    ],
+    "no-shadow": 0,
+    "no-param-reassign": 0,
+    "no-underscore-dangle": 0,
+    "no-bitwise": 0
+  }
+}
