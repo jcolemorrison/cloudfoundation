@@ -1,6 +1,7 @@
 const cmd = require('commander')
 const init = require('./init')
-const build = require ('./build')
+const build = require('./build')
+const create = require('./create')
 
 cmd.version('1.0.0')
   .description('a tool and foundation for building production cloudformation templates')
@@ -30,11 +31,9 @@ cmd
   })
 
 cmd
-  .command('create <stackname>')
+  .command('create [stackname]')
   .description('create a new stack named <stackname>')
-  .action(() => {
-    console.log('creating')
-  })
+  .action(create)
 
 cmd
   .command('add <filepath>')
@@ -46,7 +45,7 @@ cmd
 
 cmd.parse(process.argv)
 
-const validArgs = ['init', 'build', 'add']
+const validArgs = ['init', 'build', 'add', 'create']
 // console.log(cmd.args,  cmd._execs)
 
 if (cmd.args.length < 1 || validArgs.indexOf(cmd.args[cmd.args.length - 1]._name) === -1) {

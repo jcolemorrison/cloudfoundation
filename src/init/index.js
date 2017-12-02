@@ -3,9 +3,12 @@ const chk = require('chalk')
 const fse = require('fs-extra')
 const pkgTpl = require('../tpls/user/package.json')
 
-module.exports = async function init (env, options) {
+module.exports = async function init (env, opts) {
   const cwd = process.cwd()
-  let answers, extras, files, aws
+  let answers
+  let extras
+  let files
+  let aws
 
   try {
     files = await fse.readdir(cwd)
@@ -13,8 +16,8 @@ module.exports = async function init (env, options) {
     return console.log(err)
   }
 
-  if (files.length === 1 && files[0] !== '.git' || files.length > 1) {
-    return console.log(new Error('cfdn init should be used in an empty project directory'))
+  if ((files.length === 1 && files[0] !== '.git') || files.length > 1) {
+    return console.log(`${chk.red('error')}: cfdn init should be used in an empty project directory`)
   }
 
   console.log()
@@ -25,14 +28,14 @@ module.exports = async function init (env, options) {
         type: 'input',
         name: 'project',
         message: 'What is the name of your project?',
-        default: 'CloudFoundation Project'
+        default: 'CloudFoundation Project',
       },
       {
         type: 'confirm',
         name: 'vpc',
         message: 'Would you like a production VPC?',
         default: true,
-      }
+      },
     ])
   } catch (err) {
     return console.log(err)
@@ -46,7 +49,7 @@ module.exports = async function init (env, options) {
           name: 'rds',
           message: 'Would you like an encrypted, multi-AZ RDS Aurora Database?',
           default: true,
-        }
+        },
       ])
     } catch (err) {
       return console.log(err)
@@ -60,7 +63,7 @@ module.exports = async function init (env, options) {
           name: 'check',
           message: 'Would you like to set up your project for deploys, updates, and validation with AWS?',
           default: true,
-        }
+        },
       ])
     } catch (err) {
       return console.log(err)
@@ -84,8 +87,8 @@ module.exports = async function init (env, options) {
           type: 'input',
           name: 'region',
           message: 'What region do you want to do deploys, updates, and validations in?',
-          default: 'us-east-1'
-        }
+          default: 'us-east-1',
+        },
       ])
     } catch (err) {
       return console.log(err)
@@ -95,7 +98,7 @@ module.exports = async function init (env, options) {
   const pkgjson = Object.assign({ name: answers.project }, pkgTpl)
   try {
     await fse.copy(`${__dirname}/../tpls/base`, cwd, { errorOnExist: true })
-    await fse.writeFile('package.json', JSON.stringify(pkgjson, null, '  '), 'utf8')
+    await fse.writeFile(`${cwd}/package.json`, JSON.stringify(pkgjson, null, '  '), 'utf8')
 
     if (answers.vpc) await fse.copy(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
     if (extras.rds) await fse.copy(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
@@ -108,14 +111,11 @@ module.exports = async function init (env, options) {
       }
       // const envfile = `AWS_ACCESS_KEY=${aws.accessKey}\nAWS_SECRET_KEY=${aws.secretKey}\nAWS_REGION=${aws.region}`
       await fse.appendFile(`${cwd}/.cfdnrc`, JSON.stringify(rcfile, null, '  '), { errorOnExist: true })
-    } 
-
+    }
   } catch (err) {
     return console.log(err)
   }
-  
 
-  console.log(answers, extras)
   console.log()
   console.log(chk.bold.green('CloudFoundation Project Successfully Scaffolded!\n'))
   if (answers.vpc) {
@@ -125,5 +125,5 @@ module.exports = async function init (env, options) {
   console.log(chk.whiteBright(`Initialize your own stack by running ${chk.cyan('cfdn create <stackname>')}\n`))
   console.log(chk.whiteBright(`To build the stacks run ${chk.cyan('cfdn build')}\n`))
   // TODO insert github and post URLs
-  console.log(chk.whiteBright(`For more information run ${chk.cyan('cfdn --help')} or visit url\n`))
+  return console.log(chk.whiteBright(`For more information run ${chk.cyan('cfdn --help')} or visit url\n`))
 }

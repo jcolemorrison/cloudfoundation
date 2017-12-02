@@ -12,7 +12,6 @@
   },
   "ParamAuthorName": {
     "Type": "String",
-    "Default": "J Cole Morrison",
     "Description": "This will be added as a tag called 'Owner' to every resource for easier management."
   },
   "ParamAllowSSHFromRange": {

@@ -1,0 +1,14 @@
+{
+  "Author": { "Ref": "ParamAuthorName" },
+  "AWS::CloudFormation::Interface": {
+    "ParameterGroups": [
+      {
+        "Label": { "default": "General Information" },
+        "Parameters": ["ParamAuthorName"]
+      }
+    ],
+    "ParameterLabels": {
+      "ParamAuthorName": { "default": "Stack Author" }
+    }
+  }
+}
