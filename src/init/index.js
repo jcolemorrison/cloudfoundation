@@ -5,6 +5,7 @@ const pkgTpl = require('../tpls/user/package.json')
 
 module.exports = async function init (env, opts) {
   const cwd = process.cwd()
+  const { log } = console
   let answers
   let extras
   let files
@@ -13,14 +14,14 @@ module.exports = async function init (env, opts) {
   try {
     files = await fse.readdir(cwd)
   } catch (err) {
-    return console.log(err)
+    return log(err)
   }
 
   if ((files.length === 1 && files[0] !== '.git') || files.length > 1) {
-    return console.log(`${chk.red('error')}: cfdn init should be used in an empty project directory`)
+    return log(`${chk.red('error')}: cfdn init should be used in an empty project directory`)
   }
 
-  console.log()
+  log()
 
   try {
     answers = await inq.prompt([
@@ -38,7 +39,7 @@ module.exports = async function init (env, opts) {
       },
     ])
   } catch (err) {
-    return console.log(err)
+    return log(err)
   }
 
   if (answers && answers.vpc) {
@@ -52,7 +53,7 @@ module.exports = async function init (env, opts) {
         },
       ])
     } catch (err) {
-      return console.log(err)
+      return log(err)
     }
   }
   if (answers) {
@@ -66,7 +67,7 @@ module.exports = async function init (env, opts) {
         },
       ])
     } catch (err) {
-      return console.log(err)
+      return log(err)
     }
   }
 
@@ -91,7 +92,7 @@ module.exports = async function init (env, opts) {
         },
       ])
     } catch (err) {
-      return console.log(err)
+      return log(err)
     }
   }
 
@@ -113,17 +114,17 @@ module.exports = async function init (env, opts) {
       await fse.appendFile(`${cwd}/.cfdnrc`, JSON.stringify(rcfile, null, '  '), { errorOnExist: true })
     }
   } catch (err) {
-    return console.log(err)
+    return log(err)
   }
 
-  console.log()
-  console.log(chk.bold.green('CloudFoundation Project Successfully Scaffolded!\n'))
+  log()
+  log(chk.bold.green('CloudFoundation Project Successfully Scaffolded!\n'))
   if (answers.vpc) {
-    console.log(chk.whiteBright(`The stack ${chk.cyan('vpc')} is available in ${chk.cyan('src/')}`))
-    if (extras.rds) console.log(chk.whiteBright(`The stack ${chk.cyan('db')} is available in ${chk.cyan('src/')}\n`))
+    log(chk.whiteBright(`The stack ${chk.cyan('vpc')} is available in ${chk.cyan('src/')}`))
+    if (extras.rds) log(chk.whiteBright(`The stack ${chk.cyan('db')} is available in ${chk.cyan('src/')}\n`))
   }
-  console.log(chk.whiteBright(`Initialize your own stack by running ${chk.cyan('cfdn create <stackname>')}\n`))
-  console.log(chk.whiteBright(`To build the stacks run ${chk.cyan('cfdn build')}\n`))
+  log(chk.whiteBright(`Initialize your own stack by running ${chk.cyan('cfdn create <stackname>')}\n`))
+  log(chk.whiteBright(`To build the stacks run ${chk.cyan('cfdn build')}\n`))
   // TODO insert github and post URLs
-  return console.log(chk.whiteBright(`For more information run ${chk.cyan('cfdn --help')} or visit url\n`))
+  return log(chk.whiteBright(`For more information run ${chk.cyan('cfdn --help')} or visit url\n`))
 }

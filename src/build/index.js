@@ -5,6 +5,8 @@ const chk = require('chalk')
 
 const { checkValidProject } = require('../utils')
 
+const { log } = console
+
 function pathName (p) {
   if (!p) throw new Error('Valid path required')
   return p.substr(p.lastIndexOf('/') + 1).split('.')[0].toLowerCase()
@@ -66,7 +68,7 @@ function createTpls (tpls) {
         }
       })
     } catch (error) {
-      return console.log(error.message)
+      return log(error.message)
     }
 
     return {
@@ -78,7 +80,7 @@ function createTpls (tpls) {
 
 const buildTplFiles = (dir, tpls) => {
   const dist = `${dir}/dist`
-  console.log('')
+  log('')
 
   tpls.forEach((b) => {
     const { name, template } = b
@@ -92,10 +94,10 @@ const buildTplFiles = (dir, tpls) => {
     fs.writeFileSync(`${dist}/${name}.json`, fullTpl, 'utf8')
     fs.writeFileSync(`${dist}/${name}.min.json`, minTpl, 'utf8')
 
-    console.log(`${chk.green('success')}: Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} successfully built!`)
+    log(`${chk.green('success')}: Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} successfully built!`)
   })
 
-  console.log('')
+  log('')
 }
 
 function build () {
@@ -105,7 +107,7 @@ function build () {
   try {
     checkValidProject(cwd, 'build')
   } catch (error) {
-    return console.log(error.message)
+    return log(error.message)
   }
 
   const tplDirs = glob.sync(`${cwd}/src/*`)
