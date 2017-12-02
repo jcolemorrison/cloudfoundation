@@ -1,5 +1,6 @@
 const cmd = require('commander')
 const init = require('./init')
+const build = require ('./build')
 
 cmd.version('1.0.0')
   .description('a tool and foundation for building production cloudformation templates')
@@ -12,9 +13,7 @@ cmd
 cmd
   .command('build')
   .description('build down all CloudFormation templates')
-  .action(() => {
-    console.log('building')
-  })
+  .action(build)
 
 cmd
   .command('deploy <stackname>')

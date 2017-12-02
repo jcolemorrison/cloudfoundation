@@ -2,9 +2,7 @@
   "version": "1.0.0",
   "description": "A CloudFormation project - generated with CloudFoundation",
   "main": "index.js",
-  "scripts": {
-    "build": "node index.js"
-  },
+  "scripts": {},
   "keywords": [
     "aws",
     "vpc",

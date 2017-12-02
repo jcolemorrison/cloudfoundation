@@ -1,6 +1,9 @@
 const path = require('path')
 const fs = require('fs')
 const glob = require('glob')
+const chk = require('chalk')
+
+const { checkValidProject } = require('../utils')
 
 function pathName (p) {
   if (!p) throw new Error('Valid path required')
@@ -56,7 +59,7 @@ function createTpls (tpls) {
       } else if (!isDir && bpt === 'Description') {
         base[bpt] = require(path.resolve(p)).Description
       } else if (isDir && bpt === 'Description') {
-        throw new Error('Description should be contained in "description.json" with one property "Description" and with a string value.')
+        return console.log(`${chk.red('error')} Description should be contained in "description.json" with one property "Description" and with a string value.`)
       } else {
         base[bpt] = reduceDir(p)
       }
@@ -85,7 +88,7 @@ const buildTplFiles = (dir, tpls) => {
     fs.writeFileSync(`${dist}/${name}.json`, fullTpl, 'utf8')
     fs.writeFileSync(`${dist}/${name}.min.json`, minTpl, 'utf8')
 
-    console.log(`Template "${name}.json" and "${name}.min.json" successfully built!`)
+    console.log(`${chk.green('success')} Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} successfully built!`)
   })
 
   console.log('')
@@ -95,12 +98,17 @@ function build () {
   const cwd = process.cwd()
 
   // check for valid CFDN project here <--
+  try {
+    checkValidProject(cwd, 'build')
+  } catch (error) {
+    return console.log(error.message)
+  }
 
   const tplDirs = glob.sync(`${cwd}/src/*`)
 
   const tpls = createTpls(tplDirs)
 
-  buildTplFiles(cwd, tpls)
+  return buildTplFiles(cwd, tpls)
 }
 
 module.exports = build
