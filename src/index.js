@@ -17,6 +17,11 @@ cmd
   .action(build)
 
 cmd
+  .command('create [stackname]')
+  .description('create a new stack named <stackname>')
+  .action(create)
+
+cmd
   .command('deploy <stackname>')
   .description('deploy <stackname> template')
   .action((env, options) => {
@@ -29,11 +34,6 @@ cmd
   .action(() => {
     console.log('building')
   })
-
-cmd
-  .command('create [stackname]')
-  .description('create a new stack named <stackname>')
-  .action(create)
 
 cmd
   .command('add <filepath>')
