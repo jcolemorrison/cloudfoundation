@@ -2,6 +2,7 @@ const cmd = require('commander')
 const init = require('./init')
 const build = require('./build')
 const create = require('./create')
+const validate = require('/validate')
 
 cmd.version('1.0.0')
   .description('a tool and foundation for building production cloudformation templates')
@@ -20,6 +21,11 @@ cmd
   .command('create [stackname]')
   .description('create a new stack named <stackname>')
   .action(create)
+
+cmd
+  .command('validate [stackname]')
+  .description('validate [stackname] for both valid JSON and CloudFormation syntax')
+  .action(validate)
 
 cmd
   .command('deploy <stackname>')

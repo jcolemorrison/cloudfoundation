@@ -9,7 +9,7 @@ module.exports = async function create (env) {
   let settings = { stackname: env }
 
   try {
-    checkValidProject(cwd, 'create [stackname]')
+    checkValidProject('create [stackname]')
   } catch (error) {
     return log(error.message)
   }

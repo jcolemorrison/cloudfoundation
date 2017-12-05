@@ -105,7 +105,7 @@ function build () {
 
   // check for valid CFDN project here <--
   try {
-    checkValidProject(cwd, 'build')
+    checkValidProject('build')
   } catch (error) {
     return log(error.message)
   }

@@ -104,15 +104,15 @@ module.exports = async function init (env, opts) {
     if (answers.vpc) await fse.copy(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
     if (extras.rds) await fse.copy(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
 
+    const rcfile = { PROJECT: answers.project }
+
     if (aws && aws.accessKey) {
-      const rcfile = {
-        AWS_ACCESS_KEY: aws.accessKey,
-        AWS_SECRET_KEY: aws.secretKey,
-        AWS_REGION: aws.region,
-      }
-      // const envfile = `AWS_ACCESS_KEY=${aws.accessKey}\nAWS_SECRET_KEY=${aws.secretKey}\nAWS_REGION=${aws.region}`
-      await fse.appendFile(`${cwd}/.cfdnrc`, JSON.stringify(rcfile, null, '  '), { errorOnExist: true })
+      rcfile.AWS_ACCESS_KEY_ID = aws.accessKey
+      rcfile.AWS_SECRET_ACCESS_KEY = aws.secretKey
+      rcfile.AWS_REGION = aws.region
     }
+
+    await fse.appendFile(`${cwd}/.cfdnrc`, JSON.stringify(rcfile, null, '  '), { errorOnExist: true })
   } catch (err) {
     return log(err)
   }
