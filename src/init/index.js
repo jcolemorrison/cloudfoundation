@@ -109,7 +109,7 @@ module.exports = async function init (env, opts) {
     if (aws && aws.accessKey) {
       rcfile.AWS_ACCESS_KEY_ID = aws.accessKey
       rcfile.AWS_SECRET_ACCESS_KEY = aws.secretKey
-      rcfile.AWS_REGION = aws.region
+      rcfile.AWS_DEFAULT_REGION = aws.region
     }
 
     await fse.appendFile(`${cwd}/.cfdnrc`, JSON.stringify(rcfile, null, '  '), { errorOnExist: true })
