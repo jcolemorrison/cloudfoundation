@@ -2,7 +2,7 @@ const cmd = require('commander')
 const init = require('./init')
 const build = require('./build')
 const create = require('./create')
-const validate = require('/validate')
+const validate = require('./validate')
 
 cmd.version('1.0.0')
   .description('a tool and foundation for building production cloudformation templates')
@@ -44,14 +44,14 @@ cmd
 cmd
   .command('add <filepath>')
   .description('add an AWS resource to the specified file')
-  .option("-r, --resource [resource]", "exact name of the CFN resource to add to the file i.e. AWS::EC2::Instance")
+  .option('-r, --resource [resource]', 'exact name of the CFN resource to add to the file i.e. AWS::EC2::Instance')
   .action((env, options) => {
     console.log(env, options)
   })
 
 cmd.parse(process.argv)
 
-const validArgs = ['init', 'build', 'add', 'create']
+const validArgs = ['init', 'build', 'add', 'create', 'validate']
 // console.log(cmd.args,  cmd._execs)
 
 if (cmd.args.length < 1 || validArgs.indexOf(cmd.args[cmd.args.length - 1]._name) === -1) {

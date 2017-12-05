@@ -20,7 +20,7 @@
     ],
     "max-len": [
       "error",
-      150
+      250
     ],
     "strict": [
       "error",
