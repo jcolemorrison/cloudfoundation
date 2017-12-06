@@ -3,22 +3,20 @@ const fse = require('fs-extra')
 const {
   checkValidProject,
   validateJSON,
-  AWS,
+  configAWS,
   log,
+  getStack,
 } = require('../utils')
 
 module.exports = async function validate (env, opts) {
   const cwd = process.cwd()
   let aws
+  let stack
 
   try {
     checkValidProject('validate [stackname]')
-  } catch (error) {
-    return log.e(error.message)
-  }
-
-  try {
-    aws = AWS()
+    aws = configAWS()
+    stack = getStack(env)
   } catch (error) {
     return log.e(error.message)
   }
@@ -38,11 +36,11 @@ module.exports = async function validate (env, opts) {
   // d) call the SDK validate template function on the template.
   // e) either return the errors, or return a success message!
 
-  try {
-    validateJSON(env)
-  } catch (error) {
-    return log.e(error.message)
-  }
+  // try {
+  //   validateJSON(env)
+  // } catch (error) {
+  //   return log.e(error.message)
+  // }
 
   return
 }

@@ -12,6 +12,8 @@ cmd
   .description('initialize a new CloudFoundation project')
   .action(init)
 
+// TODO: import and use checkValidProject here so that I don't have to sprinkle that everywhere
+
 cmd
   .command('build')
   .description('build down all CloudFormation templates')
