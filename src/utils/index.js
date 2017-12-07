@@ -12,7 +12,7 @@ exports.log = {
   i: log.bind(this, `${chk.magenta('info')}: `),
 }
 
-exports.getCfnProp = (prop) => {
+exports.getCfnPropType = (prop) => {
   if (!prop) throw new Error('a cloudformation property type is required')
 
   const validProps = [
@@ -49,6 +49,18 @@ exports._reduceStackProps = (dir) => {
   ), {})
 }
 
+exports.getStackFiles = (name) => {
+  const stackDir = `${process.cwd()}/src/${name}`
+
+  if (!fs.existsSync(stackDir)) throw new Error(`${chk.cyan(name)} not found!`)
+
+  const files = glob.sync(`${stackDir}/*`)
+
+  if (!files) throw new Error(`${chk.cyan(name)} has no files in it!`)
+
+  return files
+}
+
 exports.getStack = (name) => {
   const stackDir = `${process.cwd()}/src/${name}`
 
@@ -67,18 +79,27 @@ exports.getStack = (name) => {
   try {
     glob.sync(`${stackDir}/*`).forEach((dir) => {
       const isDir = fs.lstatSync(dir).isDirectory()
-      const cfnProp = exports.getCfnProp(dir)
+      const cfnProp = exports.getCfnPropType(dir)
 
       // so no we're just finishing out the loop from the create tpls method
       // where we need to deal with the Description template
       // deal with the description template as directory
       //
+
+      // if it's not a directory and it's not the Descriptoin, we're done, it's a json object of what we need
       if (!isDir && cfnProp !== 'Description') {
         stack[cfnProp] = require(path.resolve(dir))
+      
+      // other wise if it's not a dir but it is Description then we have the description.json
       } else if (!isDir && cfnProp === 'Description') {
         stack[cfnProp] = require(path.resolve(dir)).Description
+      
+      // otherwise it's a dir, and it's named Description, we tell them, hey, this is the only one that has to be
+      // a fuckin regular json object and can't be a directory
       } else if (isDir && cfnProp === 'Description') {
         throw new Error(`${chk.red('error')}: Description should be contained in "description.json" with one property "Description" and with a string value.`)
+      
+      // otherwise, it's a whole thing of of related json, so we smash it together
       } else {
         stack[cfnProp] = exports._reduceStackProps(dir)
       }
@@ -105,11 +126,13 @@ exports.validateJSON = (j) => {
   return check
 }
 
-exports.checkValidProject = (cmd) => {
-  if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) {
-    // TODO: remove the chk red error and have everything using this use log
-    throw new Error(`${chk.red('error')}: ${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
+exports.checkValidProject = (cmd, action, env, opts) => {
+  try {
+    if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
+  } catch (error) {
+    return exports.log.e(error.message)
   }
+  return action(env, opts)
 }
 
 exports.configAWS = () => {

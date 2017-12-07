@@ -1,25 +1,60 @@
 const chk = require('chalk')
-const fse = require('fs-extra')
+const fs = require('fs-extra')
+const path = require('path')
+const jsonlint = require('jsonlint')
+
+const { DESCRIPTION_ERROR_MSG } = require('../utils/constants')
+
 const {
-  checkValidProject,
   validateJSON,
   configAWS,
   log,
-  getStack,
+  getStackFiles,
+  getCfnPropType,
 } = require('../utils')
 
 module.exports = async function validate (env, opts) {
   const cwd = process.cwd()
   let aws
-  let stack
+  let stackFiles
+  let errors
 
   try {
-    checkValidProject('validate [stackname]')
     aws = configAWS()
-    stack = getStack(env)
+    stackFiles = getStackFiles(env)
+    errors = []
+
+    stackFiles.forEach((sf) => {
+      const isDir = fs.lstatSync(sf).isDirectory()
+      const cfnProp = getCfnPropType(sf)
+      
+      if (!isDir) {
+        try {
+          // const j = require(path.resolve(sf))
+          const j = fs.readFileSync(path.resolve(sf), 'utf8')
+          // JSON.parse(j)
+          console.log(j)
+          jsonlint.parse(j)
+          // console.log(j)
+          // JSON.parse(JSON.stringify(j), null, '  ')
+          // JSON.parse(require(path.resolve(sf)))
+        } catch (error) {
+          errors.push({ file: sf, error: error.message })
+        }
+      } else {
+        if (cfnProp === 'Description') throw new Error(DESCRIPTION_ERROR_MSG)
+      }
+    })
   } catch (error) {
     return log.e(error.message)
   }
+  // console.log(stackFiles)
+  console.log(errors[0].error)
+
+  // so now we need to go through every fucking file
+
+
+
 
   // if at this point, we then everything is good to go
   // we need to..
