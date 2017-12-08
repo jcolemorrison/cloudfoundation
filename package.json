@@ -26,6 +26,7 @@
     "fs-extra": "^4.0.2",
     "glob": "^7.1.2",
     "inquirer": "^4.0.0",
+    "jshint": "^2.9.5",
     "jsonlint": "^1.6.2"
   },
   "devDependencies": {

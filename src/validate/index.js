@@ -1,7 +1,7 @@
 const chk = require('chalk')
 const fs = require('fs-extra')
 const path = require('path')
-const jsonlint = require('jsonlint')
+const jshint = require('jshint').JSHINT
 
 const { DESCRIPTION_ERROR_MSG } = require('../utils/constants')
 
@@ -17,12 +17,12 @@ module.exports = async function validate (env, opts) {
   const cwd = process.cwd()
   let aws
   let stackFiles
-  let errors
+  let checks
 
   try {
     aws = configAWS()
     stackFiles = getStackFiles(env)
-    errors = []
+    checks = []
 
     stackFiles.forEach((sf) => {
       const isDir = fs.lstatSync(sf).isDirectory()
@@ -33,13 +33,15 @@ module.exports = async function validate (env, opts) {
           // const j = require(path.resolve(sf))
           const j = fs.readFileSync(path.resolve(sf), 'utf8')
           // JSON.parse(j)
-          console.log(j)
-          jsonlint.parse(j)
-          // console.log(j)
+          // console.log('before', jshint)
+          const h = jshint(j)
+          // console.log('after', jshint.errors)
+          // console.log('h', h)
           // JSON.parse(JSON.stringify(j), null, '  ')
           // JSON.parse(require(path.resolve(sf)))
+          if (jshint.errors) checks.push({ file: sf, errors: jshint.errors })
         } catch (error) {
-          errors.push({ file: sf, error: error.message })
+          throw error
         }
       } else {
         if (cfnProp === 'Description') throw new Error(DESCRIPTION_ERROR_MSG)
@@ -49,7 +51,10 @@ module.exports = async function validate (env, opts) {
     return log.e(error.message)
   }
   // console.log(stackFiles)
-  console.log(errors[0].error)
+
+  const errors = checks.filter(c => c.errors.length > 0)
+  // console.log(errors[0].errors)
+  errors.forEach(e => console.log(e.file, e.errors) )
 
   // so now we need to go through every fucking file
 
