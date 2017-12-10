@@ -17,9 +17,9 @@ cmd
 // TODO: import and use checkValidProject here so that I don't have to sprinkle that everywhere
 
 cmd
-  .command('build')
+  .command('build [stackname]')
   .description('build down all CloudFormation templates')
-  .action(build)
+  .action((e, o) => checkValidProject('build [stackname]', build, e, o))
 
 cmd
   .command('create [stackname]')

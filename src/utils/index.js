@@ -3,13 +3,15 @@ const chk = require('chalk')
 const glob = require('glob')
 const path = require('path')
 const AWS = require('aws-sdk')
+const inq = require('inquirer')
 
 const { log } = console
 
 exports.log = {
-  e: log.bind(this, `${chk.red('error')}: `),
-  s: log.bind(this, `${chk.green('success')}: `),
-  i: log.bind(this, `${chk.magenta('info')}: `),
+  p: log,
+  e: log.bind(this, `  ${chk.red('error')}: `),
+  s: log.bind(this, `  ${chk.green('success')}: `),
+  i: log.bind(this, `  ${chk.magenta('info')}: `),
 }
 
 exports.getCfnPropType = (prop) => {
@@ -61,7 +63,7 @@ exports.getStackFiles = (name) => {
   return files
 }
 
-exports.getStack = (name) => {
+exports.getStackAsObject = (name) => {
   const stackDir = `${process.cwd()}/src/${name}`
 
   if (!fs.existsSync(stackDir)) {
@@ -74,7 +76,7 @@ exports.getStack = (name) => {
   // and we import those.
   //
   // so from the build file we're
-  const stack = { AWSTemplateFormatVersion: '010-09-09' }
+  const stack = { AWSTemplateFormatVersion: '2010-09-09' }
 
   try {
     glob.sync(`${stackDir}/*`).forEach((dir) => {
@@ -89,16 +91,16 @@ exports.getStack = (name) => {
       // if it's not a directory and it's not the Descriptoin, we're done, it's a json object of what we need
       if (!isDir && cfnProp !== 'Description') {
         stack[cfnProp] = require(path.resolve(dir))
-      
+
       // other wise if it's not a dir but it is Description then we have the description.json
       } else if (!isDir && cfnProp === 'Description') {
         stack[cfnProp] = require(path.resolve(dir)).Description
-      
+
       // otherwise it's a dir, and it's named Description, we tell them, hey, this is the only one that has to be
       // a fuckin regular json object and can't be a directory
       } else if (isDir && cfnProp === 'Description') {
         throw new Error(`${chk.red('error')}: Description should be contained in "description.json" with one property "Description" and with a string value.`)
-      
+
       // otherwise, it's a whole thing of of related json, so we smash it together
       } else {
         stack[cfnProp] = exports._reduceStackProps(dir)
@@ -133,6 +135,28 @@ exports.checkValidProject = (cmd, action, env, opts) => {
     return exports.log.e(error.message)
   }
   return action(env, opts)
+}
+
+exports.inquireStackName = async () => {
+  let prompt
+  try {
+    const stacks = glob.sync(`${process.cwd()}/src/*`).map((s) => {
+      const p = s.split('/')
+      return p[p.length - 1]
+    })
+    log()
+    prompt = await inq.prompt([
+      {
+        type: 'list',
+        name: 'stackname',
+        message: 'Which stack would you like to validate?',
+        choices: stacks,
+      },
+    ])
+  } catch (error) {
+    throw error
+  }
+  return prompt.stackname
 }
 
 exports.configAWS = () => {

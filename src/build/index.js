@@ -49,7 +49,7 @@ function basePropType (prop) {
 
 function createTpls (tpls) {
   return tpls.map((t) => {
-    const base = { AWSTemplateFormatVersion: '010-09-09' }
+    const base = { AWSTemplateFormatVersion: '2010-09-09' }
     const baseProps = glob.sync(`${t}/*`)
 
     try {
@@ -102,13 +102,6 @@ const buildTplFiles = (dir, tpls) => {
 
 function build () {
   const cwd = process.cwd()
-
-  // check for valid CFDN project here <--
-  try {
-    checkValidProject('build')
-  } catch (error) {
-    return log(error.message)
-  }
 
   const tplDirs = glob.sync(`${cwd}/src/*`)
 

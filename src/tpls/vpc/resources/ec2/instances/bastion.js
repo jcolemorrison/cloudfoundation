@@ -1,6 +1,5 @@
-'use strict'
-
 const fs = require('fs')
+
 const userData = fs.readFileSync(`${__dirname}/../files/user-data.sh`, 'utf-8')
 const awscliConf = fs.readFileSync(`${__dirname}/../files/awscli.conf`, 'utf-8')
 const awslogsConf = fs.readFileSync(`${__dirname}/../files/awslogs.conf`, 'utf-8')
