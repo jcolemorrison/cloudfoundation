@@ -1,113 +1,74 @@
-const path = require('path')
-const fs = require('fs')
+const fs = require('fs-extra')
 const glob = require('glob')
 const chk = require('chalk')
 
-const { checkValidProject } = require('../utils')
+const { inquireStackName, log, getStackAsObject } = require('../utils')
 
-const { log } = console
-
-function pathName (p) {
-  if (!p) throw new Error('Valid path required')
-  return p.substr(p.lastIndexOf('/') + 1).split('.')[0].toLowerCase()
-}
-
-function reduceDir (dir) {
-  return glob.sync(`${dir}/**/*.+(js|json)`).reduce((files, file) => (
-    Object.assign(files, require(path.resolve(file)))
-  ), {})
-}
-
-function basePropType (prop) {
-  const validProps = [
-    'conditions',
-    'description',
-    'mappings',
-    'metadata',
-    'outputs',
-    'parameters',
-    'resources',
-  ]
-
-  const name = pathName(prop)
-
-  if (validProps.lastIndexOf(name) === -1) {
-    throw new Error(`${chk.red('error')}: "${name}" is not a valid CFN top level template property.\n
-      Template top level directory must be one of:\n
-      conditions/ or conditions.json\n
-      description/ or description.json\n
-      mappings/ or mappings.json\n
-      metadata/ or metadata.json\n
-      outputs/ or outputs.json\n
-      parameters/ or parameters.json\n
-      resources/ or resources.json
-    `)
-  }
-
-  return `${name.charAt(0).toUpperCase()}${name.slice(1)}`
-}
-
-function createTpls (tpls) {
-  return tpls.map((t) => {
-    const base = { AWSTemplateFormatVersion: '2010-09-09' }
-    const baseProps = glob.sync(`${t}/*`)
-
-    try {
-      baseProps.forEach((p) => {
-        const isDir = fs.lstatSync(p).isDirectory()
-        const bpt = basePropType(p)
-
-        if (!isDir && bpt !== 'Description') {
-          base[bpt] = require(path.resolve(p))
-        } else if (!isDir && bpt === 'Description') {
-          base[bpt] = require(path.resolve(p)).Description
-        } else if (isDir && bpt === 'Description') {
-          throw new Error(`${chk.red('error')}: Description should be contained in "description.json" with one property "Description" and with a string value.`)
-        } else {
-          base[bpt] = reduceDir(p)
-        }
-      })
-    } catch (error) {
-      return log(error.message)
-    }
-
-    return {
-      name: pathName(t),
-      template: base,
-    }
-  })
-}
-
-const buildTplFiles = (dir, tpls) => {
-  const dist = `${dir}/dist`
-  log('')
-
-  tpls.forEach((b) => {
-    const { name, template } = b
-    const fullTpl = JSON.stringify(template, null, '  ')
-    const minTpl = JSON.stringify(template)
-
-    if (!fs.existsSync(dist)) {
-      fs.mkdirSync(dist)
-    }
-
-    fs.writeFileSync(`${dist}/${name}.json`, fullTpl, 'utf8')
-    fs.writeFileSync(`${dist}/${name}.min.json`, minTpl, 'utf8')
-
-    log(`${chk.green('success')}: Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} successfully built!`)
-  })
-
-  log('')
-}
-
-function build () {
+exports._buildTemplate = function buildTemplate (name) {
   const cwd = process.cwd()
 
-  const tplDirs = glob.sync(`${cwd}/src/*`)
+  try {
+    const stackObject = getStackAsObject(name)
+    const dist = `${cwd}/dist`
+    fs.ensureDirSync(dist)
 
-  const tpls = createTpls(tplDirs)
+    const full = JSON.stringify(stackObject, null, '  ')
+    const min = JSON.stringify(stackObject)
 
-  return buildTplFiles(cwd, tpls)
+    fs.writeFileSync(`${dist}/${name}.json`, full, 'utf8')
+    fs.writeFileSync(`${dist}/${name}.min.json`, min, 'utf8')
+  } catch (error) {
+    throw error
+  }
 }
 
-module.exports = build
+exports.build = async function buildOne (env) {
+  let name = env
+
+  if (!name) {
+    try {
+      name = await inquireStackName()
+    } catch (error) {
+      return log.e(error.message)
+    }
+  }
+
+  log.p()
+  log.i(`Building stack ${chk.cyan(name)}...\n`)
+
+  try {
+    exports._buildTemplate(name)
+  } catch (error) {
+    return log.e(error.message)
+  }
+
+  return log.s(`Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} built in ${chk.cyan('./dist')}!\n`)
+}
+
+exports.buildAll = function buildAll () {
+  const cwd = process.cwd()
+  log.p()
+  log.i('Building all stacks...\n')
+  let names
+  try {
+    names = glob.sync(`${cwd}/src/*`).map((s) => {
+      const p = s.split('/')
+      return p[p.length - 1]
+    })
+    names.forEach((n) => {
+      try {
+        exports._buildTemplate(n)
+      } catch (error) {
+        throw error
+      }
+    })
+  } catch (error) {
+    return log.e(error.message)
+  }
+
+  log.s('The following templates were successfully built\n')
+  names.forEach(n => log.p(`    ${chk.cyan(`${n}.json`)} and ${chk.cyan(`${n}.min.json`)}`))
+  log.p()
+  return log.i(`Find the built templates in ${chk.cyan('./dist')}\n`)
+}
+

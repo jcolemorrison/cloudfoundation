@@ -9,9 +9,9 @@ const { log } = console
 
 exports.log = {
   p: log,
-  e: log.bind(this, `  ${chk.red('error')}: `),
-  s: log.bind(this, `  ${chk.green('success')}: `),
-  i: log.bind(this, `  ${chk.magenta('info')}: `),
+  e: log.bind(this, `  ${chk.red('Error')}: `),
+  s: log.bind(this, `  ${chk.green('Success')}: `),
+  i: log.bind(this, `  ${chk.magenta('Info')}: `),
 }
 
 exports.getCfnPropType = (prop) => {

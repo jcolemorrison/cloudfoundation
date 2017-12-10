@@ -1,6 +1,6 @@
 const cmd = require('commander')
 const init = require('./init')
-const build = require('./build')
+const { build, buildAll } = require('./build')
 const create = require('./create')
 const validate = require('./validate')
 const { checkValidProject } = require('./utils')
@@ -18,8 +18,13 @@ cmd
 
 cmd
   .command('build [stackname]')
-  .description('build down all CloudFormation templates')
+  .description('build down [stackname] CloudFormation template')
   .action((e, o) => checkValidProject('build [stackname]', build, e, o))
+
+cmd
+  .command('build-all')
+  .description('build down all CloudFormation templates')
+  .action((e, o) => checkValidProject('build-all', buildAll, e, o))
 
 cmd
   .command('create [stackname]')
@@ -53,7 +58,7 @@ cmd
 
 cmd.parse(process.argv)
 
-const validArgs = ['init', 'build', 'add', 'create', 'validate', 'deploy']
+const validArgs = ['init', 'build', 'build-all', 'add', 'create', 'validate', 'deploy']
 // console.log(cmd.args,  cmd._execs)
 
 if (cmd.args.length < 1 || validArgs.indexOf(cmd.args[cmd.args.length - 1]._name) === -1) {
