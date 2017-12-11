@@ -9,9 +9,10 @@ const { log } = console
 
 exports.log = {
   p: log,
-  e: log.bind(this, `  ${chk.red('Error')}: `),
-  s: log.bind(this, `  ${chk.green('Success')}: `),
-  i: log.bind(this, `  ${chk.magenta('Info')}: `),
+  e: log.bind(this, `  ${chk.red('Error')} - `),
+  s: log.bind(this, `  ${chk.green('Success')} - `),
+  i: log.bind(this, `  ${chk.magenta('Info')} - `),
+  m: log.bind(this, '    '),
 }
 
 exports.getCfnPropType = (prop) => {
@@ -76,7 +77,7 @@ exports.getStackAsObject = (name) => {
   // and we import those.
   //
   // so from the build file we're
-  const stack = { AWSTemplateFormatVersion: '2010-09-09' }
+  const stack = { AWSTemplateFormatVersion: '010-09-09' }
 
   try {
     glob.sync(`${stackDir}/*`).forEach((dir) => {

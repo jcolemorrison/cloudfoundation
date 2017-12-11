@@ -90,10 +90,11 @@ module.exports = async function validate (env) {
   })
 
   if (errors.length > 0) {
-    return log.p(chk.bold.red(`${ecount} syntax errors found across ${errors.length} files.  Please fix before continuing.\n`))
+    return log.e(chk.red(`${ecount} syntax errors found across ${errors.length} files.  Please fix before continuing.\n`))
   }
 
-  log.p(chk.bold.green(`\nNo syntax errors found across ${stackFiles.length} files for ${chk.cyan(name)} stack!\n`))
+  log.p()
+  log.s(chk.green(`No syntax errors found across ${stackFiles.length} files for ${chk.cyan(name)} stack!\n`))
   log.i('Beginning Cloudformation Template Validation...\n')
 
   // DONE: if at this point, we then everything is good to go
@@ -116,11 +117,11 @@ module.exports = async function validate (env) {
 
   return cfn.validateTemplate({ TemplateBody: JSON.stringify(stackObject) }, (err, data) => {
     if (err) {
-      log.p(`${chk.bold.red('CloudFormation Validation error for stack')} ${chk.cyan(name)}:\n`)
-      return log.p(`  ${err.message}\n`)
+      log.e(`${chk.red('CloudFormation Validation error for stack')} ${chk.cyan(name)}:\n`)
+      return log.m(`${err.message}\n`)
     }
 
-    log.p(chk.bold.green('No CloudFormation Template Errors found!\n'))
+    log.s(chk.green('No CloudFormation Template Errors found!\n'))
     return log.i('Reminder - the validate-template API will not catch every error.  Some can only be found by deploying the full template.\n')
   })
 
