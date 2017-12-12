@@ -120,11 +120,11 @@ module.exports = async function init (env, opts) {
   log()
   log(chk.bold.green('CloudFoundation Project Successfully Scaffolded!\n'))
   if (answers.vpc) {
-    log(chk.whiteBright(`The stack ${chk.cyan('vpc')} is available in ${chk.cyan('src/')}`))
-    if (extras.rds) log(chk.whiteBright(`The stack ${chk.cyan('db')} is available in ${chk.cyan('src/')}\n`))
+    log(chk.whiteBright(`The template ${chk.cyan('vpc')} is available in ${chk.cyan('src/')}`))
+    if (extras.rds) log(chk.whiteBright(`The template ${chk.cyan('db')} is available in ${chk.cyan('src/')}\n`))
   }
-  log(chk.whiteBright(`Initialize your own stack by running ${chk.cyan('cfdn create <stackname>')}\n`))
-  log(chk.whiteBright(`To build the stacks run ${chk.cyan('cfdn build')}\n`))
+  log(chk.whiteBright(`Initialize your own template by running ${chk.cyan('cfdn create <templatename>')}\n`))
+  log(chk.whiteBright(`To build the templates run ${chk.cyan('cfdn build')}\n`))
   // TODO insert github and post URLs
   return log(chk.whiteBright(`For more information run ${chk.cyan('cfdn --help')} or visit url\n`))
 }

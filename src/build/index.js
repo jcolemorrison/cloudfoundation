@@ -2,18 +2,18 @@ const fs = require('fs-extra')
 const glob = require('glob')
 const chk = require('chalk')
 
-const { inquireStackName, log, getStackAsObject } = require('../utils')
+const { inquireTemplateName, log, getTemplateAsObject } = require('../utils')
 
 exports._buildTemplate = function buildTemplate (name) {
   const cwd = process.cwd()
 
   try {
-    const stackObject = getStackAsObject(name)
+    const templateObject = getTemplateAsObject(name)
     const dist = `${cwd}/dist`
     fs.ensureDirSync(dist)
 
-    const full = JSON.stringify(stackObject, null, '  ')
-    const min = JSON.stringify(stackObject)
+    const full = JSON.stringify(templateObject, null, '  ')
+    const min = JSON.stringify(templateObject)
 
     fs.writeFileSync(`${dist}/${name}.json`, full, 'utf8')
     fs.writeFileSync(`${dist}/${name}.min.json`, min, 'utf8')
@@ -27,14 +27,14 @@ exports.build = async function buildOne (env) {
 
   if (!name) {
     try {
-      name = await inquireStackName()
+      name = await inquireTemplateName()
     } catch (error) {
       return log.e(error.message)
     }
   }
 
   log.p()
-  log.i(`Building stack ${chk.cyan(name)}...\n`)
+  log.i(`Building template ${chk.cyan(name)}...\n`)
 
   try {
     exports._buildTemplate(name)
@@ -48,7 +48,7 @@ exports.build = async function buildOne (env) {
 exports.buildAll = function buildAll () {
   const cwd = process.cwd()
   log.p()
-  log.i('Building all stacks...\n')
+  log.i('Building all templates...\n')
   let names
   try {
     names = glob.sync(`${cwd}/src/*`).map((s) => {

@@ -46,28 +46,28 @@ exports.getCfnPropType = (prop) => {
   return `${name.charAt(0).toUpperCase()}${name.slice(1)}`
 }
 
-exports._reduceStackProps = (dir) => {
+exports._reduceTemplateProps = (dir) => {
   return glob.sync(`${dir}/**/*.+(js|json)`).reduce((files, file) => (
     Object.assign(files, require(path.resolve(file)))
   ), {})
 }
 
-exports.getStackFiles = (name) => {
-  const stackDir = `${process.cwd()}/src/${name}`
+exports.getTemplateFiles = (name) => {
+  const templateDir = `${process.cwd()}/src/${name}`
 
-  if (!fs.existsSync(stackDir)) throw new Error(`${chk.cyan(name)} not found!`)
+  if (!fs.existsSync(templateDir)) throw new Error(`${chk.cyan(name)} not found!`)
 
-  const files = glob.sync(`${stackDir}/*`)
+  const files = glob.sync(`${templateDir}/*`)
 
   if (!files) throw new Error(`${chk.cyan(name)} has no files in it!`)
 
   return files
 }
 
-exports.getStackAsObject = (name) => {
-  const stackDir = `${process.cwd()}/src/${name}`
+exports.getTemplateAsObject = (name) => {
+  const templateDir = `${process.cwd()}/src/${name}`
 
-  if (!fs.existsSync(stackDir)) {
+  if (!fs.existsSync(templateDir)) {
     throw new Error(`${chk.cyan(name)} not found!`)
   }
   // iterate over the folder and lint every js / json file
@@ -77,10 +77,10 @@ exports.getStackAsObject = (name) => {
   // and we import those.
   //
   // so from the build file we're
-  const stack = { AWSTemplateFormatVersion: '010-09-09' }
+  const template = { AWSTemplateFormatVersion: '2010-09-09' }
 
   try {
-    glob.sync(`${stackDir}/*`).forEach((dir) => {
+    glob.sync(`${templateDir}/*`).forEach((dir) => {
       const isDir = fs.lstatSync(dir).isDirectory()
       const cfnProp = exports.getCfnPropType(dir)
 
@@ -91,11 +91,11 @@ exports.getStackAsObject = (name) => {
 
       // if it's not a directory and it's not the Descriptoin, we're done, it's a json object of what we need
       if (!isDir && cfnProp !== 'Description') {
-        stack[cfnProp] = require(path.resolve(dir))
+        template[cfnProp] = require(path.resolve(dir))
 
       // other wise if it's not a dir but it is Description then we have the description.json
       } else if (!isDir && cfnProp === 'Description') {
-        stack[cfnProp] = require(path.resolve(dir)).Description
+        template[cfnProp] = require(path.resolve(dir)).Description
 
       // otherwise it's a dir, and it's named Description, we tell them, hey, this is the only one that has to be
       // a fuckin regular json object and can't be a directory
@@ -104,7 +104,7 @@ exports.getStackAsObject = (name) => {
 
       // otherwise, it's a whole thing of of related json, so we smash it together
       } else {
-        stack[cfnProp] = exports._reduceStackProps(dir)
+        template[cfnProp] = exports._reduceTemplateProps(dir)
       }
     })
   } catch (error) {
@@ -113,7 +113,7 @@ exports.getStackAsObject = (name) => {
 
   // so we have the top level sections, now we need to ensure they're the right type
   // from bulid this is like calling the createTpls... kind of.
-  return stack
+  return template
 }
 
 exports.validateJSON = (j) => {
@@ -138,10 +138,10 @@ exports.checkValidProject = (cmd, action, env, opts) => {
   return action(env, opts)
 }
 
-exports.inquireStackName = async () => {
+exports.inquireTemplateName = async () => {
   let prompt
   try {
-    const stacks = glob.sync(`${process.cwd()}/src/*`).map((s) => {
+    const templates = glob.sync(`${process.cwd()}/src/*`).map((s) => {
       const p = s.split('/')
       return p[p.length - 1]
     })
@@ -149,15 +149,15 @@ exports.inquireStackName = async () => {
     prompt = await inq.prompt([
       {
         type: 'list',
-        name: 'stackname',
-        message: 'Which stack would you like to validate?',
-        choices: stacks,
+        name: 'templatename',
+        message: 'Which template would you like to validate?',
+        choices: templates,
       },
     ])
   } catch (error) {
     throw error
   }
-  return prompt.stackname
+  return prompt.templatename
 }
 
 exports.configAWS = () => {

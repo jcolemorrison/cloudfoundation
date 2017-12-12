@@ -17,9 +17,9 @@ cmd
 // TODO: import and use checkValidProject here so that I don't have to sprinkle that everywhere
 
 cmd
-  .command('build [stackname]')
-  .description('build down [stackname] CloudFormation template')
-  .action((e, o) => checkValidProject('build [stackname]', build, e, o))
+  .command('build [templatename]')
+  .description('build down [templatename] CloudFormation template')
+  .action((e, o) => checkValidProject('build [templatename]', build, e, o))
 
 cmd
   .command('build-all')
@@ -27,23 +27,23 @@ cmd
   .action((e, o) => checkValidProject('build-all', buildAll, e, o))
 
 cmd
-  .command('create [stackname]')
-  .description('create a new stack named <stackname>')
-  .action((e, o) => checkValidProject('create [stackname]', create, e, o))
+  .command('create [templatename]')
+  .description('create a new template named <templatename>')
+  .action((e, o) => checkValidProject('create [templatename]', create, e, o))
 
 cmd
-  .command('validate [stackname]')
-  .description('validate [stackname] for both valid JSON and CloudFormation syntax')
-  .action((e, o) => checkValidProject('validate [stackname]', validate, e, o))
+  .command('validate [templatename]')
+  .description('validate [templatename] for both valid JSON and CloudFormation syntax')
+  .action((e, o) => checkValidProject('validate [templatename]', validate, e, o))
 
 cmd
-  .command('deploy [stackname]')
-  .description('deploy [stackname] template')
-  .action((e, o) => checkValidProject('deploy [stackname]', () =>  console.log('temp'), e, o))
+  .command('deploy [templatename]')
+  .description('deploy [templatename] template')
+  .action((e, o) => checkValidProject('deploy [templatename]', () =>  console.log('temp'), e, o))
 
 cmd
-  .command('update <stackname>')
-  .description('update <stackname> template')
+  .command('update <templatename>')
+  .description('update <templatename> template')
   .action(() => {
     console.log('building')
   })

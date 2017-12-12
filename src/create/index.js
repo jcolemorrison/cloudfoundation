@@ -5,16 +5,16 @@ const fse = require('fs-extra')
 module.exports = async function create (env) {
   const cwd = process.cwd()
   const { log } = console
-  let settings = { stackname: env }
+  let settings = { templatename: env }
 
-  if (!settings.stackname) {
+  if (!settings.templatename) {
     log()
     try {
       settings = await inq.prompt([
         {
           type: 'input',
-          name: 'stackname',
-          message: 'What is the name of your new stack?',
+          name: 'templatename',
+          message: 'What is the name of your new template?',
           default: 'main',
         },
       ])
@@ -23,17 +23,17 @@ module.exports = async function create (env) {
     }
   }
 
-  const dir = `${cwd}/src/${settings.stackname}`
+  const dir = `${cwd}/src/${settings.templatename}`
 
   if (fse.existsSync(dir)) {
-    return log(`${chk.red('error')}: stack ${chk.cyan(`${settings.stackname}`)} already exists!`)
+    return log(`${chk.red('error')}: template ${chk.cyan(`${settings.templatename}`)} already exists!`)
   }
 
   try {
     await fse.copy(`${__dirname}/../tpls/new`, dir, { errorOnExist: true })
 
     const desc = {
-      Description: `${settings.stackname} cloudformation stack template`,
+      Description: `${settings.templatename} cloudformation template template`,
     }
     await fse.writeJSON(`${dir}/description.json`, desc, { spaces: 2 })
   } catch (error) {
@@ -41,6 +41,6 @@ module.exports = async function create (env) {
   }
 
   log()
-  log(`${chk.green('success')}: stack ${chk.cyan(`${settings.stackname}`)} template created!`)
+  log(`${chk.green('success')}: template ${chk.cyan(`${settings.templatename}`)} template created!`)
   return log()
 }
