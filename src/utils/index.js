@@ -164,6 +164,25 @@ exports.inquireTemplateName = async () => {
   return prompt.templatename
 }
 
+exports.checkValidTemplate = (name) => {
+  let template
+  try {
+    template = fs.existsSync(`${process.cwd()}/src/${name}`)
+  } catch (error) {
+    throw error
+  }
+  if (!template) throw new Error(`Template ${chk.cyan(name)} does not exist!`)
+}
+
+exports.checkValidStack = (name, deploy) => {
+  // I need to check for a .stacks file
+  // if it exists, grab the whole stackfile as json
+  // loop through it and match the name to one of the json keys
+  // IF we pass the deploy flag, then we throw an error if it exists
+  // If we do not pass the deploy flag, then the stack NOT existing will throw an error AND the stack file not existing will throw an error?
+  return true
+}
+
 exports.configAWS = () => {
   let rc
 
