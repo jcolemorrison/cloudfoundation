@@ -9,8 +9,12 @@ const { log } = console
 
 exports.log = {
   p: log,
-  e: log.bind(this, `  ${chk.red('Error')} - `),
-  s: log.bind(this, `  ${chk.green('Success')} - `),
+  e (msg) {
+    log(chk.red(`  Error - ${msg}`))
+  },
+  s (msg) {
+    log(chk.green(`  Success - ${msg}`))
+  },
   i: log.bind(this, `  ${chk.magenta('Info')} - `),
   m: log.bind(this, '    '),
 }

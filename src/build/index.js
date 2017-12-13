@@ -39,7 +39,7 @@ exports.build = async function buildOne (env) {
   try {
     exports._buildTemplate(name)
   } catch (error) {
-    return log.e(chk.red(error.message))
+    return log.e(error.message)
   }
 
   return log.s(chk.green(`Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} built in ${chk.cyan('./dist')}!\n`))
@@ -63,7 +63,7 @@ exports.buildAll = function buildAll () {
       }
     })
   } catch (error) {
-    return log.e(chk.red(error.message))
+    return log.e(error.message)
   }
 
   log.s(chk.green('The following templates were successfully built\n'))

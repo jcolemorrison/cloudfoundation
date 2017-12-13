@@ -1,11 +1,11 @@
 const inq = require('inquirer')
 const chk = require('chalk')
 const fse = require('fs-extra')
+const { log } = require('../utils')
 const pkgTpl = require('../tpls/user/package.json')
 
-module.exports = async function init (env, opts) {
+module.exports = async function init (env) {
   const cwd = process.cwd()
-  const { log } = console
   let answers
   let extras
   let files
@@ -14,14 +14,14 @@ module.exports = async function init (env, opts) {
   try {
     files = await fse.readdir(cwd)
   } catch (err) {
-    return log(err)
+    return log.e(err.message)
   }
 
   if ((files.length === 1 && files[0] !== '.git') || files.length > 1) {
-    return log(`${chk.red('error')}: cfdn init should be used in an empty project directory`)
+    return log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`)
   }
 
-  log()
+  log.p()
 
   try {
     answers = await inq.prompt([
@@ -39,7 +39,7 @@ module.exports = async function init (env, opts) {
       },
     ])
   } catch (err) {
-    return log(err)
+    return log.e(err.message)
   }
 
   if (answers && answers.vpc) {
@@ -53,7 +53,7 @@ module.exports = async function init (env, opts) {
         },
       ])
     } catch (err) {
-      return log(err)
+      return log.e(err.message)
     }
   }
   if (answers) {
@@ -67,7 +67,7 @@ module.exports = async function init (env, opts) {
         },
       ])
     } catch (err) {
-      return log(err)
+      return log.e(err.message)
     }
   }
 
@@ -92,7 +92,7 @@ module.exports = async function init (env, opts) {
         },
       ])
     } catch (err) {
-      return log(err)
+      return log.e(err.message)
     }
   }
 
@@ -114,17 +114,17 @@ module.exports = async function init (env, opts) {
 
     await fse.appendFile(`${cwd}/.cfdnrc`, JSON.stringify(rcfile, null, '  '), { errorOnExist: true })
   } catch (err) {
-    return log(err)
+    return log.e(err.message)
   }
 
-  log()
-  log(chk.bold.green('CloudFoundation Project Successfully Scaffolded!\n'))
+  log.p()
+  log.p(chk.bold.green('CloudFoundation Project Successfully Scaffolded!\n'))
   if (answers.vpc) {
-    log(chk.whiteBright(`The template ${chk.cyan('vpc')} is available in ${chk.cyan('src/')}`))
-    if (extras.rds) log(chk.whiteBright(`The template ${chk.cyan('db')} is available in ${chk.cyan('src/')}\n`))
+    log.p(chk.whiteBright(`The template ${chk.cyan('vpc')} is available in ${chk.cyan('src/')}`))
+    if (extras.rds) log.p(chk.whiteBright(`The template ${chk.cyan('db')} is available in ${chk.cyan('src/')}\n`))
   }
-  log(chk.whiteBright(`Initialize your own template by running ${chk.cyan('cfdn create <templatename>')}\n`))
-  log(chk.whiteBright(`To build the templates run ${chk.cyan('cfdn build')}\n`))
+  log.p(chk.whiteBright(`Initialize your own template by running ${chk.cyan('cfdn create <templatename>')}\n`))
+  log.p(chk.whiteBright(`To build the templates run ${chk.cyan('cfdn build')}\n`))
   // TODO insert github and post URLs
-  return log(chk.whiteBright(`For more information run ${chk.cyan('cfdn --help')} or visit url\n`))
+  return log.p(chk.whiteBright(`For more information run ${chk.cyan('cfdn --help')} or visit url\n`))
 }

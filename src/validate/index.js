@@ -94,7 +94,7 @@ module.exports = async function validate (env) {
   }
 
   log.p()
-  log.s(chk.green(`No syntax errors found across ${templateFiles.length} files for ${chk.cyan(name)} template!\n`))
+  log.s(`No syntax errors found across ${templateFiles.length} files for ${chk.cyan(name)} template!\n`)
   log.i('Beginning Cloudformation Template Validation...\n')
 
   // DONE: if at this point, we then everything is good to go
@@ -117,11 +117,11 @@ module.exports = async function validate (env) {
 
   return cfn.validateTemplate({ TemplateBody: JSON.stringify(templateObject) }, (err, data) => {
     if (err) {
-      log.e(`${chk.red('CloudFormation Validation error for template')} ${chk.cyan(name)}:\n`)
+      log.e(`CloudFormation Validation error for template ${chk.cyan(name)}:\n`)
       return log.m(`${err.message}\n`)
     }
 
-    log.s(chk.green('No CloudFormation Template Errors found!\n'))
+    log.s('No CloudFormation Template Errors found!\n')
     return log.i('Reminder - the validate-template API will not catch every error.  Some can only be found by deploying the full template.\n')
   })
 

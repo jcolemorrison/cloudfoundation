@@ -3,6 +3,7 @@ const init = require('./init')
 const { build, buildAll } = require('./build')
 const create = require('./create')
 const validate = require('./validate')
+const deploy = require('./deploy')
 const { checkValidProject } = require('./utils')
 
 
@@ -38,8 +39,9 @@ cmd
 
 cmd
   .command('deploy [templatename]')
+  .option('-s, --stackname [stackname]', 'Name of stack to deploy the template as')
   .description('deploy [templatename] template')
-  .action((e, o) => checkValidProject('deploy [templatename]', () =>  console.log('temp'), e, o))
+  .action((e, o) => checkValidProject('deploy [templatename]', deploy, e, o))
 
 cmd
   .command('update <templatename>')
@@ -58,6 +60,8 @@ cmd
 
 cmd.parse(process.argv)
 
+// console.log(process.argv)
+// console.log(cmd.args)
 const validArgs = ['init', 'build', 'build-all', 'add', 'create', 'validate', 'deploy']
 // console.log(cmd.args,  cmd._execs)
 
