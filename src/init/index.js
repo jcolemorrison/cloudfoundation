@@ -62,7 +62,7 @@ module.exports = async function init (env) {
         {
           type: 'confirm',
           name: 'check',
-          message: 'Would you like to set up your project for deploys, updates, and validation with AWS?',
+          message: 'Would you like to set up keys (a profile) for deploys, updates, and validation with AWS?',
           default: true,
         },
       ])
@@ -98,21 +98,24 @@ module.exports = async function init (env) {
 
   const pkgjson = Object.assign({ name: answers.project }, pkgTpl)
   try {
-    await fse.copy(`${__dirname}/../tpls/base`, cwd, { errorOnExist: true })
-    await fse.writeFile(`${cwd}/package.json`, JSON.stringify(pkgjson, null, '  '), 'utf8')
+    fse.copySync(`${__dirname}/../tpls/base`, cwd, { errorOnExist: true })
+    fse.writeJsonSync(`${cwd}/package.json`, pkgjson, { spaces: 2, errorOnExist: true })
 
-    if (answers.vpc) await fse.copy(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
-    if (extras.rds) await fse.copy(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
+    if (answers.vpc) fse.copySync(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
+    if (extras.rds) fse.copySync(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
 
-    const rcfile = { PROJECT: answers.project }
+    const settings = { PROJECT: answers.project }
+    const profiles = { default: {} }
 
     if (aws && aws.accessKey) {
-      rcfile.AWS_ACCESS_KEY_ID = aws.accessKey
-      rcfile.AWS_SECRET_ACCESS_KEY = aws.secretKey
-      rcfile.AWS_REGION = aws.region
+      profiles.default.AWS_ACCESS_KEY_ID = aws.accessKey
+      profiles.default.AWS_SECRET_ACCESS_KEY = aws.secretKey
+      profiles.default.AWS_REGION = aws.region
     }
 
-    await fse.appendFile(`${cwd}/.cfdnrc`, JSON.stringify(rcfile, null, '  '), { errorOnExist: true })
+    fse.ensureDirSync(`${cwd}/.cfdn`)
+    fse.writeJsonSync(`${cwd}/.cfdn/settings.json`, settings, { spaces: 2, errorOnExist: true })
+    fse.writeJsonSync(`${cwd}/.cfdn/profiles.json`, profiles, { spaces: 2, errorOnExist: true })
   } catch (err) {
     return log.e(err.message)
   }

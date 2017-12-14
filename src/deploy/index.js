@@ -1,7 +1,12 @@
 const fs = require('fs-extra')
 const inq = require('inquirer')
 const chk = require('chalk')
-const { log, inquireTemplateName, checkValidTemplate, checkValidStack } = require('../utils')
+const {
+  log,
+  inquireTemplateName,
+  checkValidTemplate,
+  checkValidStack,
+} = require('../utils')
 
 module.exports = async function deploy (env, opts) {
   const cwd = process.cwd()

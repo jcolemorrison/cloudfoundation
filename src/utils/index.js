@@ -135,7 +135,7 @@ exports.validateJSON = (j) => {
 
 exports.checkValidProject = (cmd, action, env, opts) => {
   try {
-    if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
+    if (!fs.existsSync(`${process.cwd()}/.cfdn`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
   } catch (error) {
     return exports.log.e(error.message)
   }
@@ -206,7 +206,13 @@ exports.configAWS = () => {
     AWS.config.update({ region: rc.AWS_REGION })
   } else if (!process.env.AWS_REGION) {
     throw new Error(`${chk.red('error')}: Region required for AWS - Either set ${chk.cyan('AWS_REGION')} in your .cfdnrc file
-    OR set the env variable in your shell session i.e. ${chk.cyan('export AWS_REGION=us-east-1')}`) 
+    OR set the env variable in your shell session i.e. ${chk.cyan('export AWS_REGION=us-east-1')}`)
+  }
+
+  if (!AWS.config.credentials.accessKeyId) {
+    log()
+    const msg = `${chk.cyan('cfdn validate | deploy | update')} all require AWS Credentials to be set.\n\n    ${chk.white(`Please use ${chk.cyan('cfdn profiles')} to set up credentials OR configure the AWS CLI credentials.`)}\n`
+    throw new Error(msg)
   }
 
   return AWS
