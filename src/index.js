@@ -4,6 +4,8 @@ const { build, buildAll } = require('./build')
 const create = require('./create')
 const validate = require('./validate')
 const deploy = require('./deploy')
+const test = require('./test')
+const { importProfiles } = require('./profiles')
 const { checkValidProject } = require('./utils')
 
 
@@ -14,8 +16,6 @@ cmd
   .command('init')
   .description('initialize a new CloudFoundation project')
   .action(init)
-
-// TODO: import and use checkValidProject here so that I don't have to sprinkle that everywhere
 
 cmd
   .command('build [templatename]')
@@ -44,11 +44,20 @@ cmd
   .action((e, o) => checkValidProject('deploy [templatename]', deploy, e, o))
 
 cmd
+  .command('import-profiles')
+  .description('import profile data from your shared AWS Credentials to use for CloudFoundation')
+  .action(importProfiles)
+
+cmd
   .command('update <templatename>')
   .description('update <templatename> template')
   .action(() => {
     console.log('building')
   })
+cmd
+  .command('test')
+  .description('test')
+  .action(test)
 
 cmd
   .command('add <filepath>')
@@ -62,7 +71,17 @@ cmd.parse(process.argv)
 
 // console.log(process.argv)
 // console.log(cmd.args)
-const validArgs = ['init', 'build', 'build-all', 'add', 'create', 'validate', 'deploy']
+const validArgs = [
+  'init',
+  'build',
+  'build-all',
+  'add',
+  'create',
+  'validate',
+  'deploy',
+  'import-profiles',
+  'test',
+]
 // console.log(cmd.args,  cmd._execs)
 
 if (cmd.args.length < 1 || validArgs.indexOf(cmd.args[cmd.args.length - 1]._name) === -1) {

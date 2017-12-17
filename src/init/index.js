@@ -1,15 +1,22 @@
 const inq = require('inquirer')
 const chk = require('chalk')
 const fse = require('fs-extra')
-const { log } = require('../utils')
+const os = require('os')
+const { _importAWSProfiles } = require('../profiles')
+const {
+  log,
+  hasAWSCreds,
+} = require('../utils')
 const pkgTpl = require('../tpls/user/package.json')
 
 module.exports = async function init (env) {
   const cwd = process.cwd()
+  const home = os.homedir()
   let answers
   let extras
   let files
   let aws
+  let importAWS = false
 
   try {
     files = await fse.readdir(cwd)
@@ -56,19 +63,42 @@ module.exports = async function init (env) {
       return log.e(err.message)
     }
   }
-  if (answers) {
-    try {
-      aws = await inq.prompt([
+
+  try {
+    const hasAWS = hasAWSCreds(home)
+    if (hasAWS) {
+      const answer = await inq.prompt([
         {
           type: 'confirm',
-          name: 'check',
-          message: 'Would you like to set up keys (a profile) for deploys, updates, and validation with AWS?',
+          message: 'Import your AWS Profiles for usage in CFDN?  This will overwrite any previously imported CFDN profiles.',
           default: true,
+          name: 'import',
         },
       ])
-    } catch (err) {
-      return log.e(err.message)
+      if (answer.import) {
+        _importAWSProfiles(home)
+        importAWS = true
+      }
     }
+  } catch (error) {
+    return log.e(error.message)
+  }
+
+  try {
+    const message = importAWS
+      ? 'Would you like to set up additional credentials (a profile) for deploys, updates, and validation with AWS?'
+      : 'Would you like to set up credentials (a profile) for deploys, updates, and validation with AWS?'
+
+    aws = await inq.prompt([
+      {
+        type: 'confirm',
+        name: 'check',
+        message,
+        default: true,
+      },
+    ])
+  } catch (err) {
+    return log.e(err.message)
   }
 
   if (aws.check) {
@@ -113,6 +143,8 @@ module.exports = async function init (env) {
       profiles.default.AWS_REGION = aws.region
     }
 
+    // TODO: Change this to write to the user directory, ADD the "cfdn" key to the profiles.  Do not overwrite the AWS one
+    // TODO: still write a .cfdnrc file to the project root to keep track of future esttings
     fse.ensureDirSync(`${cwd}/.cfdn`)
     fse.writeJsonSync(`${cwd}/.cfdn/settings.json`, settings, { spaces: 2, errorOnExist: true })
     fse.writeJsonSync(`${cwd}/.cfdn/profiles.json`, profiles, { spaces: 2, errorOnExist: true })

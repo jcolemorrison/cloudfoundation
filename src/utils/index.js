@@ -2,8 +2,11 @@ const fs = require('fs-extra')
 const chk = require('chalk')
 const glob = require('glob')
 const path = require('path')
+const os = require('os')
 const AWS = require('aws-sdk')
 const inq = require('inquirer')
+
+const { NO_AWS_CREDENTIALS } = require('./constants')
 
 const { log } = console
 
@@ -15,7 +18,9 @@ exports.log = {
   s (msg) {
     log(chk.green(`  Success - ${msg}`))
   },
-  i: log.bind(this, `  ${chk.magenta('Info')} - `),
+  i (msg) {
+    log(chk.magenta(`  Info - ${chk.whiteBright(msg)}`))
+  },
   m: log.bind(this, '    '),
 }
 
@@ -185,6 +190,8 @@ exports.checkValidStack = (name, deploy) => {
 
 exports.configAWS = () => {
   let rc
+  // TODO: Add parameter to allow for using a profile
+  // TODO: Configure to check for the .cfdn directory
 
   try {
     rc = fs.readFileSync(`${process.cwd()}/.cfdnrc`, 'utf8')
@@ -193,6 +200,7 @@ exports.configAWS = () => {
     throw error
   }
 
+  // TODO: Grab the damn profile and use it's data here.
   rc = JSON.parse(rc)
 
   if (rc.AWS_ACCESS_KEY_ID && rc.AWS_SECRET_ACCESS_KEY) {
@@ -217,3 +225,71 @@ exports.configAWS = () => {
 
   return AWS
 }
+
+exports.hasAWSCreds = (homedir) => {
+  const home = homedir || os.homedir()
+  const creds = fs.existsSync(`${home}/.aws/credentials`, 'utf8')
+  const config = fs.existsSync(`${home}/.aws/config`, 'utf8')
+  if (!creds && !config) return false
+  return true
+}
+
+exports.getAWSCreds = (homedir) => {
+  const home = homedir || os.homedir()
+  let creds
+  let config
+
+  if (!exports.hasAWSCreds(home)) throw new Error(NO_AWS_CREDENTIALS)
+
+  try {
+    creds = fs.readFileSync(`${home}/.aws/credentials`, 'utf8')
+    config = fs.readFileSync(`${home}/.aws/config`, 'utf8')
+  } catch (error) {
+    throw error
+  }
+
+  return { creds, config }
+}
+exports.parseAWSCreds = (file, isConfig) => {
+  const data = file.split(/\r?\n/)
+
+  let profile
+
+  const profiles = data.reduce((prev, curr, i) => {
+    const line = curr.split(/(^|\s)[;#]/)[0]
+    const prof = curr.match(/^\s*\[([^[\]]+)\]\s*$/)
+
+    if (prof) {
+      let [, p] = prof
+
+      if (isConfig) p = p.replace(/^profile\s/, '')
+
+      profile = p
+    } else if (profile) {
+      const val = line.match(/^\s*(.+?)\s*=\s*(.+?)\s*$/)
+
+      if (val) {
+        const [, k, v] = val
+
+        prev[profile] = prev[profile] || {}
+
+        prev[profile][k] = v
+      }
+    }
+
+    return prev
+  }, {})
+
+  return profiles
+}
+
+exports.mergeAWSCreds = (profiles, regions) => {
+  const keys = Object.keys(profiles)
+
+  return keys.reduce((prev, curr) => {
+    const full = Object.assign({}, profiles[curr], regions[curr])
+    prev[curr] = full
+    return prev
+  }, {})
+}
+
