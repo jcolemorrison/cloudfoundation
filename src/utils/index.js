@@ -293,3 +293,7 @@ exports.mergeAWSCreds = (profiles, regions) => {
   }, {})
 }
 
+exports.hasConfiguredCfdn = (homedir) => {
+  const home = homedir || os.homedir()
+  return fs.existsSync(`${home}/.cfdn/profiles.json`)
+}

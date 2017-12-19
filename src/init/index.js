@@ -1,11 +1,12 @@
 const inq = require('inquirer')
 const chk = require('chalk')
-const fse = require('fs-extra')
+const fs = require('fs-extra')
 const os = require('os')
-const { _importAWSProfiles } = require('../profiles')
+const { _importAWSProfiles, _addProfile } = require('../profiles')
 const {
   log,
   hasAWSCreds,
+  hasConfiguredCfdn,
 } = require('../utils')
 const pkgTpl = require('../tpls/user/package.json')
 
@@ -19,7 +20,7 @@ module.exports = async function init (env) {
   let importAWS = false
 
   try {
-    files = await fse.readdir(cwd)
+    files = await fs.readdir(cwd)
   } catch (err) {
     return log.e(err.message)
   }
@@ -29,6 +30,55 @@ module.exports = async function init (env) {
   }
 
   log.p()
+
+  if (!hasConfiguredCfdn()) {
+    log.p(`To ${chk.cyan('validate')}, ${chk.cyan('deploy')}, and ${chk.cyan('update')} stacks with ${chk.cyan('cfdn')}, AWS Credentials are needed:\n`)
+    try {
+      const hasAWS = hasAWSCreds(home)
+      if (hasAWS) {
+        const answer = await inq.prompt([
+          {
+            type: 'confirm',
+            message: 'Import your AWS credentials (profiles) for usage with CFDN?',
+            default: true,
+            name: 'import',
+          },
+        ])
+        if (answer.import) {
+          _importAWSProfiles(home)
+          importAWS = true
+        }
+      }
+    } catch (error) {
+      return log.e(error.message)
+    }
+
+    try {
+      const message = importAWS
+        ? 'Set up additional credentials (a profile) for deploys, updates, and validation with AWS?'
+        : 'Set up credentials (a profile) for deploys, updates, and validation with AWS?'
+
+      aws = await inq.prompt([
+        {
+          type: 'confirm',
+          name: 'check',
+          message,
+          default: true,
+        },
+      ])
+    } catch (err) {
+      return log.e(err.message)
+    }
+
+    if (aws.check) {
+      try {
+        await _addProfile('default', home)
+      } catch (err) {
+        return log.e(err.message)
+      }
+    }
+  }
+
 
   try {
     answers = await inq.prompt([
@@ -65,74 +115,12 @@ module.exports = async function init (env) {
   }
 
   try {
-    const hasAWS = hasAWSCreds(home)
-    if (hasAWS) {
-      const answer = await inq.prompt([
-        {
-          type: 'confirm',
-          message: 'Import your AWS Profiles for usage in CFDN?  This will overwrite any previously imported CFDN profiles.',
-          default: true,
-          name: 'import',
-        },
-      ])
-      if (answer.import) {
-        _importAWSProfiles(home)
-        importAWS = true
-      }
-    }
-  } catch (error) {
-    return log.e(error.message)
-  }
+    const pkgjson = Object.assign({ name: answers.project }, pkgTpl)
+    fs.copySync(`${__dirname}/../tpls/base`, cwd, { errorOnExist: true })
+    fs.writeJsonSync(`${cwd}/package.json`, pkgjson, { spaces: 2, errorOnExist: true })
 
-  try {
-    const message = importAWS
-      ? 'Would you like to set up additional credentials (a profile) for deploys, updates, and validation with AWS?'
-      : 'Would you like to set up credentials (a profile) for deploys, updates, and validation with AWS?'
-
-    aws = await inq.prompt([
-      {
-        type: 'confirm',
-        name: 'check',
-        message,
-        default: true,
-      },
-    ])
-  } catch (err) {
-    return log.e(err.message)
-  }
-
-  if (aws.check) {
-    try {
-      aws = await inq.prompt([
-        {
-          type: 'input',
-          name: 'accessKey',
-          message: 'What\'s your AWS ACCESS_KEY?',
-        },
-        {
-          type: 'input',
-          name: 'secretKey',
-          message: 'What\'s your AWS SECRET_KEY?',
-        },
-        {
-          type: 'input',
-          name: 'region',
-          message: 'What region do you want to do deploys, updates, and validations in?',
-          default: 'us-east-1',
-        },
-      ])
-    } catch (err) {
-      return log.e(err.message)
-    }
-  }
-
-  const pkgjson = Object.assign({ name: answers.project }, pkgTpl)
-  try {
-    fse.copySync(`${__dirname}/../tpls/base`, cwd, { errorOnExist: true })
-    fse.writeJsonSync(`${cwd}/package.json`, pkgjson, { spaces: 2, errorOnExist: true })
-
-    if (answers.vpc) fse.copySync(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
-    if (extras.rds) fse.copySync(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
+    if (answers.vpc) fs.copySync(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
+    if (extras.rds) fs.copySync(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
 
     const settings = { PROJECT: answers.project }
     const profiles = { default: {} }
@@ -145,9 +133,10 @@ module.exports = async function init (env) {
 
     // TODO: Change this to write to the user directory, ADD the "cfdn" key to the profiles.  Do not overwrite the AWS one
     // TODO: still write a .cfdnrc file to the project root to keep track of future esttings
-    fse.ensureDirSync(`${cwd}/.cfdn`)
-    fse.writeJsonSync(`${cwd}/.cfdn/settings.json`, settings, { spaces: 2, errorOnExist: true })
-    fse.writeJsonSync(`${cwd}/.cfdn/profiles.json`, profiles, { spaces: 2, errorOnExist: true })
+    // TODO 12-19: REmove tjhis and just write to a cfdnrc file the project name.
+    fs.ensureDirSync(`${cwd}/.cfdn`)
+    fs.writeJsonSync(`${cwd}/.cfdn/settings.json`, settings, { spaces: 2, errorOnExist: true })
+    fs.writeJsonSync(`${cwd}/.cfdn/profiles.json`, profiles, { spaces: 2, errorOnExist: true })
   } catch (err) {
     return log.e(err.message)
   }

@@ -5,7 +5,7 @@ const create = require('./create')
 const validate = require('./validate')
 const deploy = require('./deploy')
 const test = require('./test')
-const { importProfiles } = require('./profiles')
+const { importProfiles, listProfiles } = require('./profiles')
 const { checkValidProject } = require('./utils')
 
 
@@ -49,6 +49,11 @@ cmd
   .action(importProfiles)
 
 cmd
+  .command('list-profiles')
+  .description('list all profiles configured to use cfdn with AWS')
+  .action(listProfiles)
+
+cmd
   .command('update <templatename>')
   .description('update <templatename> template')
   .action(() => {
@@ -80,6 +85,7 @@ const validArgs = [
   'validate',
   'deploy',
   'import-profiles',
+  'list-profiles',
   'test',
 ]
 // console.log(cmd.args,  cmd._execs)

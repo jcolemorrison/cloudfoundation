@@ -1,4 +1,8 @@
-const { getAWSCreds, log } = require('../utils')
+const {
+  getAWSCreds,
+  log,
+  hasConfiguredCfdn,
+} = require('../utils')
 
 function getProfileData (file, isConfig) {
   const data = file.split(/\r?\n/)
@@ -43,17 +47,21 @@ function mergeProfileData (profiles, regions) {
   }, {})
 }
 
-module.exports = async () => {
-  try {
-    const { creds, config } = getAWSCreds()
+// module.exports = async () => {
+//   try {
+//     const { creds, config } = getAWSCreds()
 
-    const profiles = getProfileData(creds)
+//     const profiles = getProfileData(creds)
 
-    const regions = getProfileData(config, true)
+//     const regions = getProfileData(config, true)
 
-    const full = mergeProfileData(profiles, regions)
-    log.p(full)
-  } catch (error) {
-    throw error
-  }
+//     const full = mergeProfileData(profiles, regions)
+//     log.p(full)
+//   } catch (error) {
+//     throw error
+//   }
+// }
+
+module.exports = () => {
+  console.log(hasConfiguredCfdn())
 }
