@@ -5,7 +5,13 @@ const create = require('./create')
 const validate = require('./validate')
 const deploy = require('./deploy')
 const test = require('./test')
-const { importProfiles, listProfiles } = require('./profiles')
+const {
+  importProfiles,
+  listProfiles,
+  addProfile,
+  removeProfile,
+  updateProfile,
+} = require('./profiles')
 const { checkValidProject } = require('./utils')
 
 
@@ -54,6 +60,21 @@ cmd
   .action(listProfiles)
 
 cmd
+  .command('add-profile [name]')
+  .description('add a new set of AWS credentials for usage with cfdn')
+  .action(addProfile)
+
+cmd
+  .command('update-profile [name]')
+  .description('update an existing cfdn profile')
+  .action(updateProfile)
+
+cmd
+  .command('remove-profile [name]')
+  .description('remove an existing cfdn profile')
+  .action(removeProfile)
+
+cmd
   .command('update <templatename>')
   .description('update <templatename> template')
   .action(() => {
@@ -86,6 +107,7 @@ const validArgs = [
   'deploy',
   'import-profiles',
   'list-profiles',
+  'add-profile',
   'test',
 ]
 // console.log(cmd.args,  cmd._execs)

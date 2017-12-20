@@ -59,16 +59,17 @@ exports.importProfiles = async function importAllProfilesCmd () {
 
 exports._addProfile = async function addCFDNProfile (name, homedir) {
   const home = homedir || os.homedir()
-  // ensure dir
-  fs.ensureFileSync(`${home}/.cfdn/profiles.json`)
-  const profiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
+  const configuredCfdn = hasConfiguredCfdn(home)
+  let profiles = {}
+
+  if (configuredCfdn) profiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
+
   profiles.cfdn = profiles.cfdn || {}
-  // check if name already exists
-  // if it does return an error and say "use a different name" or "update profile" to change it
+
   if (profiles.cfdn[name]) {
     throw new Error(`Profile ${chk.cyan(name)} already exists.  Use ${chk.cyan('update-profile')} or ${chk.cyan('remove-profile')} to manage it.`)
   }
-  // if it does not, check if name is not undefined
+
   try {
     const inqs = [
       {
@@ -97,7 +98,10 @@ exports._addProfile = async function addCFDNProfile (name, homedir) {
     }
 
     const profile = await inq.prompt(inqs)
-    const profileName = name || 'default'
+
+    let profileName = name || 'default'
+
+    if (profile.name) profileName = profile.name
 
     profiles.cfdn[profileName] = {
       aws_access_key_id: profile.aws_access_key_id,
@@ -105,24 +109,41 @@ exports._addProfile = async function addCFDNProfile (name, homedir) {
       region: profile.region,
     }
 
+    if (configuredCfdn) fs.ensureDirSync(`${home}/.cfdn`)
+
     fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
+
+    return profileName
   } catch (error) {
     throw error
   }
-  // if name is undefined, prompt them for name
-  // other wise prompt them for just the key, secret, and region
-  // write the new data to profiles.json
-  // give info that you can add / update / remove
-  // and that the --profile [profile-name] option can be used with validate, deploy, and update.
-
-  // do I show the more info messages here?  Is that worht it for init?  Probably not
 }
 
-exports.addProfile = function addPRofileCmd (env) {
-  // Here we'll do the full thing.
+exports.addProfile = async function addProfile (env) {
+  log.p()
+  const home = os.homedir()
+  let profileName
+
+  try {
+    profileName = await exports._addProfile(env, home)
+  } catch (error) {
+    throw error
+  }
+
+  log.p()
+  log.s(`profile ${chk.cyan(profileName)} created.`)
+  log.m(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
 }
 
-exports.listProfiles = function listProfiles (env) {
+exports.removeProfile = function removeProfile (env) {
+  log.p('remove profile')
+}
+
+exports.updateProfile = function updateProfile (env) {
+  log.p('update profile')
+}
+
+exports.listProfiles = function listProfiles () {
   log.p()
 
   const home = os.homedir()
@@ -179,8 +200,8 @@ exports.listProfiles = function listProfiles (env) {
     }
 
     log.i(`To configure and manage profiles for usage with ${chk.cyan('cfdn')}:`)
-    log.m(`Run ${chk.cyan('import-profiles')} to import AWS profiles for usage with ${chk.cyan('cfdn')} or...`)
-    return log.m(`Run ${chk.cyan('add-profile [name]')}, ${chk.cyan('update-profile [name]')}, or ${chk.cyan('remove-profile [name]')} to manage CFDN profiles.\n`)
+    log.m(`Run ${chk.cyan('cfdn import-profiles')} to import AWS profiles for usage with ${chk.cyan('cfdn')} or...`)
+    return log.m(`Run ${chk.cyan('cfdn add-profile')}, ${chk.cyan('update-profile')}, or ${chk.cyan('remove-profile')} to manage ${chk.cyan('cfdn')} profiles.\n`)
   } catch (error) {
     throw error
   }
