@@ -11,22 +11,38 @@ const {
   hasConfiguredCfdn,
 } = require('../utils')
 
+
+exports._getProfiles = function getProfiles (homedir) {
+  const home = homedir || os.homedir()
+  const configuredCfdn = hasConfiguredCfdn(home)
+  let profiles = {}
+
+  if (configuredCfdn) {
+    try {
+      profiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  if (!configuredCfdn) fs.ensureDirSync(`${home}/.cfdn`)
+
+  profiles.cfdn = profiles.cfdn || {}
+  profiles.aws = profiles.aws || {}
+
+  return profiles
+}
+
 exports._importAWSProfiles = function importAWSProfiles (homedir) {
   try {
     const home = homedir || os.homedir()
     const { creds, config } = getAWSCreds()
-    const profiles = parseAWSCreds(creds)
+    const parsedProfiles = parseAWSCreds(creds)
     const regions = parseAWSCreds(config, true)
-    const full = mergeAWSCreds(profiles, regions)
-    let cfdnProfiles = {}
+    const awsProfiles = mergeAWSCreds(parsedProfiles, regions)
+    const cfdnProfiles = exports._getProfiles(home)
 
-    fs.ensureDirSync(`${home}/.cfdn`)
-
-    const file = fs.existsSync(`${home}/.cfdn/profiles.json`)
-
-    if (file) cfdnProfiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
-
-    cfdnProfiles.aws = full
+    cfdnProfiles.aws = awsProfiles
 
     fs.writeJSONSync(`${home}/.cfdn/profiles.json`, cfdnProfiles, { spaces: 2 })
   } catch (error) {
@@ -34,37 +50,10 @@ exports._importAWSProfiles = function importAWSProfiles (homedir) {
   }
 }
 
-exports.importProfiles = async function importAllProfilesCmd () {
-  log.p()
-
-  if (!hasAWSCreds()) return log.i('You do not have any AWS Shared Credentials to import!\n')
-
-  try {
-    const answer = await inq.prompt([
-      {
-        type: 'confirm',
-        message: 'Import your AWS Profiles for usage in CFDN?  This will overwrite any previously imported CFDN profiles.',
-        default: true,
-        name: 'import',
-      },
-    ])
-    if (answer.import) exports._importAWSProfiles()
-  } catch (error) {
-    return log.e(error.message)
-  }
-
-  log.p()
-  return log.i('Import complete!\n')
-}
-
 exports._addProfile = async function addCFDNProfile (name, homedir) {
   const home = homedir || os.homedir()
-  const configuredCfdn = hasConfiguredCfdn(home)
-  let profiles = {}
 
-  if (configuredCfdn) profiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
-
-  profiles.cfdn = profiles.cfdn || {}
+  const profiles = exports._getProfiles(home)
 
   if (profiles.cfdn[name]) {
     throw new Error(`Profile ${chk.cyan(name)} already exists.  Use ${chk.cyan('update-profile')} or ${chk.cyan('remove-profile')} to manage it.`)
@@ -89,6 +78,7 @@ exports._addProfile = async function addCFDNProfile (name, homedir) {
         default: 'us-east-1',
       },
     ]
+
     if (!name) {
       inqs.unshift({
         type: 'input',
@@ -109,14 +99,35 @@ exports._addProfile = async function addCFDNProfile (name, homedir) {
       region: profile.region,
     }
 
-    if (configuredCfdn) fs.ensureDirSync(`${home}/.cfdn`)
-
     fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
 
     return profileName
   } catch (error) {
     throw error
   }
+}
+
+exports.importProfiles = async function importAllProfilesCmd () {
+  log.p()
+
+  if (!hasAWSCreds()) return log.i('You do not have any AWS Shared Credentials to import!\n')
+
+  try {
+    const answer = await inq.prompt([
+      {
+        type: 'confirm',
+        message: 'Import your AWS Profiles for usage in CFDN?  This will overwrite any previously imported CFDN profiles.',
+        default: true,
+        name: 'import',
+      },
+    ])
+    if (answer.import) exports._importAWSProfiles()
+  } catch (error) {
+    throw error
+  }
+
+  log.p()
+  return log.i('Import complete!\n')
 }
 
 exports.addProfile = async function addProfile (env) {
@@ -131,12 +142,74 @@ exports.addProfile = async function addProfile (env) {
   }
 
   log.p()
-  log.s(`profile ${chk.cyan(profileName)} created.`)
-  log.m(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
+  log.s(`profile ${chk.cyan(profileName)} created.\n`)
+  log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
 }
 
-exports.removeProfile = function removeProfile (env) {
-  log.p('remove profile')
+exports.removeProfile = async function removeProfile (env) {
+  log.p()
+  const home = os.homedir()
+  const profiles = exports._getProfiles(home)
+  let name = env
+  let type = 'cfdn'
+
+  if (!name) {
+    try {
+      const { cfdn, aws } = profiles
+      const cfdnProfiles = cfdn ? Object.keys(cfdn) : []
+      const awsProfiles = aws
+        ? Object.keys(aws).reduce((prev, curr) => (prev.concat(`${curr} (aws)`)), [])
+        : []
+      const choices = cfdnProfiles.concat(awsProfiles)
+      log.p(choices)
+
+      const choice = await inq.prompt([
+        {
+          type: 'list',
+          message: 'Which profile would you like to remove?',
+          name: 'profile',
+          choices,
+        },
+      ])
+      log.p()
+
+      name = choice.profile.split(' (aws)')[0]
+    } catch (error) {
+      throw error
+    }
+  }
+
+  if (!profiles.cfdn[name] && !profiles.aws[name]) {
+    return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
+  }
+
+  if (profiles.aws[name]) type = 'aws'
+
+  try {
+    if (type === 'aws') log.i(`Profile ${chk.cyan(name)} will only be removed from CFDN, but not from the AWS CLI.\n`)
+
+    const message = `Are you sure you want to remove the profile ${chk.cyan(name)}?`
+
+    const confirm = await inq.prompt([
+      {
+        type: 'confirm',
+        message,
+        default: false,
+        name: 'remove',
+      },
+    ])
+
+    if (!confirm.remove) return false
+
+    delete profiles[type][name]
+
+    fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
+
+    log.p()
+    return log.s(`Profile ${chk.cyan(name)} removed.\n`)
+  } catch (error) {
+    throw error
+  }
 }
 
 exports.updateProfile = function updateProfile (env) {

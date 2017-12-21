@@ -108,6 +108,7 @@ const validArgs = [
   'import-profiles',
   'list-profiles',
   'add-profile',
+  'remove-profile',
   'test',
 ]
 // console.log(cmd.args,  cmd._execs)
