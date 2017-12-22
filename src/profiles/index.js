@@ -146,6 +146,34 @@ exports.addProfile = async function addProfile (env) {
   log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
 }
 
+exports._selectProfile = async function selectProfile (profiles, onlyCfdn) {
+  try {
+    const { cfdn, aws } = profiles
+    let choices = cfdn ? Object.keys(cfdn) : []
+
+    if (!onlyCfdn) {
+      const awsProfiles = aws
+        ? Object.keys(aws).reduce((prev, curr) => (prev.concat(`${curr} (aws)`)), [])
+        : []
+      choices = choices.concat(awsProfiles)
+    }
+
+    const choice = await inq.prompt([
+      {
+        type: 'list',
+        message: 'Which profile would you like to remove?',
+        name: 'profile',
+        choices,
+      },
+    ])
+    log.p()
+
+    return choice.profile.split(' (aws)')[0]
+  } catch (error) {
+    throw error
+  }
+}
+
 exports.removeProfile = async function removeProfile (env) {
   log.p()
   const home = os.homedir()
@@ -153,31 +181,7 @@ exports.removeProfile = async function removeProfile (env) {
   let name = env
   let type = 'cfdn'
 
-  if (!name) {
-    try {
-      const { cfdn, aws } = profiles
-      const cfdnProfiles = cfdn ? Object.keys(cfdn) : []
-      const awsProfiles = aws
-        ? Object.keys(aws).reduce((prev, curr) => (prev.concat(`${curr} (aws)`)), [])
-        : []
-      const choices = cfdnProfiles.concat(awsProfiles)
-      log.p(choices)
-
-      const choice = await inq.prompt([
-        {
-          type: 'list',
-          message: 'Which profile would you like to remove?',
-          name: 'profile',
-          choices,
-        },
-      ])
-      log.p()
-
-      name = choice.profile.split(' (aws)')[0]
-    } catch (error) {
-      throw error
-    }
-  }
+  if (!name) name = await exports._selectProfile(profiles)
 
   if (!profiles.cfdn[name] && !profiles.aws[name]) {
     return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
@@ -212,8 +216,59 @@ exports.removeProfile = async function removeProfile (env) {
   }
 }
 
-exports.updateProfile = function updateProfile (env) {
-  log.p('update profile')
+exports.updateProfile = async function updateProfile (env) {
+  log.p()
+  const home = os.homedir()
+  const profiles = exports._getProfiles(home)
+  let name = env
+
+  log.i('Only CFDN profiles can be updated.  AWS ones must be configured through the AWS CLI.\n')
+
+  if (!name) name = await exports._selectProfile(profiles)
+
+  if (!profiles.cfdn[name] && !profiles.aws[name]) {
+    return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
+  }
+
+  if (profiles.aws[name]) {
+    log.e('You can only update CFDN profiles.')
+    return log.m(`To update AWS profiles, configure them through the AWS CLI and then use ${chk.cyan('cfdn import-profiles')}.\n`)
+  }
+
+  const { aws_access_key_id, aws_secret_access_key, region } = profiles.cfdn[name]
+
+  try {
+    const update = await inq.prompt([
+      {
+        type: 'input',
+        name: 'aws_access_key_id',
+        message: `Change ${chk.cyan(name)}'s aws_access_key_id to:`,
+        default: aws_access_key_id,
+      },
+      {
+        type: 'input',
+        name: 'aws_secret_access_key',
+        message: `Change ${chk.cyan(name)}'s aws_secret_access_key to:`,
+        default: aws_secret_access_key,
+      },
+      {
+        type: 'input',
+        name: 'region',
+        message: `Change ${chk.cyan(name)}'s region to:`,
+        default: region,
+      },
+    ])
+
+    profiles.cfdn[name] = update
+
+    fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
+  } catch (error) {
+    log.e(error.message)
+    throw error
+  }
+
+  log.p()
+  return log.s(`Profile ${chk.cyan(name)} successfully updated!\n`)
 }
 
 exports.listProfiles = function listProfiles () {

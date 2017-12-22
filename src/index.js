@@ -109,6 +109,7 @@ const validArgs = [
   'list-profiles',
   'add-profile',
   'remove-profile',
+  'update-profile',
   'test',
 ]
 // console.log(cmd.args,  cmd._execs)
