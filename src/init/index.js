@@ -10,7 +10,7 @@ const {
 } = require('../utils')
 const pkgTpl = require('../tpls/user/package.json')
 
-module.exports = async function init (env) {
+module.exports = async function init () {
   const cwd = process.cwd()
   const home = os.homedir()
   let answers
@@ -31,7 +31,7 @@ module.exports = async function init (env) {
 
   log.p()
 
-  if (!hasConfiguredCfdn()) {
+  if (!hasConfiguredCfdn(home)) {
     log.p(`To ${chk.cyan('validate')}, ${chk.cyan('deploy')}, and ${chk.cyan('update')} stacks with ${chk.cyan('cfdn')}, AWS Credentials are needed:\n`)
     try {
       const hasAWS = hasAWSCreds(home)
@@ -53,6 +53,9 @@ module.exports = async function init (env) {
       return log.e(error.message)
     }
 
+    log.p()
+    log.s('AWS credentials imported!\n')
+
     try {
       const message = importAWS
         ? 'Set up additional credentials (a profile) for deploys, updates, and validation with AWS?'
@@ -70,6 +73,8 @@ module.exports = async function init (env) {
       return log.e(err.message)
     }
 
+    log.p()
+
     if (aws.check) {
       try {
         await _addProfile('default', home)
@@ -77,15 +82,18 @@ module.exports = async function init (env) {
         return log.e(err.message)
       }
     }
-  }
 
+    log.p()
+    log.s('Default CFDN profile created for use with AWS!\n')
+    log.p('Now let\'s initialize your project...\n')
+  }
 
   try {
     answers = await inq.prompt([
       {
         type: 'input',
         name: 'project',
-        message: 'What is the name of your project?',
+        message: 'What is the name of your new project?',
         default: 'CloudFoundation Project',
       },
       {
@@ -123,20 +131,8 @@ module.exports = async function init (env) {
     if (extras.rds) fs.copySync(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
 
     const settings = { PROJECT: answers.project }
-    const profiles = { default: {} }
 
-    if (aws && aws.accessKey) {
-      profiles.default.AWS_ACCESS_KEY_ID = aws.accessKey
-      profiles.default.AWS_SECRET_ACCESS_KEY = aws.secretKey
-      profiles.default.AWS_REGION = aws.region
-    }
-
-    // TODO: Change this to write to the user directory, ADD the "cfdn" key to the profiles.  Do not overwrite the AWS one
-    // TODO: still write a .cfdnrc file to the project root to keep track of future esttings
-    // TODO 12-19: REmove tjhis and just write to a cfdnrc file the project name.
-    fs.ensureDirSync(`${cwd}/.cfdn`)
-    fs.writeJsonSync(`${cwd}/.cfdn/settings.json`, settings, { spaces: 2, errorOnExist: true })
-    fs.writeJsonSync(`${cwd}/.cfdn/profiles.json`, profiles, { spaces: 2, errorOnExist: true })
+    fs.writeJsonSync(`${cwd}/.cfdnrc`, settings)
   } catch (err) {
     return log.e(err.message)
   }
