@@ -107,6 +107,17 @@ exports._addProfile = async function addCFDNProfile (name, homedir) {
   }
 }
 
+exports.checkValidProfile = function validProfile (profile) {
+  const profiles = exports._getProfiles()
+  const profilesExist = Object.keys(profiles.cfdn).length + Object.keys(profiles.aws).length
+
+  if (!profilesExist) throw new Error(`No profiles are configured.  Please use ${chk.cyan('add-profiles')} or ${chk.cyan('import-profiles')} to set some up.`)
+
+  if (!profiles.cfdn[profiles] || !profiles.aws[profiles]) {
+    throw new Error(`Profile ${chk.cyan(profile)} does not exit!`)
+  }
+}
+
 exports.importProfiles = async function importAllProfilesCmd () {
   log.p()
 
@@ -146,10 +157,13 @@ exports.addProfile = async function addProfile (env) {
   log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
 }
 
-exports._selectProfile = async function selectProfile (profiles, onlyCfdn) {
+exports.selectProfile = async function selectProfile (action, profiles, onlyCfdn) {
   try {
+    if (!profiles) profiles = exports._getProfiles()
+
     const { cfdn, aws } = profiles
     let choices = cfdn ? Object.keys(cfdn) : []
+    let type = 'cfdn'
 
     if (!onlyCfdn) {
       const awsProfiles = aws
@@ -158,17 +172,22 @@ exports._selectProfile = async function selectProfile (profiles, onlyCfdn) {
       choices = choices.concat(awsProfiles)
     }
 
-    const choice = await inq.prompt([
+    let choice = await inq.prompt([
       {
         type: 'list',
-        message: 'Which profile would you like to remove?',
+        message: `Which profile would you like to ${action}?`,
         name: 'profile',
         choices,
       },
     ])
+
+    choice = choice.profile.split(' (aws)')[0]
+
+    if (profiles.aws[choice]) type = 'aws'
+
     log.p()
 
-    return choice.profile.split(' (aws)')[0]
+    return { ...profiles[type][choice], name: choice }
   } catch (error) {
     throw error
   }
@@ -181,7 +200,10 @@ exports.removeProfile = async function removeProfile (env) {
   let name = env
   let type = 'cfdn'
 
-  if (!name) name = await exports._selectProfile(profiles)
+  if (!name) {
+    const profile = await exports.selectProfile('remove', profiles)
+    name = profile.name
+  }
 
   if (!profiles.cfdn[name] && !profiles.aws[name]) {
     return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
@@ -224,7 +246,10 @@ exports.updateProfile = async function updateProfile (env) {
 
   log.i('Only CFDN profiles can be updated.  AWS ones must be configured through the AWS CLI.\n')
 
-  if (!name) name = await exports._selectProfile(profiles)
+  if (!name) {
+    const profile = await exports.selectProfile('remove', profiles)
+    name = profile.name
+  }
 
   if (!profiles.cfdn[name] && !profiles.aws[name]) {
     return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)

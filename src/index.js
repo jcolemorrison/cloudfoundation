@@ -41,14 +41,18 @@ cmd
 cmd
   .command('validate [templatename]')
   .description('validate [templatename] for both valid JSON and CloudFormation syntax')
+  .option('-p, --profile <profilename>', 'the AWS or CFDN profile that has the credentials you\'d like to use')
   .action((e, o) => checkValidProject('validate [templatename]', validate, e, o))
 
 cmd
   .command('deploy [templatename]')
-  .option('-s, --stackname [stackname]', 'Name of stack to deploy the template as')
+  .option('-s, --stackname <stackname>', 'Name of stack to deploy the template as')
+  .option('-p, --profile <profilename>', 'the AWS or CFDN profile that has the credentials you\'d like to use')
   .description('deploy [templatename] template')
   .action((e, o) => checkValidProject('deploy [templatename]', deploy, e, o))
 
+
+// TODO: write an error catcher for all of the below so there's no unhandled promise rejection shit.
 cmd
   .command('import-profiles')
   .description('import profile data from your shared AWS Credentials to use for CloudFoundation')

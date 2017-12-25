@@ -6,9 +6,10 @@ const os = require('os')
 const AWS = require('aws-sdk')
 const inq = require('inquirer')
 
-const { NO_AWS_CREDENTIALS } = require('./constants')
+const { NO_AWS_CREDENTIALS, AWS_REGIONS } = require('./constants')
 
 const { log } = console
+const { cyan } = chk
 
 exports.log = {
   p: log,
@@ -140,14 +141,14 @@ exports.validateJSON = (j) => {
 
 exports.checkValidProject = (cmd, action, env, opts) => {
   try {
-    if (!fs.existsSync(`${process.cwd()}/.cfdn`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
+    if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
   } catch (error) {
     return exports.log.e(error.message)
   }
-  return action(env, opts)
+  return action(env, opts).catch(e => exports.log.p(e))
 }
 
-exports.inquireTemplateName = async () => {
+exports.inquireTemplateName = async (action) => {
   let prompt
   try {
     const templates = glob.sync(`${process.cwd()}/src/*`).map((s) => {
@@ -159,7 +160,7 @@ exports.inquireTemplateName = async () => {
       {
         type: 'list',
         name: 'templatename',
-        message: 'Which template would you like to validate?',
+        message: `Which template would you like to ${action}?`,
         choices: templates,
       },
     ])
@@ -179,13 +180,65 @@ exports.checkValidTemplate = (name) => {
   if (!template) throw new Error(`Template ${chk.cyan(name)} does not exist!`)
 }
 
-exports.checkValidStack = (name, deploy) => {
+exports.getStackFile = (templateDir) => {
   // I need to check for a .stacks file
   // if it exists, grab the whole stackfile as json
   // loop through it and match the name to one of the json keys
   // IF we pass the deploy flag, then we throw an error if it exists
   // If we do not pass the deploy flag, then the stack NOT existing will throw an error AND the stack file not existing will throw an error?
-  return true
+  const stackPath = `${templateDir}/.stacks`
+  let stackFile = {}
+
+  const stackFileExists = fs.existsSync(stackPath)
+
+  if (stackFileExists) {
+    try {
+      stackFile = fs.readJsonSync(stackPath)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  return stackFile
+}
+
+exports.buildParamInquiry = (param) => {
+}
+
+exports.selectStackParams = (Parameters, profile, region) => {
+  const paramNames = Parameters && Object.keys(Parameters)
+
+  if (paramNames && paramNames.length < 1) return false
+
+  const paramInq = []
+
+  paramNames.forEach(name => {
+    return paramInq.push(exports.buildParamInquiry(Parameters[name]))
+  })
+
+  log(paramInq)
+}
+
+exports.selectRegion = async (profile, message) => {
+  let region
+
+  try {
+    const regions = await inq.prompt([
+      {
+        type: 'list',
+        message,
+        choices: AWS_REGIONS,
+        name: 'selected',
+        default: profile.region || 'us-east-1',
+      },
+    ])
+
+    region = regions.selected
+  } catch (error) {
+    throw error
+  }
+
+  return region
 }
 
 exports.configAWS = () => {

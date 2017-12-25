@@ -29,7 +29,7 @@ module.exports = async function validate (env) {
 
   if (!name) {
     try {
-      name = await inquireTemplateName()
+      name = await inquireTemplateName('validate')
     } catch (error) {
       return log.e(error.message)
     }
@@ -115,7 +115,7 @@ module.exports = async function validate (env) {
 
   const cfn = new aws.CloudFormation()
 
-  return cfn.validateTemplate({ TemplateBody: JSON.stringify(templateObject) }, (err, data) => {
+  return cfn.validateTemplate({ TemplateBody: JSON.stringify(templateObject) }, (err) => {
     if (err) {
       log.e(`CloudFormation Validation error for template ${chk.cyan(name)}:\n`)
       return log.m(`${err.message}\n`)
