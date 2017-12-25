@@ -181,11 +181,6 @@ exports.checkValidTemplate = (name) => {
 }
 
 exports.getStackFile = (templateDir) => {
-  // I need to check for a .stacks file
-  // if it exists, grab the whole stackfile as json
-  // loop through it and match the name to one of the json keys
-  // IF we pass the deploy flag, then we throw an error if it exists
-  // If we do not pass the deploy flag, then the stack NOT existing will throw an error AND the stack file not existing will throw an error?
   const stackPath = `${templateDir}/.stacks`
   let stackFile = {}
 
@@ -203,6 +198,98 @@ exports.getStackFile = (templateDir) => {
 }
 
 exports.buildParamInquiry = (param) => {
+  const {
+    AllowedPattern,
+    AllowedValues,
+    ConstraintDescription,
+    Default,
+    Description,
+    MaxLength,
+    MaxValue,
+    MinLength,
+    MinValue,
+    NoEcho,
+    Type,
+  } = param
+
+  // Now we need to match all the different conditions as in the notes
+
+  switch (Type) {
+    case 'String': {
+      const a = 'thing'
+      break
+    }
+
+    case 'Number':
+      break
+
+    case 'List<number>':
+      break
+
+    case 'CommaDelimitedList':
+      break
+
+    case 'AWS::EC2::AvailabilityZone::Name':
+      break
+
+    case 'AWS::EC2::Image::Id':
+      break
+
+    case 'AWS::EC2::Instance::Id':
+      break
+
+    case 'AWS::EC2::KeyPair::KeyName':
+      break
+
+    case 'AWS::EC2::SecurityGroup::GroupName':
+      break
+
+    case 'AWS::EC2::SecurityGroup::Id':
+      break
+
+    case 'AWS::EC2::Subnet::Id':
+      break
+
+    case 'AWS::EC2::Volume::Id':
+      break
+
+    case 'AWS::EC2::VPC::Id':
+      break
+
+    case 'AWS::Route53::HostedZone::Id':
+      break
+
+    case 'List<AWS::EC2::AvailabilityZone::Name>':
+      break
+
+    case 'List<AWS::EC2::Image::Id>':
+      break
+
+    case 'List<AWS::EC2::Instance::Id>':
+      break
+
+    case 'List<AWS::EC2::SecurityGroup::GroupName>':
+      break
+
+    case 'List<AWS::EC2::SecurityGroup::Id>':
+      break
+
+    case 'List<AWS::EC2::Subnet::Id>':
+      break
+
+    case 'List<AWS::EC2::Volume::Id>':
+      break
+
+    case 'List<AWS::EC2::VPC::Id>':
+      break
+
+    case 'List<AWS::Route53::HostedZone::Id>':
+      break
+
+    default:
+      throw new Error(`Invalid type ${Type}`)
+  }
+  log(param)
 }
 
 exports.selectStackParams = (Parameters, profile, region) => {
