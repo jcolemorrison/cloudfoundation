@@ -274,10 +274,6 @@ const buildStringInquiry = (param, name) => {
 
   if (type === 'input' || type === 'password') {
     inquiry.validation = (input) => {
-      if (!/^-?\d+\.?\d*$/.test(input)) {
-        return ConstraintDescription || `${name} must be an integer or float!`
-      }
-
       if (MaxLength && input.length > parseInt(MaxLength, 10)) {
         return `${name} can be no greater than ${MaxLength}!`
       }
@@ -288,7 +284,7 @@ const buildStringInquiry = (param, name) => {
 
       if (AllowedPattern) {
         const r = new RegExp(AllowedPattern, 'g')
-        if (!r.test(input)) return ConstraintDescription
+        if (!r.test(input)) return ConstraintDescription || `${name} must match ${AllowedPattern}`
       }
 
       return true
@@ -304,33 +300,44 @@ exports.buildStringInquiry = buildStringInquiry
 
 const buildNumberListInquiry = (param, name) => {
   const {
-    AllowedPattern,
     AllowedValues,
     ConstraintDescription,
     Default,
     Description,
-    MaxLength,
-    MinLength,
-    NoEcho,
   } = param
 
+  const type = AllowedValues ? 'checkbox' : 'input'
+
   const inquiry = {
+    type,
     name,
     message: Description,
     default: Default,
-  } 
+  }
+
   if (type === 'input') {
     inquiry.validation = (input) => {
-      // check if submitted values are (a) separated by commas and (b) are valid numbers
-      // we should be able to do this with just a regular expression
+      if (!input) return true
+
+      if (input) {
+        const r = /^(?:\s*-?\d+(?:\.\d+)?)(?:\s*,\s*-?\d+(?:\.\d+)?)*$/g
+        if (!r.test(input)) {
+          return ConstraintDescription || `${name} must be a comma separated list of numbers i.e 1,2,3.14,-5`
+        }
+      }
 
       return true
     }
 
-    inquiry.filter = (input) => {
-      // this should remove white space from the shit
-    }
+    inquiry.filter = input => input.replace(/\s/g, '')
   }
+
+  if (type === 'checkbox') {
+    inquiry.choices = AllowedValues
+    inquiry.filter = input => input //TODO: test and turn into proper comma separated number list
+  }
+
+  return inquiry
 }
 
 exports.buildNumberListInquiry = buildNumberListInquiry
