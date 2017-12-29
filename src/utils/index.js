@@ -197,7 +197,56 @@ exports.getStackFile = (templateDir) => {
   return stackFile
 }
 
-exports.buildParamInquiry = (param) => {
+const buildNumberInquiry = (param, name) => {
+  const {
+    AllowedValues,
+    ConstraintDescription,
+    Default,
+    Description,
+    MaxValue,
+    MinValue,
+    NoEcho,
+  } = param
+
+  const inquiry = {
+    name,
+    message: Description,
+    default: Default,
+  }
+
+  let type = NoEcho ? 'password' : 'input'
+
+  if (AllowedValues) {
+    type = 'list'
+    inquiry.choices = AllowedValues
+  }
+
+  if (type === 'input' || type === 'password') {
+    inquiry.validation = (input) => {
+      if (!/^-?\d+\.?\d*$/.test(input)) {
+        return ConstraintDescription || `${name} must be an integer or float!`
+      }
+
+      if (MaxValue && input.length > parseInt(MaxValue, 10)) {
+        return `${name} can be no greater than ${MaxValue}!`
+      }
+
+      if (MinValue && input.length > parseInt(MinValue, 10)) {
+        return `${name} can be no less than ${MinValue}!`
+      }
+
+      return true
+    }
+  }
+
+  inquiry.type = type
+
+  return inquiry
+}
+
+exports.buildNumberInquiry = buildNumberInquiry
+
+const buildStringInquiry = (param, name) => {
   const {
     AllowedPattern,
     AllowedValues,
@@ -205,25 +254,103 @@ exports.buildParamInquiry = (param) => {
     Default,
     Description,
     MaxLength,
-    MaxValue,
     MinLength,
-    MinValue,
     NoEcho,
-    Type,
   } = param
+
+  const inquiry = {
+    name,
+    message: Description,
+    default: Default,
+  }
+
+  let type = NoEcho ? 'password' : 'input'
+
+  if (AllowedValues) {
+    type = 'list'
+    inquiry.choices = AllowedValues
+  }
+
+
+  if (type === 'input' || type === 'password') {
+    inquiry.validation = (input) => {
+      if (!/^-?\d+\.?\d*$/.test(input)) {
+        return ConstraintDescription || `${name} must be an integer or float!`
+      }
+
+      if (MaxLength && input.length > parseInt(MaxLength, 10)) {
+        return `${name} can be no greater than ${MaxLength}!`
+      }
+
+      if (MinLength && input.length > parseInt(MinLength, 10)) {
+        return `${name} can be no less than ${MinLength}!`
+      }
+
+      if (AllowedPattern) {
+        const r = new RegExp(AllowedPattern, 'g')
+        if (!r.test(input)) return ConstraintDescription
+      }
+
+      return true
+    }
+  }
+
+  inquiry.type = type
+
+  return inquiry
+}
+
+exports.buildStringInquiry = buildStringInquiry
+
+const buildNumberListInquiry = (param, name) => {
+  const {
+    AllowedPattern,
+    AllowedValues,
+    ConstraintDescription,
+    Default,
+    Description,
+    MaxLength,
+    MinLength,
+    NoEcho,
+  } = param
+
+  const inquiry = {
+    name,
+    message: Description,
+    default: Default,
+  } 
+  if (type === 'input') {
+    inquiry.validation = (input) => {
+      // check if submitted values are (a) separated by commas and (b) are valid numbers
+      // we should be able to do this with just a regular expression
+
+      return true
+    }
+
+    inquiry.filter = (input) => {
+      // this should remove white space from the shit
+    }
+  }
+}
+
+exports.buildNumberListInquiry = buildNumberListInquiry
+
+exports.buildParamInquiry = (param, name) => {
+  let inquiry
 
   // Now we need to match all the different conditions as in the notes
 
-  switch (Type) {
-    case 'String': {
-      const a = 'thing'
+  switch (param.Type) {
+    case 'String':
+      inquiry = buildStringInquiry(param, name)
       break
-    }
 
     case 'Number':
+      inquiry = buildNumberInquiry(param, name)
       break
 
     case 'List<number>':
+      inquiry = buildNumberListInquiry(param, name)
       break
 
     case 'CommaDelimitedList':
@@ -300,7 +427,7 @@ exports.selectStackParams = (Parameters, profile, region) => {
   const paramInq = []
 
   paramNames.forEach(name => {
-    return paramInq.push(exports.buildParamInquiry(Parameters[name]))
+    return paramInq.push(exports.buildParamInquiry(Parameters[name], name))
   })
 
   log(paramInq)
