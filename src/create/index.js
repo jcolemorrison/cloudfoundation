@@ -41,7 +41,7 @@ module.exports = async function create (env) {
     return log.e(error.message)
   }
 
-  log()
+  log.p()
   log.s(`Template ${chk.cyan(`${settings.templatename}`)} template created!`)
-  return log()
+  return log.p()
 }

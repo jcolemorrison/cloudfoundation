@@ -130,6 +130,8 @@ module.exports = async function deploy (env, opts) {
     throw error
   }
 
-  log.p(templateName, stackName, profile, stackFile)
+  // log.p(templateName, stackName, profile, stackFile)
   // first we need to handle if there's a template and stack name
+
+  // furthermore, let's not write anything until the entire thing is done - this way we can avoid unnecessary midway clean up
 }

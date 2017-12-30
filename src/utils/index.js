@@ -9,7 +9,7 @@ const inq = require('inquirer')
 const { NO_AWS_CREDENTIALS, AWS_REGIONS } = require('./constants')
 
 const { log } = console
-const { cyan } = chk
+const { cyan, whiteBright } = chk
 
 exports.log = {
   p: log,
@@ -222,7 +222,7 @@ const buildNumberInquiry = (param, name) => {
   }
 
   if (type === 'input' || type === 'password') {
-    inquiry.validation = (input) => {
+    inquiry.validate = (input) => {
       if (!/^-?\d+\.?\d*$/.test(input)) {
         return ConstraintDescription || `${name} must be an integer or float!`
       }
@@ -271,9 +271,8 @@ const buildStringInquiry = (param, name) => {
     inquiry.choices = AllowedValues
   }
 
-
   if (type === 'input' || type === 'password') {
-    inquiry.validation = (input) => {
+    inquiry.validate = (input) => {
       if (MaxLength && input.length > parseInt(MaxLength, 10)) {
         return `${name} can be no greater than ${MaxLength}!`
       }
@@ -316,7 +315,7 @@ const buildNumberListInquiry = (param, name) => {
   }
 
   if (type === 'input') {
-    inquiry.validation = (input) => {
+    inquiry.validate = (input) => {
       if (!input) return true
 
       if (input) {
@@ -423,10 +422,11 @@ exports.buildParamInquiry = (param, name) => {
     default:
       throw new Error(`Invalid type ${Type}`)
   }
-  log(param)
+
+  return inquiry
 }
 
-exports.selectStackParams = (Parameters, profile, region) => {
+exports.selectStackParams = async (Parameters, profile, region) => {
   const paramNames = Parameters && Object.keys(Parameters)
 
   if (paramNames && paramNames.length < 1) return false
@@ -438,6 +438,14 @@ exports.selectStackParams = (Parameters, profile, region) => {
   })
 
   log(paramInq)
+
+  try {
+    log(chk.bold.whiteBright('Parameter Values to be used for the stack:\n'))
+    const choices = await inq.prompt(paramInq)
+    log(choices)
+  } catch (error) {
+    throw error
+  }
 }
 
 exports.selectRegion = async (profile, message) => {
