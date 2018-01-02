@@ -18,6 +18,16 @@
     "node",
     "node.js"
   ],
+  "scripts": {
+    "lint": "eslint 'src/**/*.js'",
+    "start": "node .",
+    "test": "nyc -r text-summary yarn test:unit",
+    "test:unit": "NODE_ENV=test mocha --recursive",
+    "test:unit:report": "nyc -r html report",
+    "test:unit:run": "mocha -R spec",
+    "test:unit:watch": "mocha -w -R spec",
+    "posttest": "yarn lint"
+  },
   "dependencies": {
     "aws-sdk": "^2.162.0",
     "chalk": "^2.3.0",
@@ -29,8 +39,12 @@
     "jsonlint": "^1.6.2"
   },
   "devDependencies": {
+    "chai": "^4.1.2",
     "eslint": "^4.9.0",
+    "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.7.0",
-    "eslint-config-airbnb-base": "^12.1.0"
+    "mocha": "^4.1.0",
+    "nyc": "^11.4.1",
+    "sinon": "^4.1.3"
   }
 }

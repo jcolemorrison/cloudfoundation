@@ -218,7 +218,8 @@ const buildNumberInquiry = (param, name) => {
 
   if (AllowedValues) {
     type = 'list'
-    inquiry.choices = AllowedValues
+    inquiry.choices = AllowedValues.map(d => d.toString())
+    inquiry.default = Default.toString()
   }
 
   if (type === 'input' || type === 'password') {
@@ -240,6 +241,7 @@ const buildNumberInquiry = (param, name) => {
   }
 
   inquiry.type = type
+  inquiry.filter = input => parseFloat(input)
 
   return inquiry
 }
@@ -332,8 +334,26 @@ const buildNumberListInquiry = (param, name) => {
   }
 
   if (type === 'checkbox') {
-    inquiry.choices = AllowedValues
-    inquiry.filter = input => input //TODO: test and turn into proper comma separated number list
+    let defaults
+
+    if (Default) {
+      if (!isNaN(parseFloat(Default)) && isFinite(Default)) {
+        defaults = [parseFloat(Default)]
+      } else {
+        defaults = Default && Default.split(',').map(d => parseFloat(d))
+      }
+    }
+
+    inquiry.choices = AllowedValues.reduce((sum, val) => {
+      const result = {
+        name: val,
+        value: val,
+      }
+      if (defaults && defaults.indexOf(val) > -1) result.checked = true
+      return sum.concat(result)
+    }, [])
+
+    inquiry.filter = input => input.join(',')
   }
 
   return inquiry
