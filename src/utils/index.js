@@ -313,24 +313,23 @@ const buildNumberListInquiry = (param, name) => {
     type,
     name,
     message: Description,
-    default: Default,
   }
 
   if (type === 'input') {
+    if (Default) inquiry.default = Default
+
     inquiry.validate = (input) => {
       if (!input) return true
 
-      if (input) {
-        const r = /^(?:\s*-?\d+(?:\.\d+)?)(?:\s*,\s*-?\d+(?:\.\d+)?)*$/g
-        if (!r.test(input)) {
-          return ConstraintDescription || `${name} must be a comma separated list of numbers i.e 1,2,3.14,-5`
-        }
+      const r = /^(?:\s*-?\d+(?:\.\d+)?)(?:\s*,\s*-?\d+(?:\.\d+)?)*$/g
+      if (!r.test(input)) {
+        return ConstraintDescription || `${name} must be a comma separated list of numbers i.e 1,2,3.14,-5`
       }
 
       return true
     }
 
-    inquiry.filter = input => input.replace(/\s/g, '')
+    inquiry.filter = input => input.toString().replace(/\s/g, '')
   }
 
   if (type === 'checkbox') {
@@ -345,6 +344,7 @@ const buildNumberListInquiry = (param, name) => {
     }
 
     inquiry.choices = AllowedValues.reduce((sum, val) => {
+      val = parseFloat(val)
       const result = {
         name: val,
         value: val,

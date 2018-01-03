@@ -1,4 +1,5 @@
 node_modules/
+coverage
 jsconfig.json
 .vscode
 .nyc_output
