@@ -361,28 +361,102 @@ const buildNumberListInquiry = (param, name) => {
 
 exports.buildNumberListInquiry = buildNumberListInquiry
 
-exports.buildParamInquiry = (param, name) => {
+exports.buildCommaListInquiry = (param, name) => {
+  const {
+    AllowedValues,
+    ConstraintDescription,
+    Default,
+    Description,
+  } = param
+
+  const type = AllowedValues ? 'checkbox' : 'input'
+
+  const inquiry = {
+    type,
+    name,
+    message: Description,
+  }
+
+  if (type === 'input') {
+    if (Default) inquiry.default = Default
+
+    inquiry.validate = (input) => {
+      if (input) {
+        const r = /^(?:[-\w.@]+)(?:,\s*[-\w.@]+)*$/g
+        if (!r.test(input)) {
+          return ConstraintDescription || `${name} must be a comma delimited list of strings i.e. testA,testB,testC`
+        }
+      }
+      return true
+    }
+
+    inquiry.filter = input => input.toString().replace(/\s/g, '')
+  }
+
+  if (type === 'checkbox') {
+    const defaults = Default && Default.toString().replace(/\s/g, '').split(',')
+
+    inquiry.choices = AllowedValues.reduce((sum, val) => {
+      const choice = {
+        name: val,
+        value: val,
+      }
+
+      if (defaults && defaults.indexOf(val) > -1) choice.checked = true
+
+      return sum.concat(choice)
+    }, [])
+
+    inquiry.filter = input => input.join(',')
+  }
+
+  return inquiry
+}
+
+// requires the region
+exports.buildAZInquiry = (param, name, region, aws) => {
+  const {
+    Description,
+  } = param
+
+  console.log(aws)
+
+  const inquiry = {
+    type: 'list',
+    name,
+    message: Description,
+  }
+
+  inquiry.choices = async () => {
+    // TODO: hook into the AWS SDK and get all the EC2 choices
+  }
+  return inquiry
+}
+
+exports.buildParamInquiry = (param, name, region, aws) => {
   let inquiry
 
   // Now we need to match all the different conditions as in the notes
 
   switch (param.Type) {
     case 'String':
-      inquiry = buildStringInquiry(param, name)
+      inquiry = this.buildStringInquiry(param, name)
       break
 
     case 'Number':
-      inquiry = buildNumberInquiry(param, name)
+      inquiry = this.buildNumberInquiry(param, name)
       break
 
     case 'List<number>':
-      inquiry = buildNumberListInquiry(param, name)
+      inquiry = this.buildNumberListInquiry(param, name)
       break
 
     case 'CommaDelimitedList':
+      inquiry = this.buildCommaListInquiry(param, name)
       break
 
     case 'AWS::EC2::AvailabilityZone::Name':
+      inquiry = this.buildAZInquiry(param, name, region, aws)
       break
 
     case 'AWS::EC2::Image::Id':
@@ -451,10 +525,17 @@ exports.selectStackParams = async (Parameters, profile, region) => {
 
   if (paramNames && paramNames.length < 1) return false
 
+  let aws
+  try {
+    aws = this.configAWS()
+  } catch (error) {
+   throw error
+  }
+
   const paramInq = []
 
   paramNames.forEach(name => {
-    return paramInq.push(exports.buildParamInquiry(Parameters[name], name))
+    return paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws))
   })
 
   log(paramInq)
@@ -515,8 +596,7 @@ exports.configAWS = () => {
   if (rc.AWS_REGION) {
     AWS.config.update({ region: rc.AWS_REGION })
   } else if (!process.env.AWS_REGION) {
-    throw new Error(`${chk.red('error')}: Region required for AWS - Either set ${chk.cyan('AWS_REGION')} in your .cfdnrc file
-    OR set the env variable in your shell session i.e. ${chk.cyan('export AWS_REGION=us-east-1')}`)
+    throw new Error(`${chk.red('error')}: AWS Region Required to work with functions ${cyan('cfdn validate | deploy | update')}.\n\n  ${chk.white(`Please use ${chk.cyan('cfdn profiles')} to set up credentials OR configure the AWS CLI credentials.`)}\n`)
   }
 
   if (!AWS.config.credentials.accessKeyId) {
