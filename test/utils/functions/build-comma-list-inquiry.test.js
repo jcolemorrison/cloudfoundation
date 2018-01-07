@@ -1,5 +1,4 @@
 const expect = require('chai').expect
-const sinon = require('sinon')
 const { buildCommaListInquiry, buildCommaListInquiryWithCheckbox } = require('../../../src/utils/index.js')
 
 module.exports = function buildCommaListInquiryTest () {
@@ -111,7 +110,6 @@ module.exports = function buildCommaListInquiryTest () {
         const { filter, ...test } = inquiry
 
         expect(test).to.deep.equal(testCase)
-        expect(filter).to.be.instanceOf(Function)
       })
 
       it('should set AllowedValues as Default if present on the param', () => {
@@ -136,21 +134,6 @@ module.exports = function buildCommaListInquiryTest () {
         const { filter, ...test } = inquiry
 
         expect(test).to.deep.equal(testCase)
-        expect(filter).to.be.instanceOf(Function)
-      })
-
-      describe('-> #inquiry.filter', () => {
-        it('should turn selected choices into a comma delimited string', () => {
-          const param = {
-            Description,
-            AllowedValues,
-          }
-
-          const inquiry = buildCommaListInquiry(param, name)
-          const { filter } = inquiry
-
-          expect(filter(['one', 'three'])).to.equal('one,three')
-        })
       })
     })
   })

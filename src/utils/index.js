@@ -495,8 +495,6 @@ exports.buildCommaListInquiry = (param, name) => {
 
       return sum.concat(choice)
     }, [])
-
-    inquiry.filter = input => input.join(',')
   }
 
   return inquiry
@@ -509,7 +507,67 @@ exports.buildAZInquiry = (param, name, region, aws) => {
     Description,
   } = param
 
-  console.log(aws)
+  const inquiry = {
+    type: 'list',
+    name,
+    message: Description,
+  }
+
+  inquiry.choices = async () => {
+    const ec2 = new aws.EC2({ region })
+    let choices
+    log()
+    this.log.i(`fetching Availability Zones for parameter ${name}...\n`)
+
+    try {
+      const zones = await ec2.describeAvailabilityZones().promise()
+      choices = zones.AvailabilityZones.map(z => z.State === 'available' && z.ZoneName)
+    } catch (error) {
+      throw error
+    }
+
+    return choices
+  }
+  return inquiry
+}
+
+// Like CFN - we won't show an entire drop down of these.  Becuase there's so damn many.
+// So this winds up being more or less just like a string:
+// https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#aws-specific-parameter-types-supported
+// right under "AWS::EC2::Image::Id"
+exports.buildImageInquiry = (param, name) => {
+  const {
+    AllowedValues,
+    Default,
+    Description,
+  } = param
+
+  const inquiry = {
+    name,
+    message: Description,
+    default: Default,
+  }
+
+  let type = AllowedValues ? 'list' : 'input'
+
+  if (AllowedValues) {
+    type = 'list'
+    inquiry.choices = AllowedValues
+  }
+
+  if (type === 'input' || type === 'password') {
+    inquiry.filter = input => input.trim()
+  }
+
+  inquiry.type = type
+
+  return inquiry
+}
+
+exports.buildInstanceInquiry = (param, name, region, aws) => {
+  const {
+    Description,
+  } = param
 
   const inquiry = {
     type: 'list',
@@ -518,7 +576,83 @@ exports.buildAZInquiry = (param, name, region, aws) => {
   }
 
   inquiry.choices = async () => {
-    // TODO: hook into the AWS SDK and get all the EC2 choices
+    const ec2 = new aws.EC2({ region })
+    let choices
+    log()
+    this.log.i(`fetching EC2 Instance IDs for parameter ${name}...\n`)
+
+    try {
+      const instances = await ec2.describeInstances().promise()
+
+      choices = instances.Reservations.reduce((sum, reservation) => {
+        const instances = reservation.Instances.map(i => i.InstanceId)
+        return sum.concat(instances)
+      }, [])
+    } catch (error) {
+      throw error
+    }
+
+    return choices
+  }
+  return inquiry
+}
+
+exports.buildKeyPairInquiry = (param, name, region, aws) => {
+  const {
+    Description,
+  } = param
+
+  const inquiry = {
+    type: 'list',
+    name,
+    message: Description,
+  }
+
+  inquiry.choices = async () => {
+    const ec2 = new aws.EC2({ region })
+    let choices
+    log()
+    this.log.i(`fetching EC2 Key Pairs for parameter ${name}...\n`)
+
+    try {
+      const res = await ec2.describeKeyPairs().promise()
+
+      choices = res.KeyPairs.map(k => k.KeyName)
+    } catch (error) {
+      throw error
+    }
+
+    return choices
+  }
+  return inquiry
+}
+
+exports.buildSecurityGroupInquiry = (param, name, region, aws, property) => {
+  const {
+    Description,
+  } = param
+
+  const inquiry = {
+    type: 'list',
+    name,
+    message: Description,
+  }
+
+  inquiry.choices = async () => {
+    const ec2 = new aws.EC2({ region })
+    let choices
+    log()
+    this.log.i(`fetching EC2 Security Group ${property} for parameter ${name}...\n`)
+
+    try {
+      const res = await ec2.describeSecurityGroups().promise()
+
+      choices = res.SecurityGroups.map(sg => sg[property])
+    } catch (error) {
+      throw error
+    }
+
+    return choices
   }
   return inquiry
 }
@@ -550,18 +684,23 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     case 'AWS::EC2::Image::Id':
+      inquiry = this.buildImageInquiry(param, name)
       break
 
     case 'AWS::EC2::Instance::Id':
+      inquiry = this.buildInstanceInquiry(param, name, region, aws)
       break
 
     case 'AWS::EC2::KeyPair::KeyName':
+      inquiry = this.buildKeyPairInquiry(param, name, region, aws)
       break
 
     case 'AWS::EC2::SecurityGroup::GroupName':
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupName')
       break
 
     case 'AWS::EC2::SecurityGroup::Id':
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupId')
       break
 
     case 'AWS::EC2::Subnet::Id':
@@ -617,11 +756,9 @@ exports.selectStackParams = async (Parameters, profile, region, aws) => {
 
   const paramInq = []
 
-  paramNames.forEach(name => {
-    return paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws))
-  })
-
-  log(paramInq)
+  paramNames.forEach(name => (
+    paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws))
+  ))
 
   try {
     log(chk.bold.whiteBright('Parameter Values to be used for the stack:\n'))
