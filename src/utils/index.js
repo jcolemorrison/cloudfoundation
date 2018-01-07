@@ -657,6 +657,41 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property) => {
   return inquiry
 }
 
+exports.buildSubnetInquiry = (param, name, region, aws) => {
+  const {
+    Description,
+  } = param
+
+  const inquiry = {
+    type: 'list',
+    name,
+    message: Description,
+  }
+
+  inquiry.choices = async () => {
+    const ec2 = new aws.EC2({ region })
+    let choices
+    log()
+    this.log.i(`fetching VPC Subnets for parameter ${name}...\n`)
+
+    try {
+      const res = await ec2.describeSubnets().promise()
+
+      choices = res.Subnets.map((s) => {
+        const tagname = s.Tags && s.Tags.filter(t => t.Key === 'Name')[0]
+        const subname = tagname ? ` - ${tagname.Value}` : ''
+
+        return { name: `${s.SubnetId}${subname} | ${s.VpcId}`, value: s.SubnetId }
+      })
+    } catch (error) {
+      throw error
+    }
+
+    return choices
+  }
+  return inquiry
+}
+
 exports.buildParamInquiry = (param, name, region, aws) => {
   let inquiry
 
@@ -704,6 +739,7 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     case 'AWS::EC2::Subnet::Id':
+      inquiry = this.buildSubnetInquiry(param, name, region, aws)
       break
 
     case 'AWS::EC2::Volume::Id':
