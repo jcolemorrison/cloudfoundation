@@ -9,9 +9,10 @@ const {
   getTemplateAsObject,
   selectStackParams,
   selectRegion,
+  configAWS,
 } = require('../utils')
 
-const { checkValidProfile, selectProfile } = require('../profiles')
+const { checkValidProfile, selectProfile, _getProfile } = require('../profiles')
 
 const { cyan } = chk
 
@@ -23,6 +24,7 @@ module.exports = async function deploy (env, opts) {
   let templateDir
   let stackFile
   let stackRegion // may differ from profile default region
+  let aws
 
   log.p('the env', env)
   log.p('the stackname', opts && opts.stackname)
@@ -48,6 +50,7 @@ module.exports = async function deploy (env, opts) {
   if (profile) {
     try {
       checkValidProfile(profile)
+      profile = _getProfile(profile)
     } catch (error) {
       throw error
     }
@@ -119,13 +122,15 @@ module.exports = async function deploy (env, opts) {
     throw error
   }
 
+  aws = configAWS(profile || 'default')
+
   // Now we have the valid profile, stackname, and stackfile.  Things are validated against proper rules.
   // What we need to do now...
 
   try {
     const template = getTemplateAsObject(templateName)
 
-    const params = await selectStackParams(template.Parameters, profile, stackRegion)
+    const params = await selectStackParams(template.Parameters, profile, stackRegion, aws)
   } catch (error) {
     throw error
   }

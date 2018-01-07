@@ -302,7 +302,7 @@ exports.buildStringInquiry = buildStringInquiry
 // CFN doesn't respect AllowedValues + Defaults, so while this is nice for CFDN,
 // if you ever upload a template with AllowedValues + Defaults on a List<Number>
 // you just get an error.
-const buildNumberListInquiryWithCheckbox = (param, name) => {
+exports.buildNumberListInquiryWithCheckbox = (param, name) => {
   const {
     AllowedValues,
     ConstraintDescription,
@@ -537,7 +537,7 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       inquiry = this.buildNumberInquiry(param, name)
       break
 
-    case 'List<number>':
+    case 'List<Number>':
       inquiry = this.buildNumberListInquiry(param, name)
       break
 
@@ -604,23 +604,16 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     default:
-      throw new Error(`Invalid type ${Type}`)
+      throw new Error(`Invalid type ${param.Type}`)
   }
 
   return inquiry
 }
 
-exports.selectStackParams = async (Parameters, profile, region) => {
+exports.selectStackParams = async (Parameters, profile, region, aws) => {
   const paramNames = Parameters && Object.keys(Parameters)
 
   if (paramNames && paramNames.length < 1) return false
-
-  let aws
-  try {
-    aws = this.configAWS()
-  } catch (error) {
-   throw error
-  }
 
   const paramInq = []
 

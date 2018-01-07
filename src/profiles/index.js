@@ -36,9 +36,9 @@ exports._getProfile = (name) => {
   try {
     const profiles = this._getProfiles()
 
-    if (profiles.cfdn && profiles.cfdn[name]) return profiles.cfdn[name]
+    if (profiles.cfdn && profiles.cfdn[name]) return { ...profiles.cfdn[name], name }
 
-    return profiles.aws && profiles.aws[name]
+    return profiles.aws && { ...profiles.aws[name], name }
   } catch (error) {
     throw error
   }
@@ -124,7 +124,7 @@ exports.checkValidProfile = function validProfile (profile) {
 
   if (!profilesExist) throw new Error(`No profiles are configured.  Please use ${chk.cyan('add-profiles')} or ${chk.cyan('import-profiles')} to set some up.`)
 
-  if (!profiles.cfdn[profiles] || !profiles.aws[profiles]) {
+  if (!profiles.cfdn[profile] && !profiles.aws[profile]) {
     throw new Error(`Profile ${chk.cyan(profile)} does not exit!`)
   }
 }
