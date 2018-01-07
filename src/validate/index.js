@@ -7,6 +7,10 @@ const jshint = require('jshint').JSHINT
 const { DESCRIPTION_ERROR_MSG } = require('../utils/constants')
 
 const {
+  _getProfile,
+} = require('../profiles')
+
+const {
   configAWS,
   log,
   getTemplateFiles,
@@ -21,11 +25,13 @@ const jshintOpts = {
   node: true,
 }
 
-module.exports = async function validate (env) {
+module.exports = async function validate (env, opts) {
   let aws
   let templateFiles
   let errors
   let name = env
+  const profile = opts && opts.profile
+
 
   if (!name) {
     try {
@@ -36,7 +42,8 @@ module.exports = async function validate (env) {
   }
 
   try {
-    aws = configAWS()
+    // searches for the default one if none is passed
+    aws = configAWS(_getProfile(profile || 'default'))
     templateFiles = getTemplateFiles(name)
     errors = []
 

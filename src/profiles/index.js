@@ -11,7 +11,6 @@ const {
   hasConfiguredCfdn,
 } = require('../utils')
 
-
 exports._getProfiles = function getProfiles (homedir) {
   const home = homedir || os.homedir()
   const configuredCfdn = hasConfiguredCfdn(home)
@@ -31,6 +30,18 @@ exports._getProfiles = function getProfiles (homedir) {
   profiles.aws = profiles.aws || {}
 
   return profiles
+}
+
+exports._getProfile = (name) => {
+  try {
+    const profiles = this._getProfiles()
+
+    if (profiles.cfdn && profiles.cfdn[name]) return profiles.cfdn[name]
+
+    return profiles.aws && profiles.aws[name]
+  } catch (error) {
+    throw error
+  }
 }
 
 exports._importAWSProfiles = function importAWSProfiles (homedir) {

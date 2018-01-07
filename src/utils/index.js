@@ -14,15 +14,15 @@ const { cyan, whiteBright } = chk
 exports.log = {
   p: log,
   e (msg) {
-    log(chk.red(`  Error - ${msg}`))
+    log(chk.red(`Error - ${msg}`))
   },
   s (msg) {
-    log(chk.green(`  Success - ${msg}`))
+    log(chk.green(`Success - ${msg}`))
   },
   i (msg) {
-    log(chk.magenta(`  Info - ${chk.whiteBright(msg)}`))
+    log(chk.magenta(`Info - ${chk.whiteBright(msg)}`))
   },
-  m: log.bind(this, '    '),
+  m: log.bind(this, '  '),
 }
 
 exports.getCfnPropType = (prop) => {
@@ -299,7 +299,10 @@ const buildStringInquiry = (param, name) => {
 
 exports.buildStringInquiry = buildStringInquiry
 
-const buildNumberListInquiry = (param, name) => {
+// CFN doesn't respect AllowedValues + Defaults, so while this is nice for CFDN,
+// if you ever upload a template with AllowedValues + Defaults on a List<Number>
+// you just get an error.
+const buildNumberListInquiryWithCheckbox = (param, name) => {
   const {
     AllowedValues,
     ConstraintDescription,
@@ -359,9 +362,43 @@ const buildNumberListInquiry = (param, name) => {
   return inquiry
 }
 
+const buildNumberListInquiry = (param, name) => {
+  const {
+    ConstraintDescription,
+    Default,
+    Description,
+  } = param
+
+  const inquiry = {
+    type: 'input',
+    name,
+    message: Description,
+  }
+
+  if (Default) inquiry.default = Default
+
+  inquiry.validate = (input) => {
+    if (!input) return true
+
+    const r = /^(?:\s*-?\d+(?:\.\d+)?)(?:\s*,\s*-?\d+(?:\.\d+)?)*$/g
+    if (!r.test(input)) {
+      return ConstraintDescription || `${name} must be a comma separated list of numbers i.e 1,2,3.14,-5`
+    }
+
+    return true
+  }
+
+  inquiry.filter = input => input.toString().replace(/\s/g, '')
+
+  return inquiry
+}
+
 exports.buildNumberListInquiry = buildNumberListInquiry
 
-exports.buildCommaListInquiry = (param, name) => {
+// Once again, CFN does not interpret AllowedValues + Defaults on CommaDelimitedList correctly.
+// If you specify them both, you'd expect to be able to select from a number of them.
+// Instead specifying AllowedValues only allows you to set ONE option as a Default.
+exports.buildCommaListInquiryWithCheckbox = (param, name) => {
   const {
     AllowedValues,
     ConstraintDescription,
@@ -412,6 +449,59 @@ exports.buildCommaListInquiry = (param, name) => {
 
   return inquiry
 }
+
+exports.buildCommaListInquiry = (param, name) => {
+  const {
+    AllowedValues,
+    ConstraintDescription,
+    Default,
+    Description,
+  } = param
+
+  const type = AllowedValues ? 'list' : 'input'
+
+  const inquiry = {
+    type,
+    name,
+    message: Description,
+  }
+
+  if (type === 'input') {
+    if (Default) inquiry.default = Default
+
+    inquiry.validate = (input) => {
+      if (input) {
+        const r = /^(?:[-\w.@]+)(?:,\s*[-\w.@]+)*$/g
+        if (!r.test(input)) {
+          return ConstraintDescription || `${name} must be a comma delimited list of strings i.e. testA,testB,testC`
+        }
+      }
+      return true
+    }
+
+    inquiry.filter = input => input.toString().replace(/\s/g, '')
+  }
+
+  if (type === 'list') {
+    const defaults = Default && Default.toString().replace(/\s/g, '').split(',')
+
+    inquiry.choices = AllowedValues.reduce((sum, val) => {
+      const choice = {
+        name: val,
+        value: val,
+      }
+
+      if (defaults && defaults.indexOf(val) > -1) choice.checked = true
+
+      return sum.concat(choice)
+    }, [])
+
+    inquiry.filter = input => input.join(',')
+  }
+
+  return inquiry
+}
+
 
 // requires the region
 exports.buildAZInquiry = (param, name, region, aws) => {
@@ -571,37 +661,24 @@ exports.selectRegion = async (profile, message) => {
   return region
 }
 
-exports.configAWS = () => {
-  let rc
-  // TODO: Add parameter to allow for using a profile
-  // TODO: Configure to check for the .cfdn directory
-
-  try {
-    rc = fs.readFileSync(`${process.cwd()}/.cfdnrc`, 'utf8')
-  } catch (error) {
-    if (error.code === 'ENOENT') throw new Error('.cfdnrc file not found!')
-    throw error
-  }
-
-  // TODO: Grab the damn profile and use it's data here.
-  rc = JSON.parse(rc)
-
-  if (rc.AWS_ACCESS_KEY_ID && rc.AWS_SECRET_ACCESS_KEY) {
+exports.configAWS = (profile) => {
+  if (profile) {
     AWS.config.update({
-      accessKeyId: rc.AWS_ACCESS_KEY_ID,
-      secretAccessKey: rc.AWS_SECRET_ACCESS_KEY,
+      accessKeyId: profile.aws_access_key_id,
+      secretAccessKey: profile.aws_secret_access_key,
+      region: profile.region,
     })
   }
 
-  if (rc.AWS_REGION) {
-    AWS.config.update({ region: rc.AWS_REGION })
-  } else if (!process.env.AWS_REGION) {
-    throw new Error(`${chk.red('error')}: AWS Region Required to work with functions ${cyan('cfdn validate | deploy | update')}.\n\n  ${chk.white(`Please use ${chk.cyan('cfdn profiles')} to set up credentials OR configure the AWS CLI credentials.`)}\n`)
-  }
-
-  if (!AWS.config.credentials.accessKeyId) {
+  if (!AWS.config.credentials.accessKeyId || !AWS.config.region) {
     log()
-    const msg = `${chk.cyan('cfdn validate | deploy | update')} all require AWS Credentials to be set.\n\n    ${chk.white(`Please use ${chk.cyan('cfdn profiles')} to set up credentials OR configure the AWS CLI credentials.`)}\n`
+    const msg = `${chk.cyan('cfdn validate | deploy | update')} all require AWS Credentials (Access Key Id, Secret Key, Region) to be set.
+
+${chk.white(`Please use ${chk.cyan('cfdn profiles')} to set up credentials OR configure the AWS CLI credentials.`)}
+
+Crednetials setup via the AWS CLI are used otherwise, however you must set a region via ${chk.cyan('export AWS_REGION=region')}
+`
+
     throw new Error(msg)
   }
 
