@@ -502,13 +502,13 @@ exports.buildCommaListInquiry = (param, name) => {
 
 
 // requires the region
-exports.buildAZInquiry = (param, name, region, aws) => {
+exports.buildAZInquiry = (param, name, region, aws, type) => {
   const {
     Description,
   } = param
 
   const inquiry = {
-    type: 'list',
+    type,
     name,
     message: Description,
   }
@@ -528,6 +528,8 @@ exports.buildAZInquiry = (param, name, region, aws) => {
 
     return choices
   }
+
+  if (type === 'checkbox') inquiry.filter = input => input.join(',')
   return inquiry
 }
 
@@ -692,6 +694,104 @@ exports.buildSubnetInquiry = (param, name, region, aws) => {
   return inquiry
 }
 
+exports.buildVolumeInquiry = (param, name, region, aws) => {
+  const {
+    Description,
+  } = param
+
+  const inquiry = {
+    type: 'list',
+    name,
+    message: Description,
+  }
+
+  inquiry.choices = async () => {
+    const ec2 = new aws.EC2({ region })
+    let choices
+    log()
+    this.log.i(`fetching EC2 Volume IDs for parameter ${name}...\n`)
+
+    try {
+      const res = await ec2.describeVolumes().promise()
+
+      choices = res.Volumes.map(v => v.VolumeId)
+    } catch (error) {
+      throw error
+    }
+
+    return choices
+  }
+  return inquiry
+}
+
+exports.buildVpcInquiry = (param, name, region, aws) => {
+  const {
+    Description,
+  } = param
+
+  const inquiry = {
+    type: 'list',
+    name,
+    message: Description,
+  }
+
+  inquiry.choices = async () => {
+    const ec2 = new aws.EC2({ region })
+    let choices
+    log()
+    this.log.i(`fetching VPCs for parameter ${name}...\n`)
+
+    try {
+      const res = await ec2.describeVpcs().promise()
+
+      choices = res.Vpcs.map((v) => {
+        const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
+        const subname = tagname ? ` - ${tagname.Value}` : ''
+
+        return { name: `${v.VpcId}${subname}`, value: v.VpcId }
+      })
+    } catch (error) {
+      throw error
+    }
+
+    return choices
+  }
+  return inquiry
+}
+
+exports.buildHostedZoneInquiry = (param, name, region, aws) => {
+  const {
+    Description,
+  } = param
+
+  const inquiry = {
+    type: 'list',
+    name,
+    message: Description,
+  }
+
+  inquiry.choices = async () => {
+    const r53 = new aws.Route53({ region })
+    let choices
+    log()
+    this.log.i(`fetching EC2 Volume IDs for parameter ${name}...\n`)
+
+    try {
+      const res = await r53.listHostedZones().promise()
+
+      choices = res.HostedZones.map(z => ({
+        name: `${z.Name} (${z.Id})`,
+        value: z.Id,
+      }))
+    } catch (error) {
+      throw error
+    }
+
+    return choices
+  }
+  return inquiry
+}
+
 exports.buildParamInquiry = (param, name, region, aws) => {
   let inquiry
 
@@ -715,7 +815,7 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     case 'AWS::EC2::AvailabilityZone::Name':
-      inquiry = this.buildAZInquiry(param, name, region, aws)
+      inquiry = this.buildAZInquiry(param, name, region, aws, 'list')
       break
 
     case 'AWS::EC2::Image::Id':
@@ -743,15 +843,19 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     case 'AWS::EC2::Volume::Id':
+      inquiry = this.buildVolumeInquiry(param, name, region, aws)
       break
 
     case 'AWS::EC2::VPC::Id':
+      inquiry = this.buildVpcInquiry(param, name, region, aws)
       break
 
     case 'AWS::Route53::HostedZone::Id':
+      inquiry = this.buildHostedZoneInquiry(param, name, region, aws)
       break
 
     case 'List<AWS::EC2::AvailabilityZone::Name>':
+      inquiry = this.buildAZInquiry(param, name, region, aws, 'checkbox')
       break
 
     case 'List<AWS::EC2::Image::Id>':
@@ -797,7 +901,8 @@ exports.selectStackParams = async (Parameters, profile, region, aws) => {
   ))
 
   try {
-    log(chk.bold.whiteBright('Parameter Values to be used for the stack:\n'))
+    log()
+    log(chk.bold.whiteBright('Parameter Values to be used for the stack...'))
     const choices = await inq.prompt(paramInq)
     log(choices)
   } catch (error) {

@@ -196,8 +196,6 @@ exports.selectProfile = async function selectProfile (action, profiles, onlyCfdn
 
     if (profiles.aws[choice]) type = 'aws'
 
-    log.p()
-
     return { ...profiles[type][choice], name: choice }
   } catch (error) {
     throw error
