@@ -500,8 +500,6 @@ exports.buildCommaListInquiry = (param, name) => {
   return inquiry
 }
 
-
-// requires the region
 exports.buildAZInquiry = (param, name, region, aws, type) => {
   const {
     Description,
@@ -530,6 +528,7 @@ exports.buildAZInquiry = (param, name, region, aws, type) => {
   }
 
   if (type === 'checkbox') inquiry.filter = input => input.join(',')
+
   return inquiry
 }
 
@@ -566,13 +565,13 @@ exports.buildImageInquiry = (param, name) => {
   return inquiry
 }
 
-exports.buildInstanceInquiry = (param, name, region, aws) => {
+exports.buildInstanceInquiry = (param, name, region, aws, type) => {
   const {
     Description,
   } = param
 
   const inquiry = {
-    type: 'list',
+    type,
     name,
     message: Description,
   }
@@ -587,7 +586,12 @@ exports.buildInstanceInquiry = (param, name, region, aws) => {
       const instances = await ec2.describeInstances().promise()
 
       choices = instances.Reservations.reduce((sum, reservation) => {
-        const instances = reservation.Instances.map(i => i.InstanceId)
+        const instances = reservation.Instances.map((i) => {
+          const tagname = i.Tags && i.Tags.filter(t => t.Key === 'Name')[0]
+          const subname = tagname ? ` (${tagname.Value})` : ''
+
+          return { name: `${i.InstanceId}${subname}`, value: i.InstanceId }
+        })
         return sum.concat(instances)
       }, [])
     } catch (error) {
@@ -596,6 +600,9 @@ exports.buildInstanceInquiry = (param, name, region, aws) => {
 
     return choices
   }
+
+  if (type === 'checkbox') inquiry.filter = input => input.join(',')
+
   return inquiry
 }
 
@@ -629,13 +636,13 @@ exports.buildKeyPairInquiry = (param, name, region, aws) => {
   return inquiry
 }
 
-exports.buildSecurityGroupInquiry = (param, name, region, aws, property) => {
+exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type) => {
   const {
     Description,
   } = param
 
   const inquiry = {
-    type: 'list',
+    type,
     name,
     message: Description,
   }
@@ -656,16 +663,19 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property) => {
 
     return choices
   }
+
+  if (type === 'checkbox') inquiry.filter = input => input.join(',')
+
   return inquiry
 }
 
-exports.buildSubnetInquiry = (param, name, region, aws) => {
+exports.buildSubnetInquiry = (param, name, region, aws, type) => {
   const {
     Description,
   } = param
 
   const inquiry = {
-    type: 'list',
+    type,
     name,
     message: Description,
   }
@@ -681,7 +691,7 @@ exports.buildSubnetInquiry = (param, name, region, aws) => {
 
       choices = res.Subnets.map((s) => {
         const tagname = s.Tags && s.Tags.filter(t => t.Key === 'Name')[0]
-        const subname = tagname ? ` - ${tagname.Value}` : ''
+        const subname = tagname ? ` (${tagname.Value})` : ''
 
         return { name: `${s.SubnetId}${subname} | ${s.VpcId}`, value: s.SubnetId }
       })
@@ -691,16 +701,19 @@ exports.buildSubnetInquiry = (param, name, region, aws) => {
 
     return choices
   }
+
+  if (type === 'checkbox') inquiry.filter = input => input.join(',')
+
   return inquiry
 }
 
-exports.buildVolumeInquiry = (param, name, region, aws) => {
+exports.buildVolumeInquiry = (param, name, region, aws, type) => {
   const {
     Description,
   } = param
 
   const inquiry = {
-    type: 'list',
+    type,
     name,
     message: Description,
   }
@@ -721,16 +734,19 @@ exports.buildVolumeInquiry = (param, name, region, aws) => {
 
     return choices
   }
+
+  if (type === 'checkbox') inquiry.filter = input => input.join(',')
+
   return inquiry
 }
 
-exports.buildVpcInquiry = (param, name, region, aws) => {
+exports.buildVpcInquiry = (param, name, region, aws, type) => {
   const {
     Description,
   } = param
 
   const inquiry = {
-    type: 'list',
+    type,
     name,
     message: Description,
   }
@@ -746,7 +762,7 @@ exports.buildVpcInquiry = (param, name, region, aws) => {
 
       choices = res.Vpcs.map((v) => {
         const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
-        const subname = tagname ? ` - ${tagname.Value}` : ''
+        const subname = tagname ? ` (${tagname.Value})` : ''
 
         return { name: `${v.VpcId}${subname}`, value: v.VpcId }
       })
@@ -756,16 +772,19 @@ exports.buildVpcInquiry = (param, name, region, aws) => {
 
     return choices
   }
+
+  if (type === 'checkbox') inquiry.filter = input => input.join(',')
+
   return inquiry
 }
 
-exports.buildHostedZoneInquiry = (param, name, region, aws) => {
+exports.buildHostedZoneInquiry = (param, name, region, aws, type) => {
   const {
     Description,
   } = param
 
   const inquiry = {
-    type: 'list',
+    type,
     name,
     message: Description,
   }
@@ -789,9 +808,33 @@ exports.buildHostedZoneInquiry = (param, name, region, aws) => {
 
     return choices
   }
+
+  if (type === 'checkbox') inquiry.filter = input => input.join(',')
+
   return inquiry
 }
 
+
+// Accepts an Object in the form of an AWS CFN Parameter i.e.
+/*
+{
+  "ParamDatabaseInstanceType": {
+    "Type": "String",
+    "Description": "Instance type to be used for the DB instance",
+    "Default": "db.r3.large",
+    "AllowedValues": [
+      "db.t2.small",
+      "db.t2.medium",
+      "db.r3.large",
+      "db.r3.xlarge",
+      "db.r3.2xlarge",
+      "db.r3.4xlarge",
+      "db.r3.8xlarge"
+    ]
+  },
+}
+*/
+// Requires the name of the param, the region of the stack, and a configured AWS sdk
 exports.buildParamInquiry = (param, name, region, aws) => {
   let inquiry
 
@@ -823,7 +866,7 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     case 'AWS::EC2::Instance::Id':
-      inquiry = this.buildInstanceInquiry(param, name, region, aws)
+      inquiry = this.buildInstanceInquiry(param, name, region, aws, 'list')
       break
 
     case 'AWS::EC2::KeyPair::KeyName':
@@ -831,55 +874,64 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     case 'AWS::EC2::SecurityGroup::GroupName':
-      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupName')
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupName', 'list')
       break
 
     case 'AWS::EC2::SecurityGroup::Id':
-      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupId')
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupId', 'list')
       break
 
     case 'AWS::EC2::Subnet::Id':
-      inquiry = this.buildSubnetInquiry(param, name, region, aws)
+      inquiry = this.buildSubnetInquiry(param, name, region, aws, 'list')
       break
 
     case 'AWS::EC2::Volume::Id':
-      inquiry = this.buildVolumeInquiry(param, name, region, aws)
+      inquiry = this.buildVolumeInquiry(param, name, region, aws, 'list')
       break
 
     case 'AWS::EC2::VPC::Id':
-      inquiry = this.buildVpcInquiry(param, name, region, aws)
+      inquiry = this.buildVpcInquiry(param, name, region, aws, 'list')
       break
 
     case 'AWS::Route53::HostedZone::Id':
-      inquiry = this.buildHostedZoneInquiry(param, name, region, aws)
+      inquiry = this.buildHostedZoneInquiry(param, name, region, aws, 'list')
       break
 
     case 'List<AWS::EC2::AvailabilityZone::Name>':
       inquiry = this.buildAZInquiry(param, name, region, aws, 'checkbox')
       break
 
+    // Needs to be the same as comma delimited list, since the CFN console also doesn't show all images
     case 'List<AWS::EC2::Image::Id>':
+      inquiry = this.buildCommaListInquiry(param, name)
       break
 
     case 'List<AWS::EC2::Instance::Id>':
+      inquiry = this.buildInstanceInquiry(param, name, region, aws, 'checkbox')
       break
 
     case 'List<AWS::EC2::SecurityGroup::GroupName>':
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupName', 'checkbox')
       break
 
     case 'List<AWS::EC2::SecurityGroup::Id>':
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupId', 'checkbox')
       break
 
     case 'List<AWS::EC2::Subnet::Id>':
+      inquiry = this.buildSubnetInquiry(param, name, region, aws, 'checkbox')
       break
 
     case 'List<AWS::EC2::Volume::Id>':
+      inquiry = this.buildVolumeInquiry(param, name, region, aws, 'checkbox')
       break
 
     case 'List<AWS::EC2::VPC::Id>':
+      inquiry = this.buildVpcInquiry(param, name, region, aws, 'checkbox')
       break
 
     case 'List<AWS::Route53::HostedZone::Id>':
+      inquiry = this.buildHostedZoneInquiry(param, name, region, aws, 'checkbox')
       break
 
     default:
