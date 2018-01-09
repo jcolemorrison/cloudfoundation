@@ -956,7 +956,7 @@ exports.selectStackParams = async (Parameters, profile, region, aws) => {
     log()
     log(chk.bold.whiteBright('Parameter Values to be used for the stack...'))
     const choices = await inq.prompt(paramInq)
-    log(choices)
+    return choices
   } catch (error) {
     throw error
   }

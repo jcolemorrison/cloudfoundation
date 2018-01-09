@@ -118,11 +118,10 @@ module.exports = async function deploy (env, opts) {
 
   try {
     stackRegion = await selectRegion(profile, 'Which region would you like to deploy this stack to?')
+    aws = configAWS(profile || 'default')
   } catch (error) {
     throw error
   }
-
-  aws = configAWS(profile || 'default')
 
   // Now we have the valid profile, stackname, and stackfile.  Things are validated against proper rules.
   // What we need to do now...
@@ -131,6 +130,9 @@ module.exports = async function deploy (env, opts) {
     const template = getTemplateAsObject(templateName)
 
     const params = await selectStackParams(template.Parameters, profile, stackRegion, aws)
+
+    // at this point we have all of the parameters that they'd like to deploy with...  what's left?
+    //
   } catch (error) {
     throw error
   }
