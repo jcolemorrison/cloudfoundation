@@ -189,12 +189,25 @@ exports.getStackFile = (templateDir) => {
   if (stackFileExists) {
     try {
       stackFile = fs.readJsonSync(stackPath)
+      console.log(stackFile)
     } catch (error) {
       throw error
     }
   }
 
   return stackFile
+}
+
+exports.writeStackFile = (templateDir, stack) => {
+  const stackPath = `${templateDir}/.stacks`
+
+  fs.ensureFileSync(stackPath)
+  console.log(stack)
+  try {
+    fs.writeFileSync(stackPath, JSON.stringify(stack, null, 2), 'utf8')
+  } catch (error) {
+    throw error
+  }
 }
 
 const buildNumberInquiry = (param, name) => {
@@ -941,7 +954,7 @@ exports.buildParamInquiry = (param, name, region, aws) => {
   return inquiry
 }
 
-exports.selectStackParams = async (Parameters, profile, region, aws) => {
+exports.selectStackParams = async (Parameters, region, aws) => {
   const paramNames = Parameters && Object.keys(Parameters)
 
   if (paramNames && paramNames.length < 1) return false
@@ -953,7 +966,6 @@ exports.selectStackParams = async (Parameters, profile, region, aws) => {
   ))
 
   try {
-    log()
     log(chk.bold.whiteBright('Parameter Values to be used for the stack...'))
     const choices = await inq.prompt(paramInq)
     return choices

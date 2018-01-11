@@ -48,7 +48,7 @@ cmd
   .command('deploy [templatename]')
   .option('-s, --stackname <stackname>', 'Name of stack to deploy the template as')
   .option('-p, --profile <profilename>', 'the AWS or CFDN profile that has the credentials you\'d like to use')
-  .description('deploy [templatename] template')
+  .description('deploy [templatename] template as a stack')
   .action((e, o) => checkValidProject('deploy [templatename]', deploy, e, o))
 
 
@@ -80,7 +80,7 @@ cmd
 
 cmd
   .command('update <templatename>')
-  .description('update <templatename> template')
+  .description('update a stack created from [templatename] template')
   .action(() => {
     console.log('building')
   })

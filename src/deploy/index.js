@@ -6,11 +6,17 @@ const {
   inquireTemplateName,
   checkValidTemplate,
   getStackFile,
+  writeStackFile,
   getTemplateAsObject,
   selectStackParams,
   selectRegion,
   configAWS,
 } = require('../utils')
+
+const {
+  selectStackOptions,
+  useExistingStack,
+} = require('../utils/stacks')
 
 const { checkValidProfile, selectProfile, _getProfile } = require('../profiles')
 
@@ -25,6 +31,7 @@ module.exports = async function deploy (env, opts) {
   let stackFile
   let stackRegion // may differ from profile default region
   let aws
+  let stack
 
   log.p('the env', env)
   log.p('the stackname', opts && opts.stackname)
@@ -40,12 +47,6 @@ module.exports = async function deploy (env, opts) {
       throw error
     }
   }
-
-  // check for either (a) a valid profile passed or (b) that a default profile exists
-  // if !a, then throw an error
-  // if !b, I guess it doesn't matter, because we just move on and ask them what profile to use.
-  // HOWEVER, if there are no profiles at all, we should handle that, and say "you need a valid profile set up to deploy"
-  // But again, if !b, we're just going to ask them alter down the road
 
   if (profile) {
     try {
@@ -68,6 +69,9 @@ module.exports = async function deploy (env, opts) {
 
   // We now 100% have the template name.
   // Now we need to make sure that the stadck doesn't already exist
+
+  // TODO: if stackname, then we need to check that it doesn't have a 'deployed: true' property
+  // if it doesn't, grab the values from it, show them, and ask if they want to use this one
 
   if (!stackName) {
     try {
@@ -96,7 +100,11 @@ module.exports = async function deploy (env, opts) {
     stackFile = getStackFile(templateDir)
 
     if (stackFile[stackName]) {
-      throw new Error(`Stack ${cyan(stackName)} already exists.  Run ${cyan(`update ${stackName}`)} to modify it.`)
+      if (stackFile[stackName].deployed) {
+        throw new Error(`Stack ${cyan(stackName)} already exists.  Run ${cyan(`update ${stackName}`)} to modify it.`)
+      }
+
+      stack = await useExistingStack(templateName, stackName, stackFile[stackName])
     }
   } catch (error) {
     throw error
@@ -129,10 +137,23 @@ module.exports = async function deploy (env, opts) {
   try {
     const template = getTemplateAsObject(templateName)
 
-    const params = await selectStackParams(template.Parameters, profile, stackRegion, aws)
+    log.p()
+    const params = await selectStackParams(template.Parameters, stackRegion, aws)
 
-    // at this point we have all of the parameters that they'd like to deploy with...  what's left?
-    //
+    log.p()
+    const options = await selectStackOptions(stackRegion, aws)
+
+    stack = {
+      [stackName]: {
+        profile: profile.name,
+        region: stackRegion,
+        options,
+        parameters: params,
+      },
+    }
+
+    console.log(stack)
+    writeStackFile(templateDir, { ...stack, ...stackFile })
   } catch (error) {
     throw error
   }
