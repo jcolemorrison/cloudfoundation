@@ -8,7 +8,7 @@ const inq = require('inquirer')
 
 const { NO_AWS_CREDENTIALS, AWS_REGIONS } = require('./constants')
 
-const { log } = console
+const { log, error } = console
 const { cyan, whiteBright } = chk
 
 exports.log = {
@@ -145,7 +145,7 @@ exports.checkValidProject = (cmd, action, env, opts) => {
   } catch (error) {
     return exports.log.e(error.message)
   }
-  return action(env, opts).catch(e => exports.log.p(e))
+  return action(env, opts).catch((e) => { error(e) })
 }
 
 exports.inquireTemplateName = async (action) => {
@@ -189,7 +189,6 @@ exports.getStackFile = (templateDir) => {
   if (stackFileExists) {
     try {
       stackFile = fs.readJsonSync(stackPath)
-      console.log(stackFile)
     } catch (error) {
       throw error
     }
@@ -201,8 +200,10 @@ exports.getStackFile = (templateDir) => {
 exports.writeStackFile = (templateDir, stack) => {
   const stackPath = `${templateDir}/.stacks`
 
+  console.log('the written stack', stack)
+
   fs.ensureFileSync(stackPath)
-  console.log(stack)
+
   try {
     fs.writeFileSync(stackPath, JSON.stringify(stack, null, 2), 'utf8')
   } catch (error) {

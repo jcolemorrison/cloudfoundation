@@ -15,7 +15,7 @@ const {
 
 const {
   selectStackOptions,
-  useExistingStack,
+  confirmStack,
 } = require('../utils/stacks')
 
 const { checkValidProfile, selectProfile, _getProfile } = require('../profiles')
@@ -32,6 +32,7 @@ module.exports = async function deploy (env, opts) {
   let stackRegion // may differ from profile default region
   let aws
   let stack
+  let useExisting
 
   log.p('the env', env)
   log.p('the stackname', opts && opts.stackname)
@@ -101,10 +102,21 @@ module.exports = async function deploy (env, opts) {
 
     if (stackFile[stackName]) {
       if (stackFile[stackName].deployed) {
-        throw new Error(`Stack ${cyan(stackName)} already exists.  Run ${cyan(`update ${stackName}`)} to modify it.`)
+        throw new Error(chk.red(`Stack ${cyan(stackName)} already exists.  Run ${cyan(`update ${stackName}`)} to modify it.`))
       }
 
-      stack = await useExistingStack(templateName, stackName, stackFile[stackName])
+      const msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}\n`
+      useExisting = await confirmStack(templateName, stackName, stackFile[stackName], msg)
+
+      if (useExisting) {
+        stack = stackFile[stackName]
+
+        checkValidProfile(stack.profile)
+
+        profile = _getProfile(stack.profile)
+      } else {
+        return log.e(`Stack ${cyan(stackName)} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`)
+      }
     }
   } catch (error) {
     throw error
@@ -122,41 +134,73 @@ module.exports = async function deploy (env, opts) {
     }
   }
 
-  // We need to get the region finally
-
   try {
-    stackRegion = await selectRegion(profile, 'Which region would you like to deploy this stack to?')
     aws = configAWS(profile || 'default')
   } catch (error) {
     throw error
   }
 
-  // Now we have the valid profile, stackname, and stackfile.  Things are validated against proper rules.
-  // What we need to do now...
+  // If they aren't using a stack already configured, build one
+  if (!stack) {
+    try {
+      stackRegion = await selectRegion(profile, 'Which region would you like to deploy this stack to?')
 
-  try {
-    const template = getTemplateAsObject(templateName)
+      const template = getTemplateAsObject(templateName)
 
-    log.p()
-    const params = await selectStackParams(template.Parameters, stackRegion, aws)
+      log.p()
+      const params = await selectStackParams(template.Parameters, stackRegion, aws)
 
-    log.p()
-    const options = await selectStackOptions(stackRegion, aws)
+      log.p()
+      const options = await selectStackOptions(stackRegion, aws)
 
-    stack = {
-      [stackName]: {
+      stack = {
         profile: profile.name,
         region: stackRegion,
         options,
         parameters: params,
-      },
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  try {
+    let saveSettings
+    // Now we need to (a) confirm that they want to deploy the stack, and show them the values (DONE)
+    // (b) deploy the fucking stack
+    // (c) ask if they want to save the values for later usage (DONE)
+    // if (c) then save them to the stacks file.  Mark the stack as deployed. (DONE)
+    if (!useExisting) {
+      if (!await confirmStack(templateName, stackName, stack)) return false
+
+      saveSettings = await inq.prompt({
+        type: 'confirm',
+        name: 'yes',
+        message: 'Would you like to save these options for later deploys and updates?',
+        default: true,
+      })
     }
 
-    console.log(stack)
-    writeStackFile(templateDir, { ...stack, ...stackFile })
+    // THIS SHOULD COME AFTER THE DEPLOY - or at least setting deployed true should... maybe we just write this twice?
+    // so once here without deployed true, and then after the successful deploy with deployed: true.  That way if it errors,
+    // They don't have to do this shit again.
+    if (useExisting || saveSettings) {
+      saveSettings = { ...stackFile, [stackName]: { ...stack } }
+      writeStackFile(templateDir, saveSettings)
+    }
+
+    // DEPLOY GOES HERE
+
+    // and then after deploy
+    if (useExisting || saveSettings) {
+      saveSettings[stackName].deployed = true
+      writeStackFile(templateDir, saveSettings)
+    }
   } catch (error) {
     throw error
   }
+
+  return log.p(stack)
 
   // log.p(templateName, stackName, profile, stackFile)
   // first we need to handle if there's a template and stack name

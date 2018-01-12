@@ -248,91 +248,95 @@ exports.selectStackOptions = async (region, aws) => {
   return options
 }
 
-exports.useExistingStack = async (templateName, name, stack) => {
-  try {
-    const {
-      profile,
-      region,
-      options,
-      parameters,
-    } = stack
-    const opts = options || {}
-    const info = []
+exports.reviewStackInfo = (name, stack, message) => {
+  const {
+    profile,
+    region,
+    options,
+    parameters,
+  } = stack
+  const opts = options || {}
+  const info = []
+  console.log(stack, name, message)
 
-    // TODO: Account for no parameters && missing parameters
-    log.p()
+  // TODO: Account for no parameters && missing parameters
 
-    // Add General info
-    const generalInfo = `
+  // Add General info
+  const generalInfo = `
 ${chk.green('General')}
 ------------------------
 Stack Name: ${name}
 Profile: ${profile}
 Region: ${region}
 `
-    info.push(generalInfo)
+  info.push(generalInfo)
 
-    // Add Stack Option Info
-    const iamRole = opts.iamRole ? opts.iamRole : 'Profile IAM Permissions'
-    const capabilityIam = opts.capabilityIam ? 'true' : 'false'
-    const optionsInfo = `
+  // Add Stack Option Info
+  const iamRole = opts.iamRole ? opts.iamRole : 'Profile IAM Permissions'
+  const capabilityIam = opts.capabilityIam ? 'true' : 'false'
+  const optionsInfo = `
 ${chk.green('Options')}
 ------------------------
 IamRole: ${iamRole}
 Create IAM Resources: ${capabilityIam}
 `
-    info.push(optionsInfo)
+  info.push(optionsInfo)
 
-    // Add Tags Info
-    if (opts.tags) {
-      const tags = opts.tags && opts.tags.reduce((s, t) => {
-        s += `${t.Key}, ${t.Value}\n`
-        return s
-      }, '')
+  // Add Tags Info
+  if (opts.tags) {
+    const tags = opts.tags && opts.tags.reduce((s, t) => {
+      s += `${t.Key}, ${t.Value}\n`
+      return s
+    }, '')
 
-      const tagsInfo = `
+    const tagsInfo = `
 ${chk.green('Tags (Name, Value)')}
 ------------------------
 ${tags}`
-      info.push(tagsInfo)
-    }
+    info.push(tagsInfo)
+  }
 
-    // Add Advanced Settings Info
-    if (opts.advanced && Object.keys(opts.advanced).length) {
+  // Add Advanced Settings Info
+  if (opts.advanced && Object.keys(opts.advanced).length) {
+    const {
+      snsTopicArn,
+      terminationProtection,
+      timeout,
+      onFailure,
+    } = opts.advanced || {}
 
-      const {
-        snsTopicArn,
-        terminationProtection,
-        timeout,
-        onFailure,
-      } = opts.advanced || {}
-
-      let advancedInfo = `
+    let advancedInfo = `
 ${chk.green('Advanced')}
 ------------------------
 `
-      if (snsTopicArn) advancedInfo += `SNS Notification Topic ARN: ${snsTopicArn}\n`
-      if (terminationProtection) advancedInfo += `Termination Protection Enabled: ${terminationProtection}\n`
-      if (timeout) advancedInfo += `Timeout in Minutes: ${timeout}\n`
-      if (onFailure) advancedInfo += `On Failure Behavior: ${onFailure}\n`
+    if (snsTopicArn) advancedInfo += `SNS Notification Topic ARN: ${snsTopicArn}\n`
+    if (terminationProtection) advancedInfo += `Termination Protection Enabled: ${terminationProtection}\n`
+    if (timeout) advancedInfo += `Timeout in Minutes: ${timeout}\n`
+    if (onFailure) advancedInfo += `On Failure Behavior: ${onFailure}\n`
 
-      info.push(advancedInfo)
-    }
+    info.push(advancedInfo)
+  }
 
-    // Add Parameter Info
-    const pKeys = Object.keys(parameters)
-    const params = pKeys.reduce((s, key) => {
-      s += `${key} = ${parameters[key]}\n`
-      return s
-    }, '')
-    const paramInfo = `
+  // Add Parameter Info
+  const pKeys = Object.keys(parameters)
+  const params = pKeys.reduce((s, key) => {
+    s += `${key} = ${parameters[key]}\n`
+    return s
+  }, '')
+  const paramInfo = `
 ${chk.green('Parameters')}
 ------------------------
 ${params}`
-    info.push(paramInfo)
+  info.push(paramInfo)
 
-    log.p(info.join('\n'))
-    log.i(`Stack with name ${chk.cyan(name)} found for template ${chk.cyan(templateName)}\n`)
+  log.p(info.join('\n'))
+
+  if (message) log.i(message)
+}
+
+exports.confirmStack = async (templateName, name, stack, message) => {
+  try {
+    this.reviewStackInfo(name, stack, message)
 
     const use = await inq.prompt({
       type: 'confirm',
@@ -341,9 +345,7 @@ ${params}`
       default: true,
     })
 
-    if (!use.stack) return false
-
-    return stack
+    return use.stack
   } catch (error) {
     throw error
   }
