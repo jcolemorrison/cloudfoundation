@@ -36,9 +36,9 @@ exports._getProfile = (name) => {
   try {
     const profiles = this._getProfiles()
 
-    if (profiles.cfdn && profiles.cfdn[name]) return { ...profiles.cfdn[name], name }
+    if (profiles.cfdn && profiles.cfdn[name]) return { ...profiles.cfdn[name], name, type: 'cfdn' }
 
-    return profiles.aws && { ...profiles.aws[name], name }
+    return profiles.aws && { ...profiles.aws[name], name, type: 'aws' }
   } catch (error) {
     throw error
   }
@@ -196,7 +196,7 @@ exports.selectProfile = async function selectProfile (action, profiles, onlyCfdn
 
     if (profiles.aws[choice]) type = 'aws'
 
-    return { ...profiles[type][choice], name: choice }
+    return { ...profiles[type][choice], name: choice, type }
   } catch (error) {
     throw error
   }
@@ -264,7 +264,7 @@ exports.updateProfile = async function updateProfile (env) {
     return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
   }
 
-  if (profiles.aws[name]) {
+  if (!profiles.cfdn[name] && profiles.aws[name]) {
     log.e('You can only update CFDN profiles.')
     return log.m(`To update AWS profiles, configure them through the AWS CLI and then use ${chk.cyan('cfdn import-profiles')}.\n`)
   }

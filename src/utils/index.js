@@ -200,8 +200,6 @@ exports.getStackFile = (templateDir) => {
 exports.writeStackFile = (templateDir, stack) => {
   const stackPath = `${templateDir}/.stacks`
 
-  console.log('the written stack', stack)
-
   fs.ensureFileSync(stackPath)
 
   try {

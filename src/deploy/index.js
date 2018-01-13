@@ -13,10 +13,7 @@ const {
   configAWS,
 } = require('../utils')
 
-const {
-  selectStackOptions,
-  confirmStack,
-} = require('../utils/stacks')
+const { selectStackOptions, confirmStack, createStack } = require('../utils/stacks')
 
 const { checkValidProfile, selectProfile, _getProfile } = require('../profiles')
 
@@ -28,6 +25,7 @@ module.exports = async function deploy (env, opts) {
   let stackName = opts && opts.stackname
   let profile = opts && opts.profile
   let templateDir
+  let template
   let stackFile
   let stackRegion // may differ from profile default region
   let aws
@@ -111,9 +109,9 @@ module.exports = async function deploy (env, opts) {
       if (useExisting) {
         stack = stackFile[stackName]
 
-        checkValidProfile(stack.profile)
+        checkValidProfile(stack.profile.name)
 
-        profile = _getProfile(stack.profile)
+        profile = _getProfile(stack.profile.name)
       } else {
         return log.e(`Stack ${cyan(stackName)} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`)
       }
@@ -136,6 +134,7 @@ module.exports = async function deploy (env, opts) {
 
   try {
     aws = configAWS(profile || 'default')
+    template = getTemplateAsObject(templateName)
   } catch (error) {
     throw error
   }
@@ -145,8 +144,6 @@ module.exports = async function deploy (env, opts) {
     try {
       stackRegion = await selectRegion(profile, 'Which region would you like to deploy this stack to?')
 
-      const template = getTemplateAsObject(templateName)
-
       log.p()
       const params = await selectStackParams(template.Parameters, stackRegion, aws)
 
@@ -154,7 +151,7 @@ module.exports = async function deploy (env, opts) {
       const options = await selectStackOptions(stackRegion, aws)
 
       stack = {
-        profile: profile.name,
+        profile: { name: profile.name, type: profile.type },
         region: stackRegion,
         options,
         parameters: params,
@@ -190,10 +187,12 @@ module.exports = async function deploy (env, opts) {
     }
 
     // DEPLOY GOES HERE
+    const stackId = await createStack(template, stackName, stack, aws)
 
     // and then after deploy
     if (useExisting || saveSettings) {
       saveSettings[stackName].deployed = true
+      saveSettings[stackName].stackId = stackId
       writeStackFile(templateDir, saveSettings)
     }
   } catch (error) {

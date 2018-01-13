@@ -31,6 +31,7 @@
     "no-underscore-dangle": 0,
     "no-bitwise": 0,
     "prefer-destructuring": 0,
-    "no-restricted-globals": 0
+    "no-restricted-globals": 0,
+    "object-curly-newline": 0
   }
 }

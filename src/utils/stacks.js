@@ -350,3 +350,39 @@ exports.confirmStack = async (templateName, name, stack, message) => {
     throw error
   }
 }
+
+exports.createStack = async (template, name, stack, aws) => {
+  const { region, options, parameters } = stack
+  const cfn = new aws.CloudFormation({ region })
+  const opts = { StackName: name, TemplateBody: JSON.stringify(template) }
+
+  if (parameters) {
+    opts.Parameters = Object.keys(parameters).map(k => ({ ParameterKey: k, ParameterValue: parameters[k] }))
+  }
+
+  if (options) {
+    const { tags, iamRole, advanced, capabilityIam } = options
+
+    if (tags) opts.Tags = tags
+    if (iamRole) opts.RoleArn = iamRole
+    if (capabilityIam) opts.Capabilities = ['CAPABILITY_NAMED_IAM']
+
+    if (advanced) {
+      const { snsTopicArn, terminationProtection, timeout, onFailure } = advanced
+
+      if (snsTopicArn) opts.NotificationARNs = [snsTopicArn]
+      if (onFailure) opts.OnFailure = onFailure
+      if (terminationProtection !== undefined) opts.EnableTerminationProtection = terminationProtection
+      if (timeout) opts.TimeoutInMinutes = timeout
+    }
+  }
+
+  try {
+    const { StackId } = await cfn.createStack(opts).promise()
+    console.log('makin stack', StackId)
+    return StackId
+  } catch (error) {
+    console.log('error', error)
+    throw error
+  }
+}
