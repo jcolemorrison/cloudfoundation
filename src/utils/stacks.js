@@ -378,10 +378,9 @@ exports.createStack = async (template, name, stack, aws) => {
 
   try {
     const { StackId } = await cfn.createStack(opts).promise()
-    console.log('makin stack', StackId)
+
     return StackId
   } catch (error) {
-    console.log('error', error)
     throw error
   }
 }
