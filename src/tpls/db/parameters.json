@@ -1,12 +1,12 @@
 {
   "ParamAuthorName": {
     "Type": "String",
-    "Default": "J Cole Morrison",
-    "Description": "This will be added as a tag called 'Owner' to every resource for easier management."
+    "Default": "CloudFoundation",
+    "Description": "Added as a tag called 'Owner' to every resource for easier management."
   },
   "ParamDatabaseInstanceType": {
     "Type": "String",
-    "Description": "Instance type to be used for the DB instance",
+    "Description": "Instance type for the DB instance (leave blank if using Snapshot)",
     "Default": "db.r3.large",
     "AllowedValues": [
       "db.t2.small",
@@ -20,12 +20,12 @@
   },
   "ParamDatabaseName": {
     "Type": "String",
-    "Description": "Name of the database created in the cluster",
+    "Description": "Name of the database created in the cluster (leave blank if using Snapshot)",
     "Default": "default_aurora"
   },
   "ParamDatabaseUsername": {
     "Type": "String",
-    "Description": "The database admin username",
+    "Description": "Database admin username (leave blank if using Snapshot)",
     "AllowedPattern": "[a-zA-Z0-9]+",
     "ConstraintDescription": "Can contain only alphanumeric characters.",
     "MaxLength": "16",
@@ -33,7 +33,7 @@
   },
   "ParamDatabasePassword": {
     "Type": "String",
-    "Description": "The database admin password",
+    "Description": "Database admin password (leave blank if using Snapshot)",
     "AllowedPattern": "[a-zA-Z0-9]+",
     "ConstraintDescription": "Can contain only alphanumeric characters and must be at least 8 characters long.",
     "MaxLength": "41",
@@ -42,7 +42,7 @@
   },
   "ParamDatabaseBackupRetentionPeriod": {
     "Type": "Number",
-    "Description": "The number of days DB backups are retained",
+    "Description": "Number of days DB backups are retained (leave blank if using Snapshot)",
     "Default": 7,
     "AllowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
   },
@@ -55,7 +55,7 @@
   },
   "ParamDBReadReplica": {
     "Type": "String",
-    "Description": "Launch a read replica for ",
+    "Description": "Launch a read replica for DB? (leave blank if using Snapshot)",
     "Default": "true",
     "AllowedValues": ["true", "false"],
     "ConstraintDescription":"true or false only"
@@ -66,10 +66,10 @@
   },
   "ParamDBSnapshotArn": {
     "Type": "String",
-    "Description": "ARN of the RDS Snapshot to create the cluster from"
+    "Description": "ARN of the RDS Snapshot to create the cluster from (leave blank if creating new DB)"
   },
   "ParamKMSKeyArn": {
     "Type": "String",
-    "Description": "(Optional) The Key ARN for the KMS used to encrypt / decrypt RDS data at rest.\n  Make this key yourself in IAM -> EncryptedKeys.  If not specified, the default account KMS key will be used."
+    "Description": "(Optional) Key ARN for the KMS used to encrypt / decrypt RDS data at rest.  Make this key yourself in IAM -> EncryptedKeys.  If not specified, the default account KMS key will be used."
   }
 }

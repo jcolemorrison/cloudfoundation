@@ -209,6 +209,10 @@ exports.writeStackFile = (templateDir, stack) => {
   }
 }
 
+// PARAMETER INQUIRY TYPES
+
+const baseInqMsg = (name, description) => (`${name}${description ? ` - ${description}` : ''}`)
+
 const buildNumberInquiry = (param, name) => {
   const {
     AllowedValues,
@@ -222,7 +226,7 @@ const buildNumberInquiry = (param, name) => {
 
   const inquiry = {
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
     default: Default,
   }
 
@@ -274,7 +278,7 @@ const buildStringInquiry = (param, name) => {
 
   const inquiry = {
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
     default: Default,
   }
 
@@ -291,7 +295,7 @@ const buildStringInquiry = (param, name) => {
         return `${name} can be no greater than ${MaxLength}!`
       }
 
-      if (MinLength && input.length > parseInt(MinLength, 10)) {
+      if (MinLength && input.length < parseInt(MinLength, 10)) {
         return `${name} can be no less than ${MinLength}!`
       }
 
@@ -327,7 +331,7 @@ exports.buildNumberListInquiryWithCheckbox = (param, name) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   if (type === 'input') {
@@ -384,7 +388,7 @@ const buildNumberListInquiry = (param, name) => {
   const inquiry = {
     type: 'input',
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   if (Default) inquiry.default = Default
@@ -423,7 +427,7 @@ exports.buildCommaListInquiryWithCheckbox = (param, name) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   if (type === 'input') {
@@ -475,7 +479,7 @@ exports.buildCommaListInquiry = (param, name) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   if (type === 'input') {
@@ -520,7 +524,7 @@ exports.buildAZInquiry = (param, name, region, aws, type) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   inquiry.choices = async () => {
@@ -557,7 +561,7 @@ exports.buildImageInquiry = (param, name) => {
 
   const inquiry = {
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
     default: Default,
   }
 
@@ -585,7 +589,7 @@ exports.buildInstanceInquiry = (param, name, region, aws, type) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   inquiry.choices = async () => {
@@ -626,7 +630,7 @@ exports.buildKeyPairInquiry = (param, name, region, aws) => {
   const inquiry = {
     type: 'list',
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   inquiry.choices = async () => {
@@ -656,7 +660,7 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type) =
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   inquiry.choices = async () => {
@@ -668,7 +672,12 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type) =
     try {
       const res = await ec2.describeSecurityGroups().promise()
 
-      choices = res.SecurityGroups.map(sg => sg[property])
+      choices = res.SecurityGroups.map((sg) => {
+        if (property === 'GroupId') {
+          return { name: `${sg[property]} (${sg.GroupName})`, value: sg[property] }
+        }
+        return { name: `${sg[property]} (${sg.GroupId})`, value: sg[property] }
+      })
     } catch (error) {
       throw error
     }
@@ -689,7 +698,7 @@ exports.buildSubnetInquiry = (param, name, region, aws, type) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   inquiry.choices = async () => {
@@ -727,7 +736,7 @@ exports.buildVolumeInquiry = (param, name, region, aws, type) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   inquiry.choices = async () => {
@@ -760,7 +769,7 @@ exports.buildVpcInquiry = (param, name, region, aws, type) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   inquiry.choices = async () => {
@@ -798,7 +807,7 @@ exports.buildHostedZoneInquiry = (param, name, region, aws, type) => {
   const inquiry = {
     type,
     name,
-    message: Description,
+    message: baseInqMsg(name, Description),
   }
 
   inquiry.choices = async () => {
@@ -810,10 +819,13 @@ exports.buildHostedZoneInquiry = (param, name, region, aws, type) => {
     try {
       const res = await r53.listHostedZones().promise()
 
-      choices = res.HostedZones.map(z => ({
-        name: `${z.Name} (${z.Id})`,
-        value: z.Id,
-      }))
+      choices = res.HostedZones.map((z) => {
+        const id = z.Id.split('/')[2]
+        return {
+          name: `${z.Name} (${id})`,
+          value: id, // CFN requires only the number from `/hostedzone/:number`
+        }
+      })
     } catch (error) {
       throw error
     }

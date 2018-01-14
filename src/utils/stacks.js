@@ -257,7 +257,6 @@ exports.reviewStackInfo = (name, stack, message) => {
   } = stack
   const opts = options || {}
   const info = []
-  console.log(stack, name, message)
 
   // TODO: Account for no parameters && missing parameters
 
@@ -266,7 +265,7 @@ exports.reviewStackInfo = (name, stack, message) => {
 ${chk.green('General')}
 ------------------------
 Stack Name: ${name}
-Profile: ${profile}
+Profile: ${profile.name}
 Region: ${region}
 `
   info.push(generalInfo)
@@ -357,7 +356,7 @@ exports.createStack = async (template, name, stack, aws) => {
   const opts = { StackName: name, TemplateBody: JSON.stringify(template) }
 
   if (parameters) {
-    opts.Parameters = Object.keys(parameters).map(k => ({ ParameterKey: k, ParameterValue: parameters[k] }))
+    opts.Parameters = Object.keys(parameters).map(k => ({ ParameterKey: k, ParameterValue: parameters[k].toString() }))
   }
 
   if (options) {
