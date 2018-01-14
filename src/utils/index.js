@@ -148,7 +148,7 @@ exports.checkValidProject = (cmd, action, env, opts) => {
   return action(env, opts).catch((e) => { error(e) })
 }
 
-exports.inquireTemplateName = async (action) => {
+exports.inquireTemplateName = async (message) => {
   let prompt
   try {
     const templates = glob.sync(`${process.cwd()}/src/*`).map((s) => {
@@ -160,7 +160,7 @@ exports.inquireTemplateName = async (action) => {
       {
         type: 'list',
         name: 'templatename',
-        message: `Which template would you like to ${action}?`,
+        message,
         choices: templates,
       },
     ])

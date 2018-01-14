@@ -4,6 +4,7 @@ const { build, buildAll } = require('./build')
 const create = require('./create')
 const validate = require('./validate')
 const deploy = require('./deploy')
+const update = require('./update')
 const test = require('./test')
 const {
   importProfiles,
@@ -51,6 +52,11 @@ cmd
   .description('deploy [templatename] template as a stack')
   .action((e, o) => checkValidProject('deploy [templatename]', deploy, e, o))
 
+cmd
+  .command('update [templatename]')
+  .option('-s, --stackname <stackname>', 'Name of stack to update')
+  .description('update a stack created from [templatename] template')
+  .action((e, o) => checkValidProject('update [templatename]', update, e, o))
 
 // TODO: write an error catcher for all of the below so there's no unhandled promise rejection shit.
 cmd
@@ -79,12 +85,6 @@ cmd
   .action(removeProfile)
 
 cmd
-  .command('update <templatename>')
-  .description('update a stack created from [templatename] template')
-  .action(() => {
-    console.log('building')
-  })
-cmd
   .command('test')
   .description('test')
   .action(test)
@@ -109,12 +109,12 @@ const validArgs = [
   'create',
   'validate',
   'deploy',
+  'update',
   'import-profiles',
   'list-profiles',
   'add-profile',
   'remove-profile',
   'update-profile',
-  'test',
 ]
 // console.log(cmd.args,  cmd._execs)
 

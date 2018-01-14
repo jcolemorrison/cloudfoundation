@@ -333,13 +333,13 @@ ${params}`
   if (message) log.i(message)
 }
 
-exports.confirmStack = async (templateName, name, stack, message) => {
+exports.confirmStack = async (templateName, name, stack, message, action) => {
   try {
     this.reviewStackInfo(name, stack, message)
 
     const use = await inq.prompt({
       type: 'confirm',
-      message: `Deploy Stack ${chk.cyan(name)} with the above options?`,
+      message: `${action} Stack ${chk.cyan(name)} with the above options?`,
       name: 'stack',
       default: true,
     })

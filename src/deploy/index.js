@@ -58,7 +58,7 @@ module.exports = async function deploy (env, opts) {
 
   if (!templateName) {
     try {
-      templateName = await inquireTemplateName('deploy')
+      templateName = await inquireTemplateName('Which template would you like to deploy a stack for?')
       templateDir = `${cwd}/src/${templateName}`
     } catch (error) {
       log.e(error.message)
@@ -100,11 +100,11 @@ module.exports = async function deploy (env, opts) {
 
     if (stackFile[stackName]) {
       if (stackFile[stackName].deployed) {
-        throw new Error(chk.red(`Stack ${cyan(stackName)} already exists.  Run ${cyan(`update ${stackName}`)} to modify it.`))
+        throw new Error(chk.red(`Stack ${cyan(stackName)} already exists.  Run ${cyan(`cfdn update ${templateName} --stackname ${stackName}`)} to modify it.`))
       }
 
       const msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}\n`
-      useExisting = await confirmStack(templateName, stackName, stackFile[stackName], msg)
+      useExisting = await confirmStack(templateName, stackName, stackFile[stackName], msg, 'Deploy')
 
       if (useExisting) {
         stack = stackFile[stackName]
