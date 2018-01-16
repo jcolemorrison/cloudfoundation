@@ -802,7 +802,7 @@ exports.buildVpcInquiry = (param, name, region, aws, type) => {
   return inquiry
 }
 
-exports.buildHostedZoneInquiry = (param, name, region, aws, type) => {
+exports.buildHostedZoneInquiry = (param, name, region, aws, type, prevParam) => {
   const {
     Description,
   } = param
@@ -824,10 +824,14 @@ exports.buildHostedZoneInquiry = (param, name, region, aws, type) => {
 
       choices = res.HostedZones.map((z) => {
         const id = z.Id.split('/')[2]
-        return {
+        const choice = {
           name: `${z.Name} (${id})`,
           value: id, // CFN requires only the number from `/hostedzone/:number`
         }
+
+        if (prevParam && prevParam.indexOf(id) !== -1) choice.checked = true
+
+        return choice
       })
     } catch (error) {
       throw error
@@ -922,7 +926,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::Route53::HostedZone::Id':
-      inquiry = this.buildHostedZoneInquiry(param, name, region, aws, 'list')
+      inquiry = this.buildHostedZoneInquiry(param, name, region, aws, 'list', prevParam)
       break
 
     case 'List<AWS::EC2::AvailabilityZone::Name>':
@@ -959,7 +963,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::Route53::HostedZone::Id>':
-      inquiry = this.buildHostedZoneInquiry(param, name, region, aws, 'checkbox')
+      inquiry = this.buildHostedZoneInquiry(param, name, region, aws, 'checkbox', prevParam)
       break
 
     default:
