@@ -581,7 +581,7 @@ exports.buildImageInquiry = (param, name) => {
   return inquiry
 }
 
-exports.buildInstanceInquiry = (param, name, region, aws, type) => {
+exports.buildInstanceInquiry = (param, name, region, aws, type, prevParam) => {
   const {
     Description,
   } = param
@@ -605,8 +605,11 @@ exports.buildInstanceInquiry = (param, name, region, aws, type) => {
         const instances = reservation.Instances.map((i) => {
           const tagname = i.Tags && i.Tags.filter(t => t.Key === 'Name')[0]
           const subname = tagname ? ` (${tagname.Value})` : ''
+          const choice = { name: `${i.InstanceId}${subname}`, value: i.InstanceId }
 
-          return { name: `${i.InstanceId}${subname}`, value: i.InstanceId }
+          if (prevParam && prevParam.indexOf(choice.value) !== -1) choice.checked = true
+
+          return choice
         })
         return sum.concat(instances)
       }, [])
@@ -859,8 +862,9 @@ exports.buildHostedZoneInquiry = (param, name, region, aws, type) => {
 }
 */
 // Requires the name of the param, the region of the stack, and a configured AWS sdk
-exports.buildParamInquiry = (param, name, region, aws) => {
+exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
   let inquiry
+  console.log(prevParam)
 
   // Now we need to match all the different conditions as in the notes
 
@@ -890,7 +894,7 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     case 'AWS::EC2::Instance::Id':
-      inquiry = this.buildInstanceInquiry(param, name, region, aws, 'list')
+      inquiry = this.buildInstanceInquiry(param, name, region, aws, 'list', prevParam)
       break
 
     case 'AWS::EC2::KeyPair::KeyName':
@@ -931,7 +935,7 @@ exports.buildParamInquiry = (param, name, region, aws) => {
       break
 
     case 'List<AWS::EC2::Instance::Id>':
-      inquiry = this.buildInstanceInquiry(param, name, region, aws, 'checkbox')
+      inquiry = this.buildInstanceInquiry(param, name, region, aws, 'checkbox', prevParam)
       break
 
     case 'List<AWS::EC2::SecurityGroup::GroupName>':
@@ -965,16 +969,16 @@ exports.buildParamInquiry = (param, name, region, aws) => {
   return inquiry
 }
 
-exports.selectStackParams = async (Parameters, region, aws) => {
+exports.selectStackParams = async (Parameters, region, aws, prevParams) => {
   const paramNames = Parameters && Object.keys(Parameters)
 
   if (paramNames && paramNames.length < 1) return false
 
   const paramInq = []
 
-  paramNames.forEach(name => (
-    paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws))
-  ))
+  paramNames.forEach(name => {
+    return paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws, prevParams && prevParams[name]))
+  })
 
   try {
     log(chk.bold.whiteBright('Parameter Values to be used for the stack...'))

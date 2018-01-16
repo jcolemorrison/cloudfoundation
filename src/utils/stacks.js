@@ -187,7 +187,7 @@ exports.selectAdvancedStackOptions = async (region, aws) => {
   return options
 }
 
-exports.selectStackOptions = async (region, aws) => {
+exports.selectStackOptions = async (region, aws, prevOpts) => {
   const options = {}
 
   try {
@@ -248,7 +248,7 @@ exports.selectStackOptions = async (region, aws) => {
   return options
 }
 
-exports.reviewStackInfo = (name, stack, message) => {
+exports.reviewStackInfo = (name, stack, message, action) => {
   const {
     profile,
     region,
@@ -331,11 +331,16 @@ ${params}`
   log.p(info.join('\n'))
 
   if (message) log.i(message)
+  if (action === 'Update') {
+    log.i('Termination Protection, Timeout in Minutes, and On Failure Behavior can only be set on creation of stacks.')
+    log.i('Stack Name, Profile, and Region cannot be changed on a stack once deployed.\n')
+  }
 }
 
 exports.confirmStack = async (templateName, name, stack, message, action) => {
   try {
-    this.reviewStackInfo(name, stack, message)
+    this.reviewStackInfo(name, stack, message, action)
+    // TODO: if update, we need to tell them that some parameters cannot be updated once a stack is deployed
 
     const use = await inq.prompt({
       type: 'confirm',
