@@ -213,7 +213,7 @@ exports.writeStackFile = (templateDir, stack) => {
 
 const baseInqMsg = (name, description) => (`${name}${description ? ` - ${description}` : ''}`)
 
-const buildNumberInquiry = (param, name) => {
+exports.buildNumberInquiry = (param, name) => {
   const {
     AllowedValues,
     ConstraintDescription,
@@ -262,9 +262,7 @@ const buildNumberInquiry = (param, name) => {
   return inquiry
 }
 
-exports.buildNumberInquiry = buildNumberInquiry
-
-const buildStringInquiry = (param, name) => {
+exports.buildStringInquiry = (param, name, prevParam) => {
   const {
     AllowedPattern,
     AllowedValues,
@@ -279,8 +277,9 @@ const buildStringInquiry = (param, name) => {
   const inquiry = {
     name,
     message: baseInqMsg(name, Description),
-    default: Default,
+    default: prevParam || Default,
   }
+
 
   let type = NoEcho ? 'password' : 'input'
 
@@ -288,6 +287,9 @@ const buildStringInquiry = (param, name) => {
     type = 'list'
     inquiry.choices = AllowedValues
   }
+
+  // TODO: deal with edge case where NoEcho + List type
+  if (NoEcho && prevParam) inquiry.default = `****${prevParam.slice(-4)}`
 
   if (type === 'input' || type === 'password') {
     inquiry.validate = (input) => {
@@ -312,8 +314,6 @@ const buildStringInquiry = (param, name) => {
 
   return inquiry
 }
-
-exports.buildStringInquiry = buildStringInquiry
 
 // CFN doesn't respect AllowedValues + Defaults, so while this is nice for CFDN,
 // if you ever upload a template with AllowedValues + Defaults on a List<Number>
@@ -625,7 +625,7 @@ exports.buildInstanceInquiry = (param, name, region, aws, type, prevParam) => {
   return inquiry
 }
 
-exports.buildKeyPairInquiry = (param, name, region, aws) => {
+exports.buildKeyPairInquiry = (param, name, region, aws, prevParam) => {
   const {
     Description,
   } = param
@@ -635,6 +635,8 @@ exports.buildKeyPairInquiry = (param, name, region, aws) => {
     name,
     message: baseInqMsg(name, Description),
   }
+
+  if (prevParam) inquiry.default = prevParam
 
   inquiry.choices = async () => {
     const ec2 = new aws.EC2({ region })
@@ -655,7 +657,7 @@ exports.buildKeyPairInquiry = (param, name, region, aws) => {
   return inquiry
 }
 
-exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type) => {
+exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type, prevParam) => {
   const {
     Description,
   } = param
@@ -676,10 +678,19 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type) =
       const res = await ec2.describeSecurityGroups().promise()
 
       choices = res.SecurityGroups.map((sg) => {
+        let choice
+
         if (property === 'GroupId') {
-          return { name: `${sg[property]} (${sg.GroupName})`, value: sg[property] }
+          choice = { name: `${sg[property]} (${sg.GroupName})`, value: sg[property] }
+        } else {
+          choice = { name: `${sg[property]} (${sg.GroupId})`, value: sg[property] }
         }
-        return { name: `${sg[property]} (${sg.GroupId})`, value: sg[property] }
+
+        if (type === 'checkbox' && prevParam && prevParam.indexOf(choice.value) !== -1) {
+          choice.checked = true
+        }
+
+        return choice
       })
     } catch (error) {
       throw error
@@ -689,6 +700,8 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type) =
   }
 
   if (type === 'checkbox') inquiry.filter = input => input.join(',')
+
+  if (type === 'list') inquiry.default = prevParam
 
   return inquiry
 }
@@ -764,7 +777,7 @@ exports.buildVolumeInquiry = (param, name, region, aws, type) => {
   return inquiry
 }
 
-exports.buildVpcInquiry = (param, name, region, aws, type) => {
+exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
   const {
     Description,
   } = param
@@ -788,7 +801,11 @@ exports.buildVpcInquiry = (param, name, region, aws, type) => {
         const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
         const subname = tagname ? ` (${tagname.Value})` : ''
 
-        return { name: `${v.VpcId}${subname}`, value: v.VpcId }
+        const choice = { name: `${v.VpcId}${subname}`, value: v.VpcId }
+
+        if (prevParam && prevParam.indexOf(choice.value) !== -1) choice.checked = true
+
+        return choice
       })
     } catch (error) {
       throw error
@@ -874,7 +891,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
 
   switch (param.Type) {
     case 'String':
-      inquiry = this.buildStringInquiry(param, name)
+      inquiry = this.buildStringInquiry(param, name, prevParam)
       break
 
     case 'Number':
@@ -902,15 +919,15 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::KeyPair::KeyName':
-      inquiry = this.buildKeyPairInquiry(param, name, region, aws)
+      inquiry = this.buildKeyPairInquiry(param, name, region, aws, prevParam)
       break
 
     case 'AWS::EC2::SecurityGroup::GroupName':
-      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupName', 'list')
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupName', 'list', prevParam)
       break
 
     case 'AWS::EC2::SecurityGroup::Id':
-      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupId', 'list')
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupId', 'list', prevParam)
       break
 
     case 'AWS::EC2::Subnet::Id':
@@ -922,7 +939,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::VPC::Id':
-      inquiry = this.buildVpcInquiry(param, name, region, aws, 'list')
+      inquiry = this.buildVpcInquiry(param, name, region, aws, 'list', prevParam)
       break
 
     case 'AWS::Route53::HostedZone::Id':
@@ -943,11 +960,11 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::EC2::SecurityGroup::GroupName>':
-      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupName', 'checkbox')
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupName', 'checkbox', prevParam)
       break
 
     case 'List<AWS::EC2::SecurityGroup::Id>':
-      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupId', 'checkbox')
+      inquiry = this.buildSecurityGroupInquiry(param, name, region, aws, 'GroupId', 'checkbox', prevParam)
       break
 
     case 'List<AWS::EC2::Subnet::Id>':
@@ -959,7 +976,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::EC2::VPC::Id>':
-      inquiry = this.buildVpcInquiry(param, name, region, aws, 'checkbox')
+      inquiry = this.buildVpcInquiry(param, name, region, aws, 'checkbox', prevParam)
       break
 
     case 'List<AWS::Route53::HostedZone::Id>':
@@ -980,9 +997,9 @@ exports.selectStackParams = async (Parameters, region, aws, prevParams) => {
 
   const paramInq = []
 
-  paramNames.forEach(name => {
-    return paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws, prevParams && prevParams[name]))
-  })
+  paramNames.forEach(name => (
+    paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws, prevParams && prevParams[name]))
+  ))
 
   try {
     log(chk.bold.whiteBright('Parameter Values to be used for the stack...'))
