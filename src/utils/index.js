@@ -556,7 +556,7 @@ exports.buildAZInquiry = (param, name, region, aws, type, prevParam) => {
 // So this winds up being more or less just like a string:
 // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#aws-specific-parameter-types-supported
 // right under "AWS::EC2::Image::Id"
-exports.buildImageInquiry = (param, name) => {
+exports.buildImageInquiry = (param, name, prevParam) => {
   const {
     AllowedValues,
     Default,
@@ -566,7 +566,7 @@ exports.buildImageInquiry = (param, name) => {
   const inquiry = {
     name,
     message: baseInqMsg(name, Description),
-    default: Default,
+    default: prevParam || Default,
   }
 
   let type = AllowedValues ? 'list' : 'input'
@@ -914,7 +914,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::Image::Id':
-      inquiry = this.buildImageInquiry(param, name)
+      inquiry = this.buildImageInquiry(param, name, prevParam)
       break
 
     case 'AWS::EC2::Instance::Id':
@@ -955,7 +955,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
 
     // Needs to be the same as comma delimited list, since the CFN console also doesn't show all images
     case 'List<AWS::EC2::Image::Id>':
-      inquiry = this.buildCommaListInquiry(param, name)
+      inquiry = this.buildCommaListInquiry(param, name, prevParam)
       break
 
     case 'List<AWS::EC2::Instance::Id>':
