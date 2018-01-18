@@ -472,65 +472,55 @@ exports.buildCommaListInquiryWithCheckbox = (param, name) => {
   return inquiry
 }
 
+// TODO: Handle weird AllowedValues + Defaults.
+// i.e. Fow AllowedValues: ["a", "b", "c"] one might think that a Default: "a,b" would be valid.
+// But it's not.  It's because "a,b" is not in that array of AllowedValues.  If AllowedValues was: ["a,b", "c", "d"] ...
+// THEN "a,b" would be a valid default
 exports.buildCommaListInquiry = (param, name, prevParam) => {
   const {
-    AllowedValues,
     ConstraintDescription,
     Default,
     Description,
   } = param
 
-  const type = AllowedValues ? 'list' : 'input'
-
   const inquiry = {
-    type,
+    type: 'input',
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
-  if (type === 'input') {
-    if (Default) inquiry.default = Default
-
-    inquiry.validate = (input) => {
-      if (input) {
-        const r = /^(?:[-\w.@]+)(?:,\s*[-\w.@]+)*$/g
-        if (!r.test(input)) {
-          return ConstraintDescription || `${name} must be a comma delimited list of strings i.e. testA,testB,testC`
-        }
+  inquiry.validate = (input) => {
+    if (input) {
+      const r = /^(?:[-\w.@]+)(?:,\s*[-\w.@]+)*$/g
+      if (!r.test(input)) {
+        return ConstraintDescription || `${name} must be a comma delimited list of strings i.e. testA,testB,testC`
       }
-      return true
     }
-
-    inquiry.filter = input => input.toString().replace(/\s/g, '')
+    return true
   }
 
-  if (type === 'list') {
-    const defaults = Default && Default.toString().replace(/\s/g, '').split(',')
-
-    inquiry.choices = AllowedValues.reduce((sum, val) => {
-      const choice = {
-        name: val,
-        value: val,
-      }
-
-      if (defaults && defaults.indexOf(val) > -1) choice.checked = true
-
-      return sum.concat(choice)
-    }, [])
-  }
+  inquiry.filter = input => input.toString().replace(/\s/g, '')
 
   return inquiry
 }
 
-exports.buildAZInquiry = (param, name, region, aws, type) => {
+exports.checkboxDefault = (choice, defaults) => {
+  if (defaults && defaults.indexOf(choice.value) > -1) choice.checked = true
+  return choice
+}
+
+exports.buildAZInquiry = (param, name, region, aws, type, prevParam) => {
   const {
     Description,
+    Default,
   } = param
 
   const inquiry = {
     type,
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
   inquiry.choices = async () => {
@@ -541,7 +531,15 @@ exports.buildAZInquiry = (param, name, region, aws, type) => {
 
     try {
       const zones = await ec2.describeAvailabilityZones().promise()
-      choices = zones.AvailabilityZones.map(z => z.State === 'available' && z.ZoneName)
+      choices = zones.AvailabilityZones.map((z) => {
+        if (!z.State === 'available') return undefined
+
+        let choice = { name: z.ZoneName, value: z.ZoneName }
+
+        if (type === 'checkbox') choice = this.checkboxDefault(choice, inquiry.default)
+
+        return choice
+      })
     } catch (error) {
       throw error
     }
@@ -891,7 +889,6 @@ exports.buildHostedZoneInquiry = (param, name, region, aws, type, prevParam) => 
 // Requires the name of the param, the region of the stack, and a configured AWS sdk
 exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
   let inquiry
-  console.log(prevParam)
 
   // Now we need to match all the different conditions as in the notes
 
@@ -913,7 +910,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::AvailabilityZone::Name':
-      inquiry = this.buildAZInquiry(param, name, region, aws, 'list')
+      inquiry = this.buildAZInquiry(param, name, region, aws, 'list', prevParam)
       break
 
     case 'AWS::EC2::Image::Id':
@@ -953,7 +950,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::EC2::AvailabilityZone::Name>':
-      inquiry = this.buildAZInquiry(param, name, region, aws, 'checkbox')
+      inquiry = this.buildAZInquiry(param, name, region, aws, 'checkbox', prevParam)
       break
 
     // Needs to be the same as comma delimited list, since the CFN console also doesn't show all images
