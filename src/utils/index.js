@@ -211,9 +211,12 @@ exports.writeStackFile = (templateDir, stack) => {
 
 // PARAMETER INQUIRY TYPES
 
+// All params, when passed via CFN SDK, must be a string.
+const stringFilter = input => input.toString()
+
 const baseInqMsg = (name, description) => (`${name}${description ? ` - ${description}` : ''}`)
 
-exports.buildNumberInquiry = (param, name) => {
+exports.buildNumberInquiry = (param, name, prevParam) => {
   const {
     AllowedValues,
     ConstraintDescription,
@@ -227,7 +230,8 @@ exports.buildNumberInquiry = (param, name) => {
   const inquiry = {
     name,
     message: baseInqMsg(name, Description),
-    default: Default,
+    default: prevParam || Default,
+    filter: stringFilter,
   }
 
   let type = NoEcho ? 'password' : 'input'
@@ -235,12 +239,14 @@ exports.buildNumberInquiry = (param, name) => {
   if (AllowedValues) {
     type = 'list'
     inquiry.choices = AllowedValues.map(d => d.toString())
-    inquiry.default = Default.toString()
+    inquiry.default = inquiry.default && inquiry.default.toString()
   }
+
+  if (NoEcho && prevParam && inquiry.default) inquiry.default = new Array(inquiry.default.length + 1).join('*')
 
   if (type === 'input' || type === 'password') {
     inquiry.validate = (input) => {
-      if (!/^-?\d+\.?\d*$/.test(input)) {
+      if (!isNaN(parseFloat(input)) && isFinite(input)) {
         return ConstraintDescription || `${name} must be an integer or float!`
       }
 
@@ -257,7 +263,6 @@ exports.buildNumberInquiry = (param, name) => {
   }
 
   inquiry.type = type
-  inquiry.filter = input => parseFloat(input)
 
   return inquiry
 }
@@ -278,6 +283,7 @@ exports.buildStringInquiry = (param, name, prevParam) => {
     name,
     message: baseInqMsg(name, Description),
     default: prevParam || Default,
+    filter: stringFilter,
   }
 
 
@@ -317,8 +323,9 @@ exports.buildStringInquiry = (param, name, prevParam) => {
 
 // CFN doesn't respect AllowedValues + Defaults, so while this is nice for CFDN,
 // if you ever upload a template with AllowedValues + Defaults on a List<Number>
-// you just get an error.
-exports.buildNumberListInquiryWithCheckbox = (param, name) => {
+// you just get an error
+// UNUSED:
+exports.buildNumberListInquiryWithCheckbox = (param, name, prevParam) => {
   const {
     AllowedValues,
     ConstraintDescription,
@@ -332,6 +339,7 @@ exports.buildNumberListInquiryWithCheckbox = (param, name) => {
     type,
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
   if (type === 'input') {
@@ -378,7 +386,7 @@ exports.buildNumberListInquiryWithCheckbox = (param, name) => {
   return inquiry
 }
 
-const buildNumberListInquiry = (param, name) => {
+exports.buildNumberListInquiry = (param, name, prevParam) => {
   const {
     ConstraintDescription,
     Default,
@@ -389,9 +397,8 @@ const buildNumberListInquiry = (param, name) => {
     type: 'input',
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
-
-  if (Default) inquiry.default = Default
 
   inquiry.validate = (input) => {
     if (!input) return true
@@ -409,11 +416,10 @@ const buildNumberListInquiry = (param, name) => {
   return inquiry
 }
 
-exports.buildNumberListInquiry = buildNumberListInquiry
-
 // Once again, CFN does not interpret AllowedValues + Defaults on CommaDelimitedList correctly.
 // If you specify them both, you'd expect to be able to select from a number of them.
 // Instead specifying AllowedValues only allows you to set ONE option as a Default.
+// UNUSED
 exports.buildCommaListInquiryWithCheckbox = (param, name) => {
   const {
     AllowedValues,
@@ -466,7 +472,7 @@ exports.buildCommaListInquiryWithCheckbox = (param, name) => {
   return inquiry
 }
 
-exports.buildCommaListInquiry = (param, name) => {
+exports.buildCommaListInquiry = (param, name, prevParam) => {
   const {
     AllowedValues,
     ConstraintDescription,
@@ -895,15 +901,15 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'Number':
-      inquiry = this.buildNumberInquiry(param, name)
+      inquiry = this.buildNumberInquiry(param, name, prevParam)
       break
 
     case 'List<Number>':
-      inquiry = this.buildNumberListInquiry(param, name)
+      inquiry = this.buildNumberListInquiry(param, name, prevParam)
       break
 
     case 'CommaDelimitedList':
-      inquiry = this.buildCommaListInquiry(param, name)
+      inquiry = this.buildCommaListInquiry(param, name, prevParam)
       break
 
     case 'AWS::EC2::AvailabilityZone::Name':
