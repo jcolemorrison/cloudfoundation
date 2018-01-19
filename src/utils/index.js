@@ -754,8 +754,9 @@ exports.buildSubnetInquiry = (param, name, region, aws, type, prevParam) => {
   return inquiry
 }
 
-exports.buildVolumeInquiry = (param, name, region, aws, type) => {
+exports.buildVolumeInquiry = (param, name, region, aws, type, prevParam) => {
   const {
+    Default,
     Description,
   } = param
 
@@ -763,6 +764,7 @@ exports.buildVolumeInquiry = (param, name, region, aws, type) => {
     type,
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
   inquiry.choices = async () => {
@@ -774,7 +776,15 @@ exports.buildVolumeInquiry = (param, name, region, aws, type) => {
     try {
       const res = await ec2.describeVolumes().promise()
 
-      choices = res.Volumes.map(v => v.VolumeId)
+      choices = res.Volumes.map((v) => {
+        const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
+        const subname = tagname ? ` (${tagname.Value})` : ''
+        let choice = { name: `${v.VolumeId}${subname}`, value: v.VolumeId }
+
+        if (type === 'checkbox') choice = this.checkboxDefault(choice, inquiry.default)
+
+        return choice
+      })
     } catch (error) {
       throw error
     }
@@ -789,6 +799,7 @@ exports.buildVolumeInquiry = (param, name, region, aws, type) => {
 
 exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
   const {
+    Default,
     Description,
   } = param
 
@@ -796,6 +807,7 @@ exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
     type,
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
   inquiry.choices = async () => {
@@ -811,9 +823,9 @@ exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
         const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
         const subname = tagname ? ` (${tagname.Value})` : ''
 
-        const choice = { name: `${v.VpcId}${subname}`, value: v.VpcId }
+        let choice = { name: `${v.VpcId}${subname}`, value: v.VpcId }
 
-        if (prevParam && prevParam.indexOf(choice.value) !== -1) choice.checked = true
+        if (type === 'checkbox') choice = this.checkboxDefault(choice, inquiry.default)
 
         return choice
       })
@@ -831,6 +843,7 @@ exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
 
 exports.buildHostedZoneInquiry = (param, name, region, aws, type, prevParam) => {
   const {
+    Default,
     Description,
   } = param
 
@@ -838,6 +851,7 @@ exports.buildHostedZoneInquiry = (param, name, region, aws, type, prevParam) => 
     type,
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
   inquiry.choices = async () => {
@@ -851,12 +865,12 @@ exports.buildHostedZoneInquiry = (param, name, region, aws, type, prevParam) => 
 
       choices = res.HostedZones.map((z) => {
         const id = z.Id.split('/')[2]
-        const choice = {
+        let choice = {
           name: `${z.Name} (${id})`,
           value: id, // CFN requires only the number from `/hostedzone/:number`
         }
 
-        if (prevParam && prevParam.indexOf(id) !== -1) choice.checked = true
+        if (type === 'checkbox') choice = this.checkboxDefault(choice, inquiry.default)
 
         return choice
       })
@@ -944,7 +958,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::Volume::Id':
-      inquiry = this.buildVolumeInquiry(param, name, region, aws, 'list')
+      inquiry = this.buildVolumeInquiry(param, name, region, aws, 'list', prevParam)
       break
 
     case 'AWS::EC2::VPC::Id':
@@ -981,7 +995,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::EC2::Volume::Id>':
-      inquiry = this.buildVolumeInquiry(param, name, region, aws, 'checkbox')
+      inquiry = this.buildVolumeInquiry(param, name, region, aws, 'checkbox', prevParam)
       break
 
     case 'List<AWS::EC2::VPC::Id>':
