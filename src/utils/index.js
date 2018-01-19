@@ -587,6 +587,7 @@ exports.buildImageInquiry = (param, name, prevParam) => {
 
 exports.buildInstanceInquiry = (param, name, region, aws, type, prevParam) => {
   const {
+    Default,
     Description,
   } = param
 
@@ -594,6 +595,7 @@ exports.buildInstanceInquiry = (param, name, region, aws, type, prevParam) => {
     type,
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
   inquiry.choices = async () => {
@@ -609,9 +611,9 @@ exports.buildInstanceInquiry = (param, name, region, aws, type, prevParam) => {
         const instances = reservation.Instances.map((i) => {
           const tagname = i.Tags && i.Tags.filter(t => t.Key === 'Name')[0]
           const subname = tagname ? ` (${tagname.Value})` : ''
-          const choice = { name: `${i.InstanceId}${subname}`, value: i.InstanceId }
+          let choice = { name: `${i.InstanceId}${subname}`, value: i.InstanceId }
 
-          if (prevParam && prevParam.indexOf(choice.value) !== -1) choice.checked = true
+          if (type === 'checkbox') choice = this.checkboxDefault(choice, inquiry.default)
 
           return choice
         })
@@ -631,6 +633,7 @@ exports.buildInstanceInquiry = (param, name, region, aws, type, prevParam) => {
 
 exports.buildKeyPairInquiry = (param, name, region, aws, prevParam) => {
   const {
+    Default,
     Description,
   } = param
 
@@ -638,9 +641,8 @@ exports.buildKeyPairInquiry = (param, name, region, aws, prevParam) => {
     type: 'list',
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
-
-  if (prevParam) inquiry.default = prevParam
 
   inquiry.choices = async () => {
     const ec2 = new aws.EC2({ region })
@@ -663,6 +665,7 @@ exports.buildKeyPairInquiry = (param, name, region, aws, prevParam) => {
 
 exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type, prevParam) => {
   const {
+    Default,
     Description,
   } = param
 
@@ -670,6 +673,7 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type, p
     type,
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
   inquiry.choices = async () => {
@@ -690,9 +694,7 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type, p
           choice = { name: `${sg[property]} (${sg.GroupId})`, value: sg[property] }
         }
 
-        if (type === 'checkbox' && prevParam && prevParam.indexOf(choice.value) !== -1) {
-          choice.checked = true
-        }
+        if (type === 'checkbox') choice = this.checkboxDefault(choice, inquiry.default)
 
         return choice
       })
@@ -705,13 +707,13 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type, p
 
   if (type === 'checkbox') inquiry.filter = input => input.join(',')
 
-  if (type === 'list') inquiry.default = prevParam
-
   return inquiry
 }
 
-exports.buildSubnetInquiry = (param, name, region, aws, type) => {
+// TODO: Allow for Allowed Values
+exports.buildSubnetInquiry = (param, name, region, aws, type, prevParam) => {
   const {
+    Default,
     Description,
   } = param
 
@@ -719,6 +721,7 @@ exports.buildSubnetInquiry = (param, name, region, aws, type) => {
     type,
     name,
     message: baseInqMsg(name, Description),
+    default: prevParam || Default,
   }
 
   inquiry.choices = async () => {
@@ -733,8 +736,11 @@ exports.buildSubnetInquiry = (param, name, region, aws, type) => {
       choices = res.Subnets.map((s) => {
         const tagname = s.Tags && s.Tags.filter(t => t.Key === 'Name')[0]
         const subname = tagname ? ` (${tagname.Value})` : ''
+        let choice = { name: `${s.SubnetId}${subname} | ${s.VpcId}`, value: s.SubnetId }
 
-        return { name: `${s.SubnetId}${subname} | ${s.VpcId}`, value: s.SubnetId }
+        if (type === 'checkbox') choice = this.checkboxDefault(choice, inquiry.default)
+
+        return choice
       })
     } catch (error) {
       throw error
@@ -934,7 +940,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::Subnet::Id':
-      inquiry = this.buildSubnetInquiry(param, name, region, aws, 'list')
+      inquiry = this.buildSubnetInquiry(param, name, region, aws, 'list', prevParam)
       break
 
     case 'AWS::EC2::Volume::Id':
@@ -971,7 +977,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::EC2::Subnet::Id>':
-      inquiry = this.buildSubnetInquiry(param, name, region, aws, 'checkbox')
+      inquiry = this.buildSubnetInquiry(param, name, region, aws, 'checkbox', prevParam)
       break
 
     case 'List<AWS::EC2::Volume::Id>':
