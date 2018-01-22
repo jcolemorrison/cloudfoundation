@@ -43,12 +43,13 @@ exports.addTags = async (tags = [], done) => {
   return tags
 }
 
-exports.addIamRole = async () => {
+exports.addIamRole = async (defaultVal) => {
   try {
     const role = await inq.prompt({
       type: 'input',
       message: 'ARN of IAM Role to use:',
       name: 'arn',
+      default: defaultVal,
     })
 
     return role.arn ? role.arn : false
@@ -100,7 +101,7 @@ exports.createSNSTopic = async (region, aws) => {
   }
 }
 
-exports.setStackSNS = async (region, aws) => {
+exports.setStackSNS = async (region, aws, prev) => {
   try {
     let sns = await inq.prompt({
       type: 'list',
@@ -120,6 +121,7 @@ exports.setStackSNS = async (region, aws) => {
         type: 'input',
         message: 'ARN of SNS topic:',
         name: 'TopicArn',
+        default: prev,
       })
     }
 
@@ -129,8 +131,9 @@ exports.setStackSNS = async (region, aws) => {
   }
 }
 
-exports.selectAdvancedStackOptions = async (region, aws) => {
+exports.selectAdvancedStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   const options = {}
+
   try {
     let sns = await inq.prompt({
       type: 'confirm',
@@ -140,9 +143,19 @@ exports.selectAdvancedStackOptions = async (region, aws) => {
     })
 
     if (sns) {
-      sns = await this.setStackSNS(region, aws)
+      sns = await this.setStackSNS(region, aws, prevOpts.snsTopicArn)
 
       if (sns) options.snsTopicArn = sns
+    }
+
+    if (isUpdate) {
+      const { terminationProtection, timeout, onFailure } = prevOpts
+
+      options.terminationProtection = terminationProtection
+      options.timeout = timeout
+      options.onFailure = onFailure
+
+      return options
     }
 
     const termination = await inq.prompt({
@@ -187,65 +200,189 @@ exports.selectAdvancedStackOptions = async (region, aws) => {
   return options
 }
 
-exports.selectStackOptions = async (region, aws, prevOpts) => {
+exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   const options = {}
 
+  // console.log(prevOpts)
+
   try {
-    let tags = await inq.prompt({
-      type: 'confirm',
-      message: 'Would you like to add tags to this stack?',
-      default: false,
-      name: 'add',
-    })
+    let tags
+    let iamRole
+    let advanced
+    let capabilityIam
 
-    if (tags.add) {
-      tags = await this.addTags()
+    // Use or Reuse Tags
+    if (prevOpts.tags) {
+      log.p(this.displayTags(prevOpts.tags))
+      log.i('Previous tags found.\n')
 
-      if (tags && tags.length) options.tags = tags
-      log.p()
+      const reuse = await inq.prompt({
+        type: 'confirm',
+        message: 'Would you like to use these tags?',
+        default: true,
+        name: 'tags',
+      })
+
+      tags = reuse.tags && prevOpts.tags
     }
 
-    let iamRole = await inq.prompt({
-      type: 'confirm',
-      message: 'Would you like to use a separate IAM role to create / update this stack?',
-      default: false,
-      name: 'add',
-    })
+    if (!tags) {
+      tags = await inq.prompt({
+        type: 'confirm',
+        message: 'Would you like to add tags to this stack?',
+        default: false,
+        name: 'add',
+      })
 
-    if (iamRole.add) {
-      iamRole = await this.addIamRole()
-
-      if (iamRole) options.iamRole = iamRole
-      log.p()
+      tags = tags.add && await this.addTags()
     }
 
-    let advanced = await inq.prompt({
-      type: 'confirm',
-      message: 'Would you like to configure advanced options for your stack? i.e. notifications',
-      default: false,
-      name: 'add',
-    })
+    if (tags && tags.length) options.tags = tags
 
-    if (advanced.add) {
-      advanced = await this.selectAdvancedStackOptions(region, aws)
+    log.p()
 
-      if (advanced) options.advanced = { ...advanced }
-      log.p()
+    // Use or Reuse IAM Role
+    if (prevOpts.iamRole) {
+      log.p(this.displayIamRole(prevOpts.iamRole))
+      log.i('Previous IAM Role settings found.\n')
+
+      const reuse = await inq.prompt({
+        type: 'confirm',
+        message: 'Would you like to use this IAM Role?',
+        default: true,
+        name: 'iamRole',
+      })
+
+      iamRole = reuse.iamRole && prevOpts.iamRole
     }
 
-    const capabilityIam = await inq.prompt({
-      type: 'confirm',
-      message: 'Allow stack to create IAM resources?',
-      default: true,
-      name: 'add',
-    })
+    if (!iamRole) {
+      iamRole = await inq.prompt({
+        type: 'confirm',
+        message: 'Would you like to use a separate IAM role to create / update this stack?',
+        default: false,
+        name: 'add',
+      })
 
-    if (capabilityIam.add) options.capabilityIam = true
+      iamRole = iamRole.add && await this.addIamRole(prevOpts.iamRole)
+    }
+
+    if (iamRole) options.iamRole = iamRole
+
+    log.p()
+
+    // Use and Reuse Advanced Settings
+
+    if (prevOpts.advanced) {
+      log.p(this.displayAdvanced(prevOpts.advanced))
+      log.i('Previous Advanced settings found.\n')
+
+      const reuse = await inq.prompt({
+        type: 'confirm',
+        message: 'Would you like to use the above advanced settings?',
+        default: true,
+        name: 'advanced',
+      })
+
+      advanced = reuse.advanced && prevOpts.advanced
+    }
+
+    if (!advanced) {
+      advanced = await inq.prompt({
+        type: 'confirm',
+        message: 'Would you like to configure advanced options for your stack? i.e. notifications',
+        default: false,
+        name: 'add',
+      })
+
+      advanced = advanced.add && await this.selectAdvancedStackOptions(region, aws, prevOpts.advanced, isUpdate)
+    }
+
+    if (advanced) options.advanced = { ...advanced }
+
+    log.p()
+
+    if (prevOpts.capabilityIam) {
+      log.p(this.displayIamCapability(prevOpts.capabilityIam))
+      log.i('Previous IAM Capability settings found.\n')
+
+      const reuse = await inq.prompt({
+        type: 'confirm',
+        message: 'Would you like to use this IAM Capability?',
+        default: true,
+        name: 'capability',
+      })
+
+      capabilityIam = reuse.capability && prevOpts.advanced
+    }
+
+    if (!capabilityIam) {
+      capabilityIam = await inq.prompt({
+        type: 'confirm',
+        message: 'Allow stack to create IAM resources?',
+        default: true,
+        name: 'add',
+      })
+
+      capabilityIam = capabilityIam.add
+    }
+
+    if (capabilityIam) options.capabilityIam = true
   } catch (error) {
     throw error
   }
 
   return options
+}
+
+exports.displayTags = (tags) => {
+  const tagsDisplay = tags && tags.reduce((s, t) => {
+    s += `${t.Key}, ${t.Value}\n`
+    return s
+  }, '')
+
+  const tagsInfo = `${chk.green('Tags (Name, Value)')}
+------------------------
+${tagsDisplay}`
+
+  return tagsInfo
+}
+
+exports.displayIamRole = (iamRole) => {
+  const role = iamRole || 'Profile IAM Permissions'
+  const optionsInfo = `${chk.green('IAM Role')}
+------------------------
+IamRole: ${role}
+`
+  return optionsInfo
+}
+
+exports.displayIamCapability = (iam) => {
+  const capabilityIam = iam ? 'true' : 'false'
+  const optionsInfo = `${chk.green('IAM Capabilties')}
+------------------------
+Create IAM Resources: ${capabilityIam}
+`
+  return optionsInfo
+}
+
+exports.displayAdvanced = (advanced) => {
+  const {
+    snsTopicArn,
+    terminationProtection,
+    timeout,
+    onFailure,
+  } = advanced || {}
+
+  let advancedInfo = `${chk.green('Advanced')}
+------------------------
+`
+  if (snsTopicArn) advancedInfo += `SNS Notification Topic ARN: ${snsTopicArn}\n`
+  if (terminationProtection) advancedInfo += `Termination Protection Enabled: ${terminationProtection}\n`
+  if (timeout) advancedInfo += `Timeout in Minutes: ${timeout}\n`
+  if (onFailure) advancedInfo += `On Failure Behavior: ${onFailure}\n`
+
+  return advancedInfo
 }
 
 exports.reviewStackInfo = (name, stack, message, action) => {
@@ -271,49 +408,17 @@ Region: ${region}
   info.push(generalInfo)
 
   // Add Stack Option Info
-  const iamRole = opts.iamRole ? opts.iamRole : 'Profile IAM Permissions'
-  const capabilityIam = opts.capabilityIam ? 'true' : 'false'
-  const optionsInfo = `
-${chk.green('Options')}
-------------------------
-IamRole: ${iamRole}
-Create IAM Resources: ${capabilityIam}
-`
-  info.push(optionsInfo)
+  info.push(this.displayIamRole(opts.iamRole))
+  info.push(this.displayIamCapability(opts.capabilityIam))
 
   // Add Tags Info
   if (opts.tags) {
-    const tags = opts.tags && opts.tags.reduce((s, t) => {
-      s += `${t.Key}, ${t.Value}\n`
-      return s
-    }, '')
-
-    const tagsInfo = `
-${chk.green('Tags (Name, Value)')}
-------------------------
-${tags}`
-    info.push(tagsInfo)
+    info.push(this.displayTags(opts.tags))
   }
 
   // Add Advanced Settings Info
   if (opts.advanced && Object.keys(opts.advanced).length) {
-    const {
-      snsTopicArn,
-      terminationProtection,
-      timeout,
-      onFailure,
-    } = opts.advanced || {}
-
-    let advancedInfo = `
-${chk.green('Advanced')}
-------------------------
-`
-    if (snsTopicArn) advancedInfo += `SNS Notification Topic ARN: ${snsTopicArn}\n`
-    if (terminationProtection) advancedInfo += `Termination Protection Enabled: ${terminationProtection}\n`
-    if (timeout) advancedInfo += `Timeout in Minutes: ${timeout}\n`
-    if (onFailure) advancedInfo += `On Failure Behavior: ${onFailure}\n`
-
-    info.push(advancedInfo)
+    info.push(this.displayAdvanced(opts.advanced))
   }
 
   // Add Parameter Info
@@ -322,8 +427,7 @@ ${chk.green('Advanced')}
     s += `${key} = ${parameters[key]}\n`
     return s
   }, '')
-  const paramInfo = `
-${chk.green('Parameters')}
+  const paramInfo = `${chk.green('Parameters')}
 ------------------------
 ${params}`
   info.push(paramInfo)
@@ -388,4 +492,32 @@ exports.createStack = async (template, name, stack, aws) => {
   } catch (error) {
     throw error
   }
+}
+
+exports.updateStack = async (template, name, stack, aws) => {
+  const { region, options, parameters } = stack
+  const cfn = new aws.CloudFormation({ region })
+  const opts = { StackName: name, TemplateBody: JSON.stringify(template) }
+
+  if (parameters) {
+    opts.Parameters = Object.keys(parameters).map(k => ({ ParameterKey: k, ParameterValue: parameters[k].toString() }))
+  }
+
+  if (options) {
+    const { tags, iamRole, advanced, capabilityIam } = options
+
+    if (tags) opts.Tags = tags
+    if (iamRole) opts.RoleArn = iamRole
+    if (capabilityIam) opts.Capabilities = ['CAPABILITY_NAMED_IAM']
+
+    if (advanced) {
+      const { snsTopicArn } = advanced
+
+      if (snsTopicArn) opts.NotificationARNs = [snsTopicArn]
+    }
+  }
+
+  const { StackId } = await cfn.updateStack(opts).promise()
+
+  return StackId
 }

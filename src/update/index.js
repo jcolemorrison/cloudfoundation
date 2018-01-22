@@ -8,12 +8,12 @@ const {
   writeStackFile,
   getTemplateAsObject,
   selectStackParams,
-  selectRegion,
   configAWS,
 } = require('../utils')
 
-const { selectStackOptions, confirmStack, createStack } = require('../utils/stacks')
-const { checkValidProfile, selectProfile, _getProfile } = require('../profiles')
+const { selectStackOptions, confirmStack, updateStack } = require('../utils/stacks')
+const { checkValidProfile, _getProfile } = require('../profiles')
+
 const { cyan } = chk
 
 module.exports = async function update (env, opts) {
@@ -68,6 +68,7 @@ module.exports = async function update (env, opts) {
       if (stackInq && stackInq.name) {
         stackName = stackInq.name
         stack = stackFile[stackName]
+        stackRegion = stack.region
         checkValidProfile(stack.profile.name)
         profile = _getProfile(stack.profile.name)
       }
@@ -81,6 +82,7 @@ module.exports = async function update (env, opts) {
       }
 
       stack = stackFile[stackName]
+      stackRegion = stack.region
       checkValidProfile(stack.profile.name)
       profile = _getProfile(stack.profile.name)
     } catch (error) {
@@ -89,7 +91,7 @@ module.exports = async function update (env, opts) {
   }
 
   try {
-    const msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}\n`
+    let msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}\n`
 
     aws = configAWS(profile || 'default')
     template = getTemplateAsObject(templateName)
@@ -111,7 +113,7 @@ module.exports = async function update (env, opts) {
       const params = await selectStackParams(template.Parameters, stack.region, aws, stack.parameters)
 
       log.p()
-      const options = await selectStackOptions(stack.region, aws, stack.options)
+      const options = await selectStackOptions(stack.region, aws, stack.options, true)
 
       stack = {
         profile: { name: stack.profile.name, type: stack.profile.type },
@@ -119,9 +121,22 @@ module.exports = async function update (env, opts) {
         options,
         parameters: params,
       }
+
+      msg = `Use the above options for ${chk.cyan(stackName)} update?`
+
+      // need to deal with this NOT showing the info a second time when you confirm it
+      const useNew = await confirmStack(templateName, stackName, stack, msg, 'Update')
+
+      if (!useNew) return false
     }
+
+    // Save stack, because if the deploy fails it'll be annoying to redo it
+    const saveSettings = { ...stackFile, [stackName]: { ...stack } }
+    writeStackFile(templateDir, saveSettings)
+
+    // Deploy the update
+    return await updateStack(template, stackName, stack, aws)
   } catch (error) {
     throw error
   }
-  console.log(stackName, stack, profile)
 }
