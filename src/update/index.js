@@ -91,10 +91,38 @@ module.exports = async function update (env, opts) {
   }
 
   try {
-    let msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}\n`
+    let msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}`
 
     aws = configAWS(profile || 'default')
     template = getTemplateAsObject(templateName)
+
+    // check for new params and optionally just let them fill those in and go
+    // console.log('current params', stack.parameters)
+    // console.log('all params', template.Parameters)
+    const existingParams = Object.keys(stack.parameters)
+    const newParamKeys = []
+    const newParams = Object.keys(template.Parameters).reduce((sum, p) => {
+      if (existingParams.indexOf(p) === -1) {
+        sum[p] = template.Parameters[p]
+        newParamKeys.push(p)
+      }
+      return sum
+    }, {})
+
+    if (newParamKeys.length > 0) {
+      log.p()
+      log.i(`New Parameters ${chk.cyan(newParamKeys.join(', '))} found.\n`)
+
+      const params = await selectStackParams(newParams, stack.region, aws)
+
+      stack.parameters = {
+        ...stack.parameters,
+        ...params,
+      }
+
+      msg = `Use the above options for ${chk.cyan(stackName)} update?`
+    }
+
     useExisting = await confirmStack(templateName, stackName, stack, msg, 'Update')
 
     if (!useExisting) {
@@ -135,7 +163,11 @@ module.exports = async function update (env, opts) {
     writeStackFile(templateDir, saveSettings)
 
     // Deploy the update
-    return await updateStack(template, stackName, stack, aws)
+    const stackId = await updateStack(template, stackName, stack, aws)
+
+    log.p()
+    log.s(`Stack ${chk.cyan(stackName)} successfully updated!`)
+    return log.i(`StackId: ${chk.cyan(stackId)}\n`)
   } catch (error) {
     throw error
   }

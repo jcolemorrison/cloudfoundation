@@ -103,7 +103,7 @@ module.exports = async function deploy (env, opts) {
         throw new Error(chk.red(`Stack ${cyan(stackName)} already exists.  Run ${cyan(`cfdn update ${templateName} --stackname ${stackName}`)} to modify it.`))
       }
 
-      const msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}\n`
+      const msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}`
       useExisting = await confirmStack(templateName, stackName, stackFile[stackName], msg, 'Deploy')
 
       if (useExisting) {
@@ -168,7 +168,7 @@ module.exports = async function deploy (env, opts) {
     // (c) ask if they want to save the values for later usage (DONE)
     // if (c) then save them to the stacks file.  Mark the stack as deployed. (DONE)
     if (!useExisting) {
-      if (!await confirmStack(templateName, stackName, stack)) return false
+      if (!await confirmStack(templateName, stackName, stack, false, 'Deploy')) return false
 
       saveSettings = await inq.prompt({
         type: 'confirm',
@@ -195,14 +195,11 @@ module.exports = async function deploy (env, opts) {
       saveSettings[stackName].stackId = stackId
       writeStackFile(templateDir, saveSettings)
     }
+
+    log.p()
+    log.s(`Stack ${chk.cyan(stackName)} successfully deployed!`)
+    return log.i(`StackId: ${chk.cyan(stackId)}\n`)
   } catch (error) {
     throw error
   }
-
-  return log.p(stack)
-
-  // log.p(templateName, stackName, profile, stackFile)
-  // first we need to handle if there's a template and stack name
-
-  // furthermore, let's not write anything until the entire thing is done - this way we can avoid unnecessary midway clean up
 }

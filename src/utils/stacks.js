@@ -434,7 +434,7 @@ ${params}`
 
   log.p(info.join('\n'))
 
-  if (message) log.p(chk.green(message))
+  if (message) log.p(`${chk.green(message)} ${chk.gray('(scroll up to see all)')}\n`)
   if (action === 'Update') {
     log.i('Termination Protection, Timeout in Minutes, and On Failure Behavior can only be set on creation of stacks.')
     log.i('Stack Name, Profile, and Region cannot be changed on a stack once deployed.\n')

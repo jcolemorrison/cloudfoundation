@@ -143,9 +143,13 @@ exports.checkValidProject = (cmd, action, env, opts) => {
   try {
     if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
   } catch (error) {
-    return exports.log.e(error.message)
+    return this.log.e(error.message)
   }
-  return action(env, opts).catch((e) => { error(e) })
+  return action(env, opts).catch((e) => {
+    this.log.p()
+    this.log.e(`${e.message}`)
+    error(e)
+  })
 }
 
 exports.inquireTemplateName = async (message) => {
@@ -246,7 +250,9 @@ exports.buildNumberInquiry = (param, name, prevParam) => {
 
   if (type === 'input' || type === 'password') {
     inquiry.validate = (input) => {
-      if (!isNaN(parseFloat(input)) && isFinite(input)) {
+      // console.log('HELLO')
+      // console.log(input)
+      if (isNaN(parseFloat(input)) && !isFinite(input)) {
         return ConstraintDescription || `${name} must be an integer or float!`
       }
 
@@ -1025,7 +1031,7 @@ exports.selectStackParams = async (Parameters, region, aws, prevParams) => {
   ))
 
   try {
-    log(chk.bold.whiteBright('Parameter Values to be used for the stack...'))
+    log(chk.bold.whiteBright('Parameter Values to be used for the stack...\n'))
     const choices = await inq.prompt(paramInq)
     return choices
   } catch (error) {
