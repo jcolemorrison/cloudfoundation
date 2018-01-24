@@ -146,9 +146,10 @@ exports.checkValidProject = (cmd, action, env, opts) => {
     return this.log.e(error.message)
   }
   return action(env, opts).catch((e) => {
-    this.log.p()
-    this.log.e(`${e.message}`)
+    log()
+    e.message = chk.red(e.message)
     error(e)
+    log()
   })
 }
 
@@ -176,12 +177,16 @@ exports.inquireTemplateName = async (message) => {
 
 exports.checkValidTemplate = (name) => {
   let template
+
   try {
     template = fs.existsSync(`${process.cwd()}/src/${name}`)
   } catch (error) {
     throw error
   }
+
   if (!template) throw new Error(`Template ${chk.cyan(name)} does not exist!`)
+
+  return name
 }
 
 exports.getStackFile = (templateDir) => {
@@ -190,15 +195,14 @@ exports.getStackFile = (templateDir) => {
 
   const stackFileExists = fs.existsSync(stackPath)
 
-  if (stackFileExists) {
-    try {
-      stackFile = fs.readJsonSync(stackPath)
-    } catch (error) {
-      throw error
-    }
-  }
+  if (!stackFileExists) throw new Error(`Stack file at ${stackPath} does not exist!`)
 
-  return stackFile
+  try {
+    stackFile = fs.readJsonSync(stackPath)
+    return stackFile
+  } catch (error) {
+    throw error
+  }
 }
 
 exports.writeStackFile = (templateDir, stack) => {

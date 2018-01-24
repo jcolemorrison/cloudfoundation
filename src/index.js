@@ -5,6 +5,7 @@ const create = require('./create')
 const validate = require('./validate')
 const deploy = require('./deploy')
 const update = require('./update')
+const describe = require('./describe')
 const test = require('./test')
 const {
   importProfiles,
@@ -58,6 +59,12 @@ cmd
   .description('update a stack created from [templatename] template')
   .action((e, o) => checkValidProject('update [templatename]', update, e, o))
 
+cmd
+  .command('describe [templatename]')
+  .option('-s, --stackname <stackname>', 'Name of stack to describe')
+  .description('describe a stack created from [templatename] template')
+  .action((e, o) => checkValidProject('describe [templatename]', describe, e, o))
+
 // TODO: write an error catcher for all of the below so there's no unhandled promise rejection shit.
 cmd
   .command('import-profiles')
@@ -110,6 +117,7 @@ const validArgs = [
   'validate',
   'deploy',
   'update',
+  'describe',
   'import-profiles',
   'list-profiles',
   'add-profile',

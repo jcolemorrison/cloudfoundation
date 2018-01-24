@@ -335,6 +335,20 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   return options
 }
 
+exports.selectStackName = async (templateName, stackFile) => {
+  const choices = Object.keys(stackFile)
+  const stackInq = await inq.prompt([
+    {
+      type: 'list',
+      name: 'name',
+      message: `Which stack, using template ${chk.cyan(templateName)}, would you like to update?`,
+      choices,
+    },
+  ])
+
+  return stackInq && stackInq.name
+}
+
 exports.displayTags = (tags) => {
   const tagsDisplay = tags && tags.reduce((s, t) => {
     s += `${t.Key}, ${t.Value}\n`
