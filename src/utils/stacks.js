@@ -335,8 +335,9 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   return options
 }
 
-exports.selectStackName = async (templateName, stackFile) => {
+exports.selectStackName = async (templateName, stackFile, includeAll) => {
   const choices = Object.keys(stackFile)
+  if (includeAll) choices.unshift('all')
   const stackInq = await inq.prompt([
     {
       type: 'list',
@@ -397,6 +398,53 @@ exports.displayAdvanced = (advanced) => {
   if (onFailure) advancedInfo += `On Failure Behavior: ${onFailure}\n`
 
   return advancedInfo
+}
+
+// The following displayStackProperty methods are for logging output returned from CFN's `describeStacks` call
+exports.displayStackParameters = (params) => {
+  const p = params.reduce((s, { ParameterKey, ParameterValue }) => {
+    s += `${ParameterKey} = ${ParameterValue}\n`
+    return s
+  }, '')
+
+  const display = `${chk.green('Parameters')}
+------------------------
+${p}`
+
+  return display
+}
+
+exports.displayStackOutputs = (outputs) => {
+  const o = outputs.reduce((s, { OutputKey, OutputValue, Description }) => {
+    s += `${OutputKey} = ${OutputValue} ${chk.gray(`(${Description})`)}\n`
+    return s
+  }, '')
+
+  const display = `${chk.green('Outputs')}
+------------------------
+${o}`
+
+  return display
+}
+
+exports.displayStackStatus = (StackStatus, CreationTime, LastUpdatedTime) => (`${chk.green('Status')}
+------------------------
+Stack Status: ${StackStatus}
+Creation Time: ${new Date(CreationTime).toLocaleString()}
+Last Updated Time: ${new Date(LastUpdatedTime).toLocaleString()}
+`)
+
+exports.displayStackOptions = (NotificationARNs, TimeoutInMinutes, Capabilities, EnableTerminationProtection) => {
+  let display = `${chk.green('Options')}
+------------------------
+`
+
+  if (NotificationARNs) display += `SNS Notification Topic ARN: ${NotificationARNs[0]}\n`
+  if (TimeoutInMinutes) display += `Timeout in Minutes: ${TimeoutInMinutes}\n`
+  if (Capabilities) display += `IAM Capabilities: ${Capabilities.length > 1 ? Capabilities.join(', ') : Capabilities[0]}\n`
+  if (EnableTerminationProtection) display += `Enable Termination Protection: ${EnableTerminationProtection ? 'True' : 'False'}\n`
+
+  return display
 }
 
 exports.reviewStackInfo = (name, stack, message, action) => {
@@ -534,4 +582,41 @@ exports.updateStack = async (template, name, stack, aws) => {
   const { StackId } = await cfn.updateStack(opts).promise()
 
   return StackId
+}
+
+exports.displayStack = (stack, columns) => {
+  const {
+    StackName,
+    StackId,
+    Description,
+    Parameters,
+    CreationTime,
+    LastUpdatedTime,
+    StackStatus,
+    NotificationARNs,
+    TimeoutInMinutes,
+    Capabilities,
+    Outputs,
+    Tags,
+    EnableTerminationProtection,
+  } = stack
+
+  const stackInfo = `${chk.cyan(`Stack ${StackName} Info`)}
+------------------------
+Stack Id: ${StackId}
+Description: ${Description}
+`
+  const display = [stackInfo]
+
+  if (!columns || columns.status) display.push(this.displayStackStatus(StackStatus, CreationTime, LastUpdatedTime))
+
+  if (!columns || columns.parameters) display.push(this.displayStackParameters(Parameters))
+
+  if (!columns || columns.info) display.push(this.displayStackOptions(NotificationARNs, TimeoutInMinutes, Capabilities, EnableTerminationProtection))
+
+  if (!columns || columns.tags) display.push(this.displayTags(Tags))
+
+  if (!columns || columns.outputs) display.push(this.displayStackOutputs(Outputs))
+
+  return log.p(display.join('\n'))
 }

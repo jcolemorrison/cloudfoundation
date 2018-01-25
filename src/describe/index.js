@@ -1,25 +1,36 @@
-const inq = require('inquirer')
-const chk = require('chalk')
 const {
   log,
   inquireTemplateName,
   checkValidTemplate,
   getStackFile,
-  writeStackFile,
-  getTemplateAsObject,
-  selectStackParams,
   configAWS,
 } = require('../utils')
 
-const { selectStackOptions, selectStackName } = require('../utils/stacks')
-const { checkValidProfile, _getProfile } = require('../profiles')
+const { selectStackName, displayStack } = require('../utils/stacks')
+const { _getProfile } = require('../profiles')
 
 module.exports = async function describe (env, opts) {
   const cwd = process.cwd()
+  const {
+    status,
+    parameters,
+    outputs,
+    tags,
+    info,
+  } = opts
+
   let templateName = env && checkValidTemplate(env)
-  let template
-  let stackRegion // may differ from profile default region
-  let useExisting
+  let columns
+
+  if (status || parameters || outputs || tags || info) {
+    columns = {
+      status,
+      parameters,
+      outputs,
+      tags,
+      info,
+    }
+  }
 
   if (!templateName) templateName = await inquireTemplateName('Which template has the stack you want to update?')
 
@@ -31,12 +42,15 @@ module.exports = async function describe (env, opts) {
     : await selectStackName(templateName, stackFile)
 
   const stack = stackFile[stackName]
+  const region = stack.region
 
   const profile = _getProfile(stack.profile.name)
   const aws = configAWS(profile || 'default')
-  console.log(aws.config)
 
-  // now we have the stack name AND the template name AND the template dir.. etc.
-  // what next?
-  // Now we need to make the AWS sdk call
+  const cfn = new aws.CloudFormation({ region })
+  log.p()
+  log.i('Fetching stack info...\n')
+  const { Stacks } = await cfn.describeStacks({ StackName: stackName }).promise()
+
+  return displayStack(Stacks[0], columns)
 }

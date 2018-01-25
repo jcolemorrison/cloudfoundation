@@ -62,7 +62,12 @@ cmd
 cmd
   .command('describe [templatename]')
   .option('-s, --stackname <stackname>', 'Name of stack to describe')
-  .description('describe a stack created from [templatename] template')
+  .option('-a, --status', 'Include the status of the stack')
+  .option('-p, --parameters', 'Include the parameters of the stack')
+  .option('-i, --info', 'Include the advanced info of the stack')
+  .option('-t, --tags', 'Include the tags of the stack')
+  .option('-o, --outputs', 'Include the outputs of the stack')
+  .description('describe a stack created from [templatename] template - include all columns unless at least one is specified')
   .action((e, o) => checkValidProject('describe [templatename]', describe, e, o))
 
 // TODO: write an error catcher for all of the below so there's no unhandled promise rejection shit.
