@@ -5,7 +5,7 @@ const create = require('./create')
 const validate = require('./validate')
 const deploy = require('./deploy')
 const update = require('./update')
-const describe = require('./describe')
+const { describe, describeAll } = require('./describe')
 const test = require('./test')
 const {
   importProfiles,
@@ -70,6 +70,12 @@ cmd
   .description('describe a stack created from [templatename] template - include all columns unless at least one is specified')
   .action((e, o) => checkValidProject('describe [templatename]', describe, e, o))
 
+cmd
+  .command('describe-all [templatename]')
+  .option('-p, --profile <profilename>', 'the AWS or CFDN profile with the stacks to describe')
+  .description('describe all a stacks created from [templatename] template for a given profile')
+  .action((e, o) => checkValidProject('describe-all [templatename]', describeAll, e, o))
+
 // TODO: write an error catcher for all of the below so there's no unhandled promise rejection shit.
 cmd
   .command('import-profiles')
@@ -123,6 +129,7 @@ const validArgs = [
   'deploy',
   'update',
   'describe',
+  'describe-all',
   'import-profiles',
   'list-profiles',
   'add-profile',

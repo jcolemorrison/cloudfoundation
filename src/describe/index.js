@@ -1,3 +1,5 @@
+const chk = require('chalk')
+const inq = require('inquirer')
 const {
   log,
   inquireTemplateName,
@@ -9,7 +11,42 @@ const {
 const { selectStackName, displayStack } = require('../utils/stacks')
 const { _getProfile } = require('../profiles')
 
-module.exports = async function describe (env, opts) {
+exports.describeAll = async function describeAll (env, opts) {
+  const cwd = process.cwd()
+  let templateName = env && checkValidTemplate(env)
+  let profile = opts && opts.profile
+
+  if (!templateName) templateName = await inquireTemplateName('Which template has the stack you want to update?')
+
+  const templateDir = `${cwd}/src/${templateName}`
+  const stackFile = getStackFile(templateDir)
+  const stacks = Object.entries(stackFile)
+
+  const validProfiles = stacks
+    .reduce((list, [, stack]) => {
+      if (!list.find(p => p.name === stack.profile.name)) list.push({ ...stack.profile, value: stack.profile })
+      return list
+    }, [])
+  
+  if (profile && !validProfiles.find(p => p.name === profile)) {
+    throw new Error(`${chk.cyan(profile)} is not used for any of ${chk.cyan(templateName)}'s stacks.`)
+  } else {
+    profile = await inq.prompt({
+      type: 'list',
+      message: 'Which profile\'s stacks would you like to describe?',
+      name: 'use',
+      choices: validProfiles,
+    })
+
+    if (profile.use) profile = profile.use
+  }
+
+  console.log(profile)
+
+  return true
+}
+
+exports.describe = async function describe (env, opts) {
   const cwd = process.cwd()
   const {
     status,
