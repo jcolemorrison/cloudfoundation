@@ -73,7 +73,8 @@ cmd
 cmd
   .command('describe-all [templatename]')
   .option('-p, --profile <profilename>', 'the AWS or CFDN profile with the stacks to describe')
-  .description('describe all a stacks created from [templatename] template for a given profile')
+  .option('-r, --region <region>', 'the AWS region with the stacks to describe')
+  .description('describe all a stacks created from [templatename] template for a given profile and region')
   .action((e, o) => checkValidProject('describe-all [templatename]', describeAll, e, o))
 
 // TODO: write an error catcher for all of the below so there's no unhandled promise rejection shit.

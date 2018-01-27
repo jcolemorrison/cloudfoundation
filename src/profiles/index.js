@@ -11,6 +11,14 @@ const {
   hasConfiguredCfdn,
 } = require('../utils')
 
+exports.parseProfileOption = function parseProfileOption (profile) {
+  const p = profile.split('.')
+  return {
+    name: p[0],
+    type: p[1] === 'aws' ? 'aws' : 'cfdn',
+  }
+}
+
 exports._getProfiles = function getProfiles (homedir) {
   const home = homedir || os.homedir()
   const configuredCfdn = hasConfiguredCfdn(home)
@@ -32,9 +40,17 @@ exports._getProfiles = function getProfiles (homedir) {
   return profiles
 }
 
-exports._getProfile = (name) => {
+exports._getProfile = (name, type) => {
   try {
     const profiles = this._getProfiles()
+
+    if (type) {
+      return {
+        ...profiles[type][name],
+        name,
+        type,
+      }
+    }
 
     if (profiles.cfdn && profiles.cfdn[name]) return { ...profiles.cfdn[name], name, type: 'cfdn' }
 
