@@ -5,6 +5,7 @@ const create = require('./create')
 const validate = require('./validate')
 const deploy = require('./deploy')
 const update = require('./update')
+const deleteStack = require('./delete')
 const { describe, describeAll } = require('./describe')
 const test = require('./test')
 const {
@@ -77,6 +78,12 @@ cmd
   .description('describe all a stacks created from [templatename] template for a given profile and region')
   .action((e, o) => checkValidProject('describe-all [templatename]', describeAll, e, o))
 
+cmd
+  .command('delete [templatename]')
+  .option('-s, --stackname <stackname>', 'Name of stack to delete')
+  .description('delete a stack created from [templatename] template')
+  .action((e, o) => checkValidProject('delete [templatename]', deleteStack, e, o))
+
 // TODO: write an error catcher for all of the below so there's no unhandled promise rejection shit.
 cmd
   .command('import-profiles')
@@ -128,6 +135,7 @@ const validArgs = [
   'create',
   'validate',
   'deploy',
+  'delete',
   'update',
   'describe',
   'describe-all',

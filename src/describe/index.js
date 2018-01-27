@@ -91,9 +91,7 @@ ${s.StackName}, ${new Date(s.CreationTime).toLocaleString()}, ${s.StackStatus}, 
 `
   })
 
-  log.p(info)
-
-  return true
+  return log.p(info)
 }
 
 exports.describe = async function describe (env, opts) {
@@ -129,9 +127,15 @@ exports.describe = async function describe (env, opts) {
     : await selectStackName(templateName, stackFile)
 
   const stack = stackFile[stackName]
+
+  if (!stack) {
+    log.p()
+    return log.i(`Stack ${stackName} not found.`)
+  }
+
   const region = stack.region
 
-  const profile = _getProfile(stack.profile.name)
+  const profile = _getProfile(stack.profile.name, stack.profile.type)
   const aws = configAWS(profile || 'default')
 
   const cfn = new aws.CloudFormation({ region })
