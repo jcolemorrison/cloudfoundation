@@ -6,6 +6,7 @@ const {
   checkValidTemplate,
   getStackFile,
   configAWS,
+  writeStackFile,
 } = require('../utils')
 
 const { selectStackName } = require('../utils/stacks')
@@ -49,7 +50,8 @@ module.exports = async function deleteStack (env, opts) {
 
   await cfn.deleteStack({ StackName: stack.stackId }).promise()
 
-  // I also need to remove it from the stack file.
+  delete stackFile[stackName]
+  writeStackFile(templateDir, stackFile)
 
   log.p()
   return log.s(`Stack ${chk.cyan(stackName)} is being removed.  Run ${chk.cyan(`cfdn describe ${templateName} -s ${stackName} -a`)} to see the status.\n`)
