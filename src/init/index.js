@@ -2,59 +2,63 @@ const inq = require('inquirer')
 const chk = require('chalk')
 const fs = require('fs-extra')
 const os = require('os')
-const { _importAWSProfiles, _addProfile } = require('../profiles')
+const { importAWSProfiles, _addProfile } = require('../profiles')
 const {
   log,
-  hasAWSCreds,
   hasConfiguredCfdn,
 } = require('../utils')
+
+const { hasAWSCreds } = require('../utils/aws')
+
 const pkgTpl = require('../tpls/user/package.json')
+
+const { cyan, gray } = chk
 
 module.exports = async function init () {
   const cwd = process.cwd()
   const home = os.homedir()
   let answers
   let extras
-  let files
   let aws
   let importAWS = false
 
-  try {
-    files = await fs.readdir(cwd)
-  } catch (err) {
-    return log.e(err.message)
-  }
+  const files = await fs.readdir(cwd)
 
   if ((files.length === 1 && files[0] !== '.git') || files.length > 1) {
     return log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`)
   }
 
-  log.p()
 
   if (!hasConfiguredCfdn(home)) {
-    log.p(`To ${chk.cyan('validate')}, ${chk.cyan('deploy')}, and ${chk.cyan('update')} stacks with ${chk.cyan('cfdn')}, AWS Credentials are needed:\n`)
-    try {
-      const hasAWS = hasAWSCreds(home)
-      if (hasAWS) {
-        const answer = await inq.prompt([
-          {
-            type: 'confirm',
-            message: 'Import your AWS credentials (profiles) for usage with CFDN?',
-            default: true,
-            name: 'import',
-          },
-        ])
-        if (answer.import) {
-          _importAWSProfiles(home)
-          importAWS = true
-        }
-      }
-    } catch (error) {
-      return log.e(error.message)
-    }
+    log.i(`To ${cyan('validate')}, ${cyan('deploy')}, ${cyan('update')}, and ${cyan('describe')} stacks with ${cyan('cfdn')}, AWS Credentials (Profiles) are needed:`)
 
-    log.p()
-    log.s('AWS credentials imported!\n')
+    const choices = [
+      {
+        name: `Set up a Global Profile ${gray('All Projects')}`,
+        value: 'global',
+      },
+      {
+        name: `Set up a Local Profile ${gray('Only This Project')}`,
+        value: 'local',
+      },
+    ]
+    const hasAWS = hasAWSCreds(home)
+
+    if (hasAWS) {
+      const answer = await inq.prompt([
+        {
+          type: 'confirm',
+          message: 'Import your AWS credentials (profiles) for usage with CFDN?',
+          default: true,
+          name: 'import',
+        },
+      ])
+      if (answer.import) {
+        importAWSProfiles(home)
+        importAWS = true
+        log.s('AWS credentials imported!')
+      }
+    }
 
     try {
       const message = importAWS
@@ -89,6 +93,8 @@ module.exports = async function init () {
   }
 
   try {
+    log.p()
+
     answers = await inq.prompt([
       {
         type: 'input',
@@ -130,7 +136,7 @@ module.exports = async function init () {
     if (answers.vpc) fs.copySync(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
     if (extras.rds) fs.copySync(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
 
-    const settings = { PROJECT: answers.project }
+    const settings = { Project: answers.project }
 
     fs.writeJsonSync(`${cwd}/.cfdnrc`, settings)
   } catch (err) {

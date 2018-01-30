@@ -24,7 +24,7 @@ cmd.version('1.0.0')
 cmd
   .command('init')
   .description('initialize a new CloudFoundation project')
-  .action(init)
+  .action((e, o) => checkValidProject('init', init, e, o))
 
 cmd
   .command('build [templatename]')
