@@ -136,7 +136,7 @@ module.exports = async function init () {
     if (answers.vpc) fs.copySync(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
     if (extras.rds) fs.copySync(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
 
-    const settings = { Project: answers.project }
+    const settings = { project: answers.project }
 
     fs.writeJsonSync(`${cwd}/.cfdnrc`, settings)
   } catch (err) {

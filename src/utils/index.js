@@ -144,12 +144,15 @@ exports.validateJSON = (j) => {
   return check
 }
 
-exports.checkValidProject = (cmd, action, env, opts) => {
-  try {
-    if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
-  } catch (error) {
-    return this.log.e(error.message)
+exports.checkValidProject = (cmd, action, env, opts, isGlobal) => {
+  if (!isGlobal) {
+    try {
+      if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
+    } catch (error) {
+      return this.log.e(error.message)
+    }
   }
+
   return action(env, opts).catch((e) => {
     this.log.e(e.message)
     error(e)

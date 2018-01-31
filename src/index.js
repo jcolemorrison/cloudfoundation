@@ -15,6 +15,7 @@ const {
   removeProfile,
   updateProfile,
 } = require('./profiles')
+const profiles = require('./profiles')
 const { checkValidProject } = require('./utils')
 
 
@@ -97,8 +98,12 @@ cmd
 
 cmd
   .command('add-profile [name]')
+  .option('-a, --aws', 'import an AWS profile')
+  .option('-c, --cfdn', 'add a standalone (CFDN) profile')
+  .option('-l, --local', 'add the profile to the current project')
+  .option('-g, --global', 'make the profile available for all projects')
   .description('add a new set of AWS credentials for usage with cfdn')
-  .action(addProfile)
+  .action((e, o) => checkValidProject('add-profile [name]', profiles.add, e, o, true))
 
 cmd
   .command('update-profile [name]')

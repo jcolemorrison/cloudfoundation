@@ -38,7 +38,11 @@ exports._getProfiles = function getProfiles (homedir) {
   return profiles
 }
 
-exports._getLocalProfiles = function getLocalProfiles (cwd) {}
+exports._getLocalProfiles = function getLocalProfiles (currentDir) {
+  const cwd = currentDir || process.cwd()
+  if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan('cfdn add-profile [name] --local')} can only be run in a valid cfdn project`)
+  return fs.readJsonSync(`${cwd}/.cfdnrc`).profiles || {}
+}
 
 exports._getProfile = (name, type) => {
   try {
@@ -223,7 +227,18 @@ exports.writeGlobalProfiles = function writeGlobalProfiles (profiles, homedir) {
   }
 }
 
-exports.writeLocalProfiles = function writeLocalProfiles (profiles) {}
+exports.writeLocalProfiles = function writeLocalProfiles (profiles, dir) {
+  const cwd = dir || process.cwd()
+  const path = `${cwd}/.cfdnrc`
+  try {
+    const rc = fs.readJsonSync(path)
+    rc.profiles = rc.profiles || {}
+    rc.profiles = { ...rc.profiles, ...profiles }
+    fs.writeJsonSync(path, rc, { spaces: 2 })
+  } catch (error) {
+    throw error
+  }
+}
 
 // TODO UPDATE
 exports.importProfiles = async function importAllProfilesCmd () {
@@ -252,10 +267,7 @@ exports.importProfiles = async function importAllProfilesCmd () {
 // The `cfdn add-profile` method
 exports.add = async function addProfile (env, opts) {
   log.p()
-  const global = opts && opts.global
-  const local = opts && opts.local
-  const aws = opts && opts.aws
-  const cfdn = opts && opts.cfdn
+  const { global, local, aws, cfdn } = opts
   let profileName
   let profiles
   let profile
@@ -266,11 +278,11 @@ exports.add = async function addProfile (env, opts) {
 
   if (global) {
     scope = 'global'
-    profiles = this._getProfiles()
+    profiles = exports._getProfiles()
   } else if (local) {
     scope = 'local'
-    profiles = this._getLocalProfiles()
-  } else if (!local || !global) {
+    profiles = exports._getLocalProfiles()
+  } else {
     const scopeInq = await inq.prompt({
       type: 'list',
       default: 'local',
@@ -284,15 +296,15 @@ exports.add = async function addProfile (env, opts) {
 
     scope = scopeInq.type
     profiles = scopeInq.type === 'global'
-      ? this._getProfiles()
-      : this._getLocalProfiles
+      ? exports._getProfiles()
+      : exports._getLocalProfiles()
   }
 
   if (aws) {
-    profile = this.importAwsProfile(profiles)
+    profile = exports.importAwsProfile(profiles)
   } else if (cfdn) {
-    profile = this.setupProfile(profiles)
-  } else if (!aws || !cfdn) {
+    profile = exports.setupProfile(profiles)
+  } else {
     const add = await inq.prompt({
       type: 'list',
       default: 'cfdn',
@@ -305,16 +317,16 @@ exports.add = async function addProfile (env, opts) {
     })
 
     profile = add.type === 'aws'
-      ? this.importAwsProfile(profiles)
-      : this.setupProfile(profiles)
+      ? exports.importAwsProfile(profiles)
+      : exports.setupProfile(profiles)
   }
 
   profiles = { ...profiles, ...profile }
 
   if (scope === 'global') {
-    this.writeGlobalProfiles(profiles)
+    exports.writeGlobalProfiles(profiles)
   } else {
-    this.writeLocalProfiles(profiles)
+    exports.writeLocalProfiles(profiles)
   }
 
   log.p()
