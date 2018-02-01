@@ -8,7 +8,7 @@ const { DESCRIPTION_ERROR_MSG } = require('../utils/constants')
 
 const {
   _getProfile,
-} = require('../profiles')
+} = require('../profiles/utils')
 
 const {
   configAWS,

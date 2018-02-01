@@ -96,3 +96,10 @@ exports.mergeAWSCreds = (profiles, regions) => {
     return prev
   }, {})
 }
+
+exports.getAWSProfiles = () => {
+  const { creds, config } = exports.getAWSCreds()
+  const parsedProfiles = exports.parseAWSCreds(creds)
+  const regions = exports.parseAWSCreds(config, true)
+  return exports.mergeAWSCreds(parsedProfiles, regions)
+}

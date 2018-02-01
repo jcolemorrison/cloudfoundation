@@ -2,7 +2,7 @@ const inq = require('inquirer')
 const chk = require('chalk')
 const fs = require('fs-extra')
 const os = require('os')
-const { importAWSProfiles, _addProfile } = require('../profiles')
+const { importAWSProfiles, _addProfile } = require('../profiles/utils')
 const {
   log,
   hasConfiguredCfdn,

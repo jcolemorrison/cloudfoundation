@@ -15,7 +15,7 @@ const {
 
 const { selectStackOptions, confirmStack, createStack } = require('../utils/stacks')
 
-const { checkValidProfile, selectProfile, _getProfile } = require('../profiles')
+const { checkValidProfile, selectProfile, _getProfile } = require('../profiles/utils')
 
 const { cyan } = chk
 

@@ -9,7 +9,7 @@ const {
 } = require('../utils')
 
 const { selectStackName, displayStack } = require('../utils/stacks')
-const { _getProfile, parseProfileOption } = require('../profiles')
+const { _getProfile, parseProfileOption } = require('../profiles/utils')
 
 exports.describeAll = async function describeAll (env, opts) {
   const cwd = process.cwd()

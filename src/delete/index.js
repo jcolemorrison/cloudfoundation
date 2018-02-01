@@ -10,7 +10,7 @@ const {
 } = require('../utils')
 
 const { selectStackName } = require('../utils/stacks')
-const { _getProfile } = require('../profiles')
+const { _getProfile } = require('../profiles/utils')
 
 module.exports = async function deleteStack (env, opts) {
   const cwd = process.cwd()

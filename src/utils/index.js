@@ -10,22 +10,37 @@ const { AWS_REGIONS } = require('./constants')
 const { log, error } = console
 
 exports.log = {
-  _b (msg, bef, end) {
-    let m = `\n${msg}\n`
-    if (bef) m = `${msg}\n`
-    if (end) m = `\n${msg}`
-    if (bef && end) m = msg
+  // bef - strip linebreak before; end - stripe linebreak after
+  _b (msg, breaks) {
+    let m
+    switch (breaks) {
+      case 0:
+        m = msg
+        break
+      case 1:
+        m = `\n${msg}`
+        break
+      case 2:
+        m = `\n${msg}\n`
+        break
+      case 3:
+        m = `${msg}\n`
+        break
+      default:
+        m = `\n${msg}`
+        break
+    }
     log(m)
   },
   p: log,
-  e (msg, brk, end) {
-    this._b(chk.red(`Error - ${msg}`), brk, end)
+  e (msg, breaks) {
+    this._b(chk.red(`Error - ${msg}`), breaks)
   },
-  s (msg, brk, end) {
-    this._b(chk.green(`Success - ${msg}`), brk, end)
+  s (msg, breaks) {
+    this._b(chk.green(`Success - ${msg}`), breaks)
   },
-  i (msg, brk, end) {
-    this._b(chk.magenta(`Info - ${chk.whiteBright(msg)}`), brk, end)
+  i (msg, breaks) {
+    this._b(chk.magenta(`Info - ${chk.whiteBright(msg)}`), breaks)
   },
   m: log.bind(this, '  '),
 }
@@ -154,7 +169,7 @@ exports.checkValidProject = (cmd, action, env, opts, isGlobal) => {
   }
 
   return action(env, opts).catch((e) => {
-    this.log.e(e.message)
+    e.message = chk.red(e.message)
     error(e)
     log()
   })

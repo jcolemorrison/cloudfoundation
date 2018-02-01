@@ -12,7 +12,7 @@ const {
 } = require('../utils')
 
 const { selectStackOptions, confirmStack, updateStack } = require('../utils/stacks')
-const { checkValidProfile, _getProfile } = require('../profiles')
+const { checkValidProfile, _getProfile } = require('../profiles/utils')
 
 const { cyan } = chk
 

@@ -4,7 +4,6 @@ const os = require('os')
 const chk = require('chalk')
 const {
   log,
-  hasConfiguredCfdn,
 } = require('../utils')
 
 const {
@@ -12,8 +11,10 @@ const {
   getAWSCreds,
   parseAWSCreds,
   mergeAWSCreds,
+  getAWSProfiles,
 } = require('../utils/aws')
 
+// REMOVE/REWORK - no more types means this is pointless
 exports.parseProfileOption = function parseProfileOption (profile) {
   const p = profile.split('.')
   return {
@@ -22,31 +23,10 @@ exports.parseProfileOption = function parseProfileOption (profile) {
   }
 }
 
-exports._getProfiles = function getProfiles (homedir) {
-  const home = homedir || os.homedir()
-  const configuredCfdn = hasConfiguredCfdn(home)
-  let profiles
-
-  if (configuredCfdn) {
-    profiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
-  } else {
-    fs.ensureDirSync(`${home}/.cfdn`)
-  }
-
-  profiles = profiles || {}
-
-  return profiles
-}
-
-exports._getLocalProfiles = function getLocalProfiles (currentDir) {
-  const cwd = currentDir || process.cwd()
-  if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan('cfdn add-profile [name] --local')} can only be run in a valid cfdn project`)
-  return fs.readJsonSync(`${cwd}/.cfdnrc`).profiles || {}
-}
-
-exports._getProfile = (name, type) => {
+// REMOVE/REWORK This needs to go, because there will be no type
+exports.getProfile = (name, type) => {
   try {
-    const profiles = this._getProfiles()
+    const profiles = this.getProfiles()
 
     if (type) {
       return {
@@ -64,6 +44,9 @@ exports._getProfile = (name, type) => {
   }
 }
 
+// Make every AWS Profile available for global usage
+// REWORK/REMOVE - no types means we need to merge the AWS ones into the main ones
+// And check for duplicates so that we don't overwrite.
 exports.importAWSProfiles = function importAWSProfiles (homedir) {
   try {
     const home = homedir || os.homedir()
@@ -71,7 +54,7 @@ exports.importAWSProfiles = function importAWSProfiles (homedir) {
     const parsedProfiles = parseAWSCreds(creds)
     const regions = parseAWSCreds(config, true)
     const awsProfiles = mergeAWSCreds(parsedProfiles, regions)
-    const cfdnProfiles = exports._getProfiles(home)
+    const cfdnProfiles = this.getProfiles(home)
 
     cfdnProfiles.aws = awsProfiles
 
@@ -81,24 +64,58 @@ exports.importAWSProfiles = function importAWSProfiles (homedir) {
   }
 }
 
+exports.hasGlobalProfiles = function hasGlobalProfiles (homedir) {
+  const home = homedir || os.homedir()
+  return fs.existsSync(`${home}/.cfdn/profiles.json`)
+}
+
+exports.getProfiles = function getProfiles (homedir) {
+  const home = homedir || os.homedir()
+  let profiles
+
+  if (exports.hasGlobalProfiles(home)) {
+    profiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
+  } else {
+    fs.ensureDirSync(`${home}/.cfdn`)
+  }
+
+  profiles = profiles || {}
+
+  return profiles
+}
+
+exports.getLocalProfiles = function getLocalProfiles (currentdir) {
+  const cwd = currentdir || process.cwd()
+  if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan('cfdn add-profile [name] --local')} can only be run in a valid cfdn project`)
+  return fs.readJsonSync(`${cwd}/.cfdnrc`).profiles || {}
+}
+
+/* Creating a profile via Setup or Import */
+
 // Accepts a Profiles Object
-exports.importAWSProfile = async function importAwsProfile (existingProfiles) {
-  const { creds, config } = getAWSCreds()
-  const parsedProfiles = parseAWSCreds(creds)
-  const regions = parseAWSCreds(config, true)
-  const awsProfiles = mergeAWSCreds(parsedProfiles, regions)
+exports.importAWSProfile = async function importAwsProfile (name, existingProfiles) {
+  const awsProfiles = getAWSProfiles()
+  const existing = existingProfiles && Object.keys(existingProfiles)
+  let profileName = name
 
-  const choices = Object.keys(awsProfiles).filter(p => existingProfiles && existingProfiles.includes(p))
+  const choices = Object.keys(awsProfiles).filter(p => existing && !existing.includes(p))
 
-  const profile = await inq.prompt({
-    type: 'list',
-    message: 'Which AWS Profile would you like to use?',
-    name: 'use',
-    choices,
-  })
+  console.log(choices)
+  if (!profileName) {
+    const profile = await inq.prompt({
+      type: 'list',
+      message: 'Which AWS Profile would you like to use?',
+      name: 'use',
+      choices,
+    })
+    profileName = profile.use
+  }
+
+  if (existing.includes(profileName)) throw new Error(`Profile ${chk.cyan(profileName)} already exists!`)
+  if (!awsProfiles[profileName]) throw new Error(`Profile ${chk.cyan(profileName)} does not exist!`)
 
   return {
-    [profile.use]: awsProfiles[profile.use],
+    [profileName]: awsProfiles[profileName],
   }
 }
 
@@ -136,6 +153,7 @@ exports.setupProfile = async function setupProfile (name, existingProfiles) {
   let profileName = name || 'default'
 
   if (profile.name) profileName = profile.name
+  if (Object.keys(existingProfiles).includes(profileName)) throw new Error(`${chk.cyan(profileName)} already exists!`)
 
   return {
     [profileName]: {
@@ -144,6 +162,22 @@ exports.setupProfile = async function setupProfile (name, existingProfiles) {
       region: profile.region,
     },
   }
+}
+
+exports.writeGlobalProfiles = function writeGlobalProfiles (profiles, homedir) {
+  const home = homedir || os.homedir()
+  fs.ensureDirSync(`${home}/.cfdn`)
+  fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
+}
+
+exports.writeLocalProfiles = function writeLocalProfiles (profiles, dir) {
+  const cwd = dir || process.cwd()
+  const path = `${cwd}/.cfdnrc`
+  const rc = fs.readJsonSync(path)
+
+  rc.profiles = rc.profiles || {}
+  rc.profiles = { ...rc.profiles, ...profiles }
+  fs.writeJsonSync(path, rc, { spaces: 2 })
 }
 
 // What should this do?
@@ -207,7 +241,7 @@ exports.addProfile = async function addCFDNProfile (name, homedir) {
 }
 
 exports.checkValidProfile = function validProfile (profile) {
-  const profiles = exports._getProfiles()
+  const profiles = exports.getProfiles()
   const profilesExist = Object.keys(profiles.cfdn).length + Object.keys(profiles.aws).length
 
   if (!profilesExist) throw new Error(`No profiles are configured.  Please use ${chk.cyan('add-profiles')} or ${chk.cyan('import-profiles')} to set some up.`)
@@ -217,28 +251,6 @@ exports.checkValidProfile = function validProfile (profile) {
   }
 }
 
-exports.writeGlobalProfiles = function writeGlobalProfiles (profiles, homedir) {
-  const home = homedir || os.homedir()
-  try {
-    fs.ensureDirSync(`${home}/.cfdn`)
-    fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
-  } catch (error) {
-    throw error
-  }
-}
-
-exports.writeLocalProfiles = function writeLocalProfiles (profiles, dir) {
-  const cwd = dir || process.cwd()
-  const path = `${cwd}/.cfdnrc`
-  try {
-    const rc = fs.readJsonSync(path)
-    rc.profiles = rc.profiles || {}
-    rc.profiles = { ...rc.profiles, ...profiles }
-    fs.writeJsonSync(path, rc, { spaces: 2 })
-  } catch (error) {
-    throw error
-  }
-}
 
 // TODO UPDATE
 exports.importProfiles = async function importAllProfilesCmd () {
@@ -255,7 +267,7 @@ exports.importProfiles = async function importAllProfilesCmd () {
         name: 'import',
       },
     ])
-    if (answer.import) exports._importAWSProfiles()
+    if (answer.import) exports.importAWSProfiles()
   } catch (error) {
     throw error
   }
@@ -265,79 +277,79 @@ exports.importProfiles = async function importAllProfilesCmd () {
 }
 
 // The `cfdn add-profile` method
-exports.add = async function addProfile (env, opts) {
-  log.p()
-  const { global, local, aws, cfdn } = opts
-  let profileName
-  let profiles
-  let profile
-  let scope
+// exports.add = async function addProfile (env, opts) {
+//   log.p()
+//   const { global, local, aws, cfdn } = opts
+//   let profileName
+//   let profiles
+//   let profile
+//   let scope
 
-  if (global && local) throw new Error(`Select one of either ${chk.cyan('-g|--global')} or ${chk.cyan('-l|--local')} only.`)
-  if (aws && cfdn) throw new Error(`Select one of either ${chk.cyan('-a|--aws')} or ${chk.cyan('-c|--cfdn')}only.`)
+//   if (global && local) throw new Error(`Select one of either ${chk.cyan('-g|--global')} or ${chk.cyan('-l|--local')} only.`)
+//   if (aws && cfdn) throw new Error(`Select one of either ${chk.cyan('-a|--aws')} or ${chk.cyan('-c|--cfdn')}only.`)
 
-  if (global) {
-    scope = 'global'
-    profiles = exports._getProfiles()
-  } else if (local) {
-    scope = 'local'
-    profiles = exports._getLocalProfiles()
-  } else {
-    const scopeInq = await inq.prompt({
-      type: 'list',
-      default: 'local',
-      name: 'type',
-      message: 'Would you like to set up a Local or Global Profile?',
-      choices: [
-        { name: 'Local', value: 'local' },
-        { name: 'Global', value: 'global' },
-      ],
-    })
+//   if (global) {
+//     scope = 'global'
+//     profiles = exports._getProfiles()
+//   } else if (local) {
+//     scope = 'local'
+//     profiles = exports._getLocalProfiles()
+//   } else {
+//     const scopeInq = await inq.prompt({
+//       type: 'list',
+//       default: 'local',
+//       name: 'type',
+//       message: 'Would you like to set up a Local or Global Profile?',
+//       choices: [
+//         { name: 'Local', value: 'local' },
+//         { name: 'Global', value: 'global' },
+//       ],
+//     })
 
-    scope = scopeInq.type
-    profiles = scopeInq.type === 'global'
-      ? exports._getProfiles()
-      : exports._getLocalProfiles()
-  }
+//     scope = scopeInq.type
+//     profiles = scopeInq.type === 'global'
+//       ? exports._getProfiles()
+//       : exports._getLocalProfiles()
+//   }
 
-  if (aws) {
-    profile = exports.importAwsProfile(profiles)
-  } else if (cfdn) {
-    profile = exports.setupProfile(profiles)
-  } else {
-    const add = await inq.prompt({
-      type: 'list',
-      default: 'cfdn',
-      name: 'type',
-      message: 'Which type of profile would you like to add?',
-      choices: [
-        { name: 'Setup a CFDN Profile', value: 'cfdn' },
-        { name: 'Import an AWS Profile', value: 'aws' },
-      ],
-    })
+//   if (aws) {
+//     profile = exports.importAwsProfile(profiles)
+//   } else if (cfdn) {
+//     profile = exports.setupProfile(profiles)
+//   } else {
+//     const add = await inq.prompt({
+//       type: 'list',
+//       default: 'cfdn',
+//       name: 'type',
+//       message: 'Which type of profile would you like to add?',
+//       choices: [
+//         { name: 'Setup a CFDN Profile', value: 'cfdn' },
+//         { name: 'Import an AWS Profile', value: 'aws' },
+//       ],
+//     })
 
-    profile = add.type === 'aws'
-      ? exports.importAwsProfile(profiles)
-      : exports.setupProfile(profiles)
-  }
+//     profile = add.type === 'aws'
+//       ? exports.importAwsProfile(profiles)
+//       : exports.setupProfile(profiles)
+//   }
 
-  profiles = { ...profiles, ...profile }
+//   profiles = { ...profiles, ...profile }
 
-  if (scope === 'global') {
-    exports.writeGlobalProfiles(profiles)
-  } else {
-    exports.writeLocalProfiles(profiles)
-  }
+//   if (scope === 'global') {
+//     exports.writeGlobalProfiles(profiles)
+//   } else {
+//     exports.writeLocalProfiles(profiles)
+//   }
 
-  log.p()
-  log.s(`profile ${chk.cyan(profileName)} created.\n`)
-  log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
-}
+//   log.p()
+//   log.s(`profile ${chk.cyan(profileName)} created.\n`)
+//   log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
+// }
 
 // TODO Update
 exports.selectProfile = async function selectProfile (action, profiles, onlyCfdn) {
   try {
-    if (!profiles) profiles = exports._getProfiles()
+    if (!profiles) profiles = exports.getProfiles()
 
     const { cfdn, aws } = profiles
     let choices = cfdn ? Object.keys(cfdn) : []
@@ -374,7 +386,7 @@ exports.selectProfile = async function selectProfile (action, profiles, onlyCfdn
 exports.removeProfile = async function removeProfile (env) {
   log.p()
   const home = os.homedir()
-  const profiles = exports._getProfiles(home)
+  const profiles = exports.getProfiles(home)
   let name = env
   let type = 'cfdn'
 
@@ -421,7 +433,7 @@ exports.removeProfile = async function removeProfile (env) {
 exports.updateProfile = async function updateProfile (env) {
   log.p()
   const home = os.homedir()
-  const profiles = exports._getProfiles(home)
+  const profiles = exports.getProfiles(home)
   let name = env
 
   log.i('Only CFDN profiles can be updated.  AWS ones must be configured through the AWS CLI.\n')
@@ -483,7 +495,7 @@ exports.listProfiles = function listProfiles () {
 
   const home = os.homedir()
 
-  if (!hasConfiguredCfdn(home)) {
+  if (!this.hasGlobalProfiles(home)) {
     log.e('You have no CFDN Profiles Setup')
     return log.m(`run ${chk.cyan('import-profiles')} or ${chk.cyan('add-profile')}.\n`)
   }
