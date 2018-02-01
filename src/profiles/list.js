@@ -62,7 +62,7 @@ module.exports = async function listProfiles (opts) {
   }
 
 
-  log.i(`To configure and manage profiles for usage with ${chk.cyan('cfdn')}:`, 1)
+  log.i(`To configure and manage profiles for usage with ${chk.cyan('cfdn')}:`, 0)
   log.m(`Run ${chk.cyan('cfdn import-profiles')} to import AWS profiles for usage with ${chk.cyan('cfdn')} or...`)
   return log.m(`Run ${chk.cyan('cfdn add-profile')}, ${chk.cyan('update-profile')}, or ${chk.cyan('remove-profile')} to manage ${chk.cyan('cfdn')} profiles.\n`)
 }
