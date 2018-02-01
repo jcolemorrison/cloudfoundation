@@ -69,7 +69,7 @@ exports.hasGlobalProfiles = function hasGlobalProfiles (homedir) {
   return fs.existsSync(`${home}/.cfdn/profiles.json`)
 }
 
-exports.getProfiles = function getProfiles (homedir) {
+exports.getGlobalProfiles = function getGlobalProfiles (homedir) {
   const home = homedir || os.homedir()
   let profiles
 
@@ -86,7 +86,7 @@ exports.getProfiles = function getProfiles (homedir) {
 
 exports.getLocalProfiles = function getLocalProfiles (currentdir) {
   const cwd = currentdir || process.cwd()
-  if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan('cfdn add-profile [name] --local')} can only be run in a valid cfdn project`)
+  if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error('No local .cfdnrc file found!  Make sure you\'re in a valid project directory.')
   return fs.readJsonSync(`${cwd}/.cfdnrc`).profiles || {}
 }
 
@@ -120,7 +120,7 @@ exports.importAWSProfile = async function importAwsProfile (name, existingProfil
 }
 
 // Accepts a string Name and a Profiles Object
-exports.setupProfile = async function setupProfile (name, existingProfiles) {
+exports.setupCFDNProfile = async function setupProfile (name, existingProfiles) {
   const inqs = [
     {
       type: 'input',
@@ -252,7 +252,7 @@ exports.checkValidProfile = function validProfile (profile) {
 }
 
 
-// TODO UPDATE
+// (The actual command) TODO UPDATE - I think this is a redundant function?
 exports.importProfiles = async function importAllProfilesCmd () {
   log.p()
 
@@ -490,66 +490,66 @@ exports.updateProfile = async function updateProfile (env) {
 
 
 // TODO UPDATE
-exports.listProfiles = function listProfiles () {
-  log.p()
+// exports.listProfiles = function listProfiles () {
+//   log.p()
 
-  const home = os.homedir()
+//   const home = os.homedir()
 
-  if (!this.hasGlobalProfiles(home)) {
-    log.e('You have no CFDN Profiles Setup')
-    return log.m(`run ${chk.cyan('import-profiles')} or ${chk.cyan('add-profile')}.\n`)
-  }
+//   if (!this.hasGlobalProfiles(home)) {
+//     log.e('You have no CFDN Profiles Setup')
+//     return log.m(`run ${chk.cyan('import-profiles')} or ${chk.cyan('add-profile')}.\n`)
+//   }
 
-  try {
-    const profiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
-    const { aws, cfdn } = profiles
+//   try {
+//     const profiles = fs.readJsonSync(`${home}/.cfdn/profiles.json`)
+//     const { aws, cfdn } = profiles
 
-    if (!aws && !cfdn) {
-      log.e('You have no CFDN Profiles Setup')
-      return log.m(`run ${chk.cyan('import-profiles')} or ${chk.cyan('add-profile')}.\n`)
-    }
+//     if (!aws && !cfdn) {
+//       log.e('You have no CFDN Profiles Setup')
+//       return log.m(`run ${chk.cyan('import-profiles')} or ${chk.cyan('add-profile')}.\n`)
+//     }
 
-    const awsProfiles = Object.keys(aws)
-    const cfdnProfiles = Object.keys(cfdn)
+//     const awsProfiles = Object.keys(aws)
+//     const cfdnProfiles = Object.keys(cfdn)
 
-    if (cfdnProfiles.length > 0) {
-      log.p('CloudFoundation Profiles')
-      log.p('------------------------')
-      cfdnProfiles.forEach((p) => {
-        const {
-          aws_access_key_id,
-          aws_secret_access_key,
-          region,
-        } = cfdn[p]
+//     if (cfdnProfiles.length > 0) {
+//       log.p('CloudFoundation Profiles')
+//       log.p('------------------------')
+//       cfdnProfiles.forEach((p) => {
+//         const {
+//           aws_access_key_id,
+//           aws_secret_access_key,
+//           region,
+//         } = cfdn[p]
 
-        log.p(`[${p}]`)
-        log.p(`aws_access_key_id: ****${aws_access_key_id.substr(aws_access_key_id.length - 4)}`)
-        log.p(`aws_secret_access_key: ****${aws_secret_access_key.substr(aws_secret_access_key.length - 4)}`)
-        log.p(`region: ${region}\n`)
-      })
-    }
+//         log.p(`[${p}]`)
+//         log.p(`aws_access_key_id: ****${aws_access_key_id.substr(aws_access_key_id.length - 4)}`)
+//         log.p(`aws_secret_access_key: ****${aws_secret_access_key.substr(aws_secret_access_key.length - 4)}`)
+//         log.p(`region: ${region}\n`)
+//       })
+//     }
 
-    if (awsProfiles.length > 0) {
-      log.p('Imported AWS Profiles')
-      log.p('------------------------')
-      awsProfiles.forEach((p) => {
-        const {
-          aws_access_key_id,
-          aws_secret_access_key,
-          region,
-        } = aws[p]
+//     if (awsProfiles.length > 0) {
+//       log.p('Imported AWS Profiles')
+//       log.p('------------------------')
+//       awsProfiles.forEach((p) => {
+//         const {
+//           aws_access_key_id,
+//           aws_secret_access_key,
+//           region,
+//         } = aws[p]
 
-        log.p(`[${p}]`)
-        log.p(`aws_access_key_id: ****${aws_access_key_id.substr(aws_access_key_id.length - 4)}`)
-        log.p(`aws_secret_access_key: ****${aws_secret_access_key.substr(aws_secret_access_key.length - 4)}`)
-        log.p(`region: ${region}\n`)
-      })
-    }
+//         log.p(`[${p}]`)
+//         log.p(`aws_access_key_id: ****${aws_access_key_id.substr(aws_access_key_id.length - 4)}`)
+//         log.p(`aws_secret_access_key: ****${aws_secret_access_key.substr(aws_secret_access_key.length - 4)}`)
+//         log.p(`region: ${region}\n`)
+//       })
+//     }
 
-    log.i(`To configure and manage profiles for usage with ${chk.cyan('cfdn')}:`)
-    log.m(`Run ${chk.cyan('cfdn import-profiles')} to import AWS profiles for usage with ${chk.cyan('cfdn')} or...`)
-    return log.m(`Run ${chk.cyan('cfdn add-profile')}, ${chk.cyan('update-profile')}, or ${chk.cyan('remove-profile')} to manage ${chk.cyan('cfdn')} profiles.\n`)
-  } catch (error) {
-    throw error
-  }
-}
+//     log.i(`To configure and manage profiles for usage with ${chk.cyan('cfdn')}:`)
+//     log.m(`Run ${chk.cyan('cfdn import-profiles')} to import AWS profiles for usage with ${chk.cyan('cfdn')} or...`)
+//     return log.m(`Run ${chk.cyan('cfdn add-profile')}, ${chk.cyan('update-profile')}, or ${chk.cyan('remove-profile')} to manage ${chk.cyan('cfdn')} profiles.\n`)
+//   } catch (error) {
+//     throw error
+//   }
+// }

@@ -10,11 +10,11 @@ const { describe, describeAll } = require('./describe')
 const test = require('./test')
 const {
   importProfiles,
-  listProfiles,
   removeProfile,
   updateProfile,
 } = require('./profiles/utils')
 const addProfile = require('./profiles/add')
+const listProfiles = require('./profiles/list')
 const { checkValidProject } = require('./utils')
 
 
@@ -92,8 +92,10 @@ cmd
 
 cmd
   .command('list-profiles')
+  .option('-l, --local', 'add the profile to the current project')
+  .option('-g, --global', 'make the profile available for all projects')
   .description('list all profiles configured to use cfdn with AWS')
-  .action(listProfiles)
+  .action((e, o) => checkValidProject('list-profiles [name]', listProfiles, e, o, true))
 
 cmd
   .command('add-profile [name]')

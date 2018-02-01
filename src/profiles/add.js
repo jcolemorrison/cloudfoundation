@@ -5,10 +5,10 @@ const {
 } = require('../utils')
 
 const {
-  getProfiles,
+  getGlobalProfiles,
   getLocalProfiles,
   importAWSProfile,
-  setupProfile,
+  setupCFDNProfile,
   writeGlobalProfiles,
   writeLocalProfiles,
 } = require('./utils')
@@ -26,7 +26,7 @@ module.exports = async function addProfile (env, opts) {
 
   if (global) {
     scope = 'global'
-    profiles = getProfiles()
+    profiles = getGlobalProfiles()
   } else if (local) {
     scope = 'local'
     profiles = getLocalProfiles()
@@ -44,14 +44,14 @@ module.exports = async function addProfile (env, opts) {
 
     scope = scopeInq.type
     profiles = scope === 'global'
-      ? getProfiles()
+      ? getGlobalProfiles()
       : getLocalProfiles()
   }
 
   if (aws) {
     profile = await importAWSProfile(name, profiles)
   } else if (cfdn) {
-    profile = await setupProfile(name, profiles)
+    profile = await setupCFDNProfile(name, profiles)
   } else {
     const add = await inq.prompt({
       type: 'list',
@@ -66,7 +66,7 @@ module.exports = async function addProfile (env, opts) {
 
     profile = add.type === 'aws'
       ? await importAWSProfile(name, profiles)
-      : await setupProfile(name, profiles)
+      : await setupCFDNProfile(name, profiles)
   }
 
   profiles = { ...profiles, ...profile }
