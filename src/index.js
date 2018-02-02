@@ -11,10 +11,10 @@ const test = require('./test')
 const {
   importProfiles,
   removeProfile,
-  updateProfile,
 } = require('./profiles/utils')
 const addProfile = require('./profiles/add')
 const listProfiles = require('./profiles/list')
+const updateProfile = require('./profiles/update')
 const { checkValidProject } = require('./utils')
 
 
@@ -92,8 +92,8 @@ cmd
 
 cmd
   .command('list-profiles')
-  .option('-l, --local', 'add the profile to the current project')
-  .option('-g, --global', 'make the profile available for all projects')
+  .option('-l, --local', 'list profiles local to the current project')
+  .option('-g, --global', 'list profiles available for global use')
   .description('list all profiles configured to use cfdn with AWS')
   .action((e, o) => checkValidProject('list-profiles [name]', listProfiles, e, o, true))
 
@@ -108,8 +108,10 @@ cmd
 
 cmd
   .command('update-profile [name]')
-  .description('update an existing cfdn profile')
-  .action(updateProfile)
+  .option('-l, --local', 'update a profile from the local project')
+  .option('-g, --global', 'update a profile available for global use')
+  .description('update an existing profile')
+  .action((e, o) => checkValidProject('update-profile [name]', updateProfile, e, o, true))
 
 cmd
   .command('remove-profile [name]')

@@ -90,6 +90,40 @@ exports.getLocalProfiles = function getLocalProfiles (currentdir) {
   return fs.readJsonSync(`${cwd}/.cfdnrc`).profiles || {}
 }
 
+// Returns both the scope of the profiles, and the profiles themselves
+exports.getScopedProfiles = async function getProfiles (global, local) {
+  let profiles
+  let scope
+
+  if (global && local) throw new Error(`Select one of either ${chk.cyan('-g|--global')} or ${chk.cyan('-l|--local')} only.`)
+
+  if (global) {
+    scope = 'global'
+    profiles = exports.getGlobalProfiles()
+  } else if (local) {
+    scope = 'local'
+    profiles = exports.getLocalProfiles()
+  } else {
+    const scopeInq = await inq.prompt({
+      type: 'list',
+      default: 'local',
+      name: 'type',
+      message: 'Would you like to set up a Local or Global Profile?',
+      choices: [
+        { name: 'Local', value: 'local' },
+        { name: 'Global', value: 'global' },
+      ],
+    })
+
+    scope = scopeInq.type
+    profiles = scope === 'global'
+      ? exports.getGlobalProfiles()
+      : exports.getLocalProfiles()
+  }
+
+  return { scope, profiles }
+}
+
 /* Creating a profile via Setup or Import */
 
 // Accepts a Profiles Object
@@ -346,40 +380,58 @@ exports.importProfiles = async function importAllProfilesCmd () {
 //   log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
 // }
 
-// TODO Update
-exports.selectProfile = async function selectProfile (action, profiles, onlyCfdn) {
-  try {
-    if (!profiles) profiles = exports.getProfiles()
+// Profiles are an object of { profilename: { ...profileData } }, Message is the wording for selecting a profile
+exports.selectProfile = async function selectProfile (profiles, message) {
+  const msg = message || 'Which profile would you like to use?'
+  const choices = Object.keys(profiles)
 
-    const { cfdn, aws } = profiles
-    let choices = cfdn ? Object.keys(cfdn) : []
-    let type = 'cfdn'
+  const profile = await inq.prompt({
+    type: 'list',
+    message: msg,
+    name: 'choice',
+    choices,
+  })
 
-    if (!onlyCfdn) {
-      const awsProfiles = aws
-        ? Object.keys(aws).reduce((prev, curr) => (prev.concat(`${curr} (aws)`)), [])
-        : []
-      choices = choices.concat(awsProfiles)
-    }
-
-    let choice = await inq.prompt([
-      {
-        type: 'list',
-        message: `Which profile would you like to ${action}?`,
-        name: 'profile',
-        choices,
-      },
-    ])
-
-    choice = choice.profile.split(' (aws)')[0]
-
-    if (profiles.aws[choice]) type = 'aws'
-
-    return { ...profiles[type][choice], name: choice, type }
-  } catch (error) {
-    throw error
+  return {
+    ...profiles[profile.choice],
+    name: profile.choice,
   }
 }
+
+// TODO Update
+// exports.selectProfile = async function selectProfile (action, profiles, onlyCfdn) {
+//   try {
+//     if (!profiles) profiles = exports.getProfiles()
+
+//     const { cfdn, aws } = profiles
+//     let choices = cfdn ? Object.keys(cfdn) : []
+//     let type = 'cfdn'
+
+//     if (!onlyCfdn) {
+//       const awsProfiles = aws
+//         ? Object.keys(aws).reduce((prev, curr) => (prev.concat(`${curr} (aws)`)), [])
+//         : []
+//       choices = choices.concat(awsProfiles)
+//     }
+
+//     let choice = await inq.prompt([
+//       {
+//         type: 'list',
+//         message: `Which profile would you like to ${action}?`,
+//         name: 'profile',
+//         choices,
+//       },
+//     ])
+
+//     choice = choice.profile.split(' (aws)')[0]
+
+//     if (profiles.aws[choice]) type = 'aws'
+
+//     return { ...profiles[type][choice], name: choice, type }
+//   } catch (error) {
+//     throw error
+//   }
+// }
 
 
 // TODO UPDATE
