@@ -134,7 +134,8 @@ exports.importAWSProfile = async function importAwsProfile (name, existingProfil
 
   const choices = Object.keys(awsProfiles).filter(p => existing && !existing.includes(p))
 
-  console.log(choices)
+  log.i('Profiles already imported are omitted from the below choices.', 2)
+
   if (!profileName) {
     const profile = await inq.prompt({
       type: 'list',
@@ -198,6 +199,8 @@ exports.setupCFDNProfile = async function setupProfile (name, existingProfiles) 
   }
 }
 
+// Both of these writes assume that you're passing back the the FULL updated profiles object...
+// not just an individual profile addition / removal / update
 exports.writeGlobalProfiles = function writeGlobalProfiles (profiles, homedir) {
   const home = homedir || os.homedir()
   fs.ensureDirSync(`${home}/.cfdn`)
@@ -209,8 +212,7 @@ exports.writeLocalProfiles = function writeLocalProfiles (profiles, dir) {
   const path = `${cwd}/.cfdnrc`
   const rc = fs.readJsonSync(path)
 
-  rc.profiles = rc.profiles || {}
-  rc.profiles = { ...rc.profiles, ...profiles }
+  rc.profiles = profiles
   fs.writeJsonSync(path, rc, { spaces: 2 })
 }
 
@@ -482,63 +484,63 @@ exports.removeProfile = async function removeProfile (env) {
 
 
 // TODO UPDATE
-exports.updateProfile = async function updateProfile (env) {
-  log.p()
-  const home = os.homedir()
-  const profiles = exports.getProfiles(home)
-  let name = env
+// exports.updateProfile = async function updateProfile (env) {
+//   log.p()
+//   const home = os.homedir()
+//   const profiles = exports.getProfiles(home)
+//   let name = env
 
-  log.i('Only CFDN profiles can be updated.  AWS ones must be configured through the AWS CLI.\n')
+//   log.i('Only CFDN profiles can be updated.  AWS ones must be configured through the AWS CLI.\n')
 
-  if (!name) {
-    const profile = await exports.selectProfile('remove', profiles)
-    name = profile.name
-  }
+//   if (!name) {
+//     const profile = await exports.selectProfile('remove', profiles)
+//     name = profile.name
+//   }
 
-  if (!profiles.cfdn[name] && !profiles.aws[name]) {
-    return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
-  }
+//   if (!profiles.cfdn[name] && !profiles.aws[name]) {
+//     return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
+//   }
 
-  if (!profiles.cfdn[name] && profiles.aws[name]) {
-    log.e('You can only update CFDN profiles.')
-    return log.m(`To update AWS profiles, configure them through the AWS CLI and then use ${chk.cyan('cfdn import-profiles')}.\n`)
-  }
+//   if (!profiles.cfdn[name] && profiles.aws[name]) {
+//     log.e('You can only update CFDN profiles.')
+//     return log.m(`To update AWS profiles, configure them through the AWS CLI and then use ${chk.cyan('cfdn import-profiles')}.\n`)
+//   }
 
-  const { aws_access_key_id, aws_secret_access_key, region } = profiles.cfdn[name]
+//   const { aws_access_key_id, aws_secret_access_key, region } = profiles.cfdn[name]
 
-  try {
-    const update = await inq.prompt([
-      {
-        type: 'input',
-        name: 'aws_access_key_id',
-        message: `Change ${chk.cyan(name)}'s aws_access_key_id to:`,
-        default: aws_access_key_id,
-      },
-      {
-        type: 'input',
-        name: 'aws_secret_access_key',
-        message: `Change ${chk.cyan(name)}'s aws_secret_access_key to:`,
-        default: aws_secret_access_key,
-      },
-      {
-        type: 'input',
-        name: 'region',
-        message: `Change ${chk.cyan(name)}'s region to:`,
-        default: region,
-      },
-    ])
+//   try {
+//     const update = await inq.prompt([
+//       {
+//         type: 'input',
+//         name: 'aws_access_key_id',
+//         message: `Change ${chk.cyan(name)}'s aws_access_key_id to:`,
+//         default: aws_access_key_id,
+//       },
+//       {
+//         type: 'input',
+//         name: 'aws_secret_access_key',
+//         message: `Change ${chk.cyan(name)}'s aws_secret_access_key to:`,
+//         default: aws_secret_access_key,
+//       },
+//       {
+//         type: 'input',
+//         name: 'region',
+//         message: `Change ${chk.cyan(name)}'s region to:`,
+//         default: region,
+//       },
+//     ])
 
-    profiles.cfdn[name] = update
+//     profiles.cfdn[name] = update
 
-    fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
-  } catch (error) {
-    log.e(error.message)
-    throw error
-  }
+//     fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
+//   } catch (error) {
+//     log.e(error.message)
+//     throw error
+//   }
 
-  log.p()
-  return log.s(`Profile ${chk.cyan(name)} successfully updated!\n`)
-}
+//   log.p()
+//   return log.s(`Profile ${chk.cyan(name)} successfully updated!\n`)
+// }
 
 
 // TODO UPDATE

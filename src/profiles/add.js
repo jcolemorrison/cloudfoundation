@@ -45,13 +45,10 @@ module.exports = async function addProfile (env, opts) {
 
   const updatedProfiles = { ...profiles, ...profile }
 
-  if (scope === 'global') {
-    writeGlobalProfiles(updatedProfiles)
-  } else {
-    writeLocalProfiles(updatedProfiles)
-  }
+  if (scope === 'global') writeGlobalProfiles(updatedProfiles)
+  else writeLocalProfiles(updatedProfiles)
 
-  const profileName = Object.keys(updatedProfiles)[0]
+  const profileName = Object.keys(profile)[0]
 
   log.s(`Profile ${chk.cyan(profileName)} created.`, 1)
   log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.`, 3)

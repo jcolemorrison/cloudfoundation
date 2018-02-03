@@ -10,11 +10,11 @@ const { describe, describeAll } = require('./describe')
 const test = require('./test')
 const {
   importProfiles,
-  removeProfile,
 } = require('./profiles/utils')
 const addProfile = require('./profiles/add')
 const listProfiles = require('./profiles/list')
 const updateProfile = require('./profiles/update')
+const removeProfile = require('./profiles/remove')
 const { checkValidProject } = require('./utils')
 
 
@@ -115,8 +115,10 @@ cmd
 
 cmd
   .command('remove-profile [name]')
+  .option('-l, --local', 'update a profile from the local project')
+  .option('-g, --global', 'update a profile available for global use')
   .description('remove an existing cfdn profile')
-  .action(removeProfile)
+  .action((e, o) => checkValidProject('update-profile [name]', removeProfile, e, o, true))
 
 cmd
   .command('test')
