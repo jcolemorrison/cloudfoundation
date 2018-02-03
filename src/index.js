@@ -8,13 +8,11 @@ const update = require('./update')
 const deleteStack = require('./delete')
 const { describe, describeAll } = require('./describe')
 const test = require('./test')
-const {
-  importProfiles,
-} = require('./profiles/utils')
 const addProfile = require('./profiles/add')
 const listProfiles = require('./profiles/list')
 const updateProfile = require('./profiles/update')
 const removeProfile = require('./profiles/remove')
+const importProfiles = require('./profiles/import')
 const { checkValidProject } = require('./utils')
 
 
@@ -84,12 +82,6 @@ cmd
   .description('delete a stack created from [templatename] template')
   .action((e, o) => checkValidProject('delete [templatename]', deleteStack, e, o))
 
-// TODO: write an error catcher for all of the below so there's no unhandled promise rejection shit.
-cmd
-  .command('import-profiles')
-  .description('import profile data from your shared AWS Credentials to use for CloudFoundation')
-  .action(importProfiles)
-
 cmd
   .command('list-profiles')
   .option('-l, --local', 'list profiles local to the current project')
@@ -119,6 +111,11 @@ cmd
   .option('-g, --global', 'update a profile available for global use')
   .description('remove an existing cfdn profile')
   .action((e, o) => checkValidProject('update-profile [name]', removeProfile, e, o, true))
+
+cmd
+  .command('import-profiles')
+  .description('import all profile data from your shared AWS Credentials for global use with CloudFoundation')
+  .action((e, o) => checkValidProject('import-profiles [name]', importProfiles, e, o, true))
 
 cmd
   .command('test')

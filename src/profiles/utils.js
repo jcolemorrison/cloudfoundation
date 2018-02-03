@@ -2,17 +2,8 @@ const inq = require('inquirer')
 const fs = require('fs-extra')
 const os = require('os')
 const chk = require('chalk')
-const {
-  log,
-} = require('../utils')
-
-const {
-  hasAWSCreds,
-  getAWSCreds,
-  parseAWSCreds,
-  mergeAWSCreds,
-  getAWSProfiles,
-} = require('../utils/aws')
+const { log } = require('../utils')
+const { getAWSProfiles } = require('../utils/aws')
 
 // REMOVE/REWORK - no more types means this is pointless
 exports.parseProfileOption = function parseProfileOption (profile) {
@@ -47,22 +38,22 @@ exports.getProfile = (name, type) => {
 // Make every AWS Profile available for global usage
 // REWORK/REMOVE - no types means we need to merge the AWS ones into the main ones
 // And check for duplicates so that we don't overwrite.
-exports.importAWSProfiles = function importAWSProfiles (homedir) {
-  try {
-    const home = homedir || os.homedir()
-    const { creds, config } = getAWSCreds()
-    const parsedProfiles = parseAWSCreds(creds)
-    const regions = parseAWSCreds(config, true)
-    const awsProfiles = mergeAWSCreds(parsedProfiles, regions)
-    const cfdnProfiles = this.getProfiles(home)
+// exports.importAWSProfiles = function importAWSProfiles (homedir) {
+//   try {
+//     const home = homedir || os.homedir()
+//     const { creds, config } = getAWSCreds()
+//     const parsedProfiles = parseAWSCreds(creds)
+//     const regions = parseAWSCreds(config, true)
+//     const awsProfiles = mergeAWSCreds(parsedProfiles, regions)
+//     const cfdnProfiles = this.getProfiles(home)
 
-    cfdnProfiles.aws = awsProfiles
+//     cfdnProfiles.aws = awsProfiles
 
-    fs.writeJSONSync(`${home}/.cfdn/profiles.json`, cfdnProfiles, { spaces: 2 })
-  } catch (error) {
-    throw error
-  }
-}
+//     fs.writeJSONSync(`${home}/.cfdn/profiles.json`, cfdnProfiles, { spaces: 2 })
+//   } catch (error) {
+//     throw error
+//   }
+// }
 
 exports.hasGlobalProfiles = function hasGlobalProfiles (homedir) {
   const home = homedir || os.homedir()
@@ -219,62 +210,62 @@ exports.writeLocalProfiles = function writeLocalProfiles (profiles, dir) {
 // What should this do?
 // Well, we more or less need a local and global
 // If local, it needs to write it to the current directory's
-exports.addProfile = async function addCFDNProfile (name, homedir) {
-  const home = homedir || os.homedir()
+// exports.addProfile = async function addCFDNProfile (name, homedir) {
+//   const home = homedir || os.homedir()
 
-  const profiles = exports._getProfiles(home)
+//   const profiles = exports._getProfiles(home)
 
-  if (profiles[name]) {
-    throw new Error(`Profile ${chk.cyan(name)} already exists.  Use ${chk.cyan('update-profile')} or ${chk.cyan('remove-profile')} to manage it.`)
-  }
+//   if (profiles[name]) {
+//     throw new Error(`Profile ${chk.cyan(name)} already exists.  Use ${chk.cyan('update-profile')} or ${chk.cyan('remove-profile')} to manage it.`)
+//   }
 
-  try {
-    const inqs = [
-      {
-        type: 'input',
-        name: 'aws_access_key_id',
-        message: `What is the ${chk.cyan('aws_access_key_id')}?`,
-      },
-      {
-        type: 'input',
-        name: 'aws_secret_access_key',
-        message: `What is the ${chk.cyan('aws_secret_access_key')}?`,
-      },
-      {
-        type: 'input',
-        name: 'region',
-        message: `What is the default ${chk.cyan('region')} of the profile?`,
-        default: 'us-east-1',
-      },
-    ]
+//   try {
+//     const inqs = [
+//       {
+//         type: 'input',
+//         name: 'aws_access_key_id',
+//         message: `What is the ${chk.cyan('aws_access_key_id')}?`,
+//       },
+//       {
+//         type: 'input',
+//         name: 'aws_secret_access_key',
+//         message: `What is the ${chk.cyan('aws_secret_access_key')}?`,
+//       },
+//       {
+//         type: 'input',
+//         name: 'region',
+//         message: `What is the default ${chk.cyan('region')} of the profile?`,
+//         default: 'us-east-1',
+//       },
+//     ]
 
-    if (!name) {
-      inqs.unshift({
-        type: 'input',
-        name: 'name',
-        message: 'What do you want to name this profile?',
-      })
-    }
+//     if (!name) {
+//       inqs.unshift({
+//         type: 'input',
+//         name: 'name',
+//         message: 'What do you want to name this profile?',
+//       })
+//     }
 
-    const profile = await inq.prompt(inqs)
+//     const profile = await inq.prompt(inqs)
 
-    let profileName = name || 'default'
+//     let profileName = name || 'default'
 
-    if (profile.name) profileName = profile.name
+//     if (profile.name) profileName = profile.name
 
-    profiles.cfdn[profileName] = {
-      aws_access_key_id: profile.aws_access_key_id,
-      aws_secret_access_key: profile.aws_secret_access_key,
-      region: profile.region,
-    }
+//     profiles.cfdn[profileName] = {
+//       aws_access_key_id: profile.aws_access_key_id,
+//       aws_secret_access_key: profile.aws_secret_access_key,
+//       region: profile.region,
+//     }
 
-    fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
+//     fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
 
-    return profileName
-  } catch (error) {
-    throw error
-  }
-}
+//     return profileName
+//   } catch (error) {
+//     throw error
+//   }
+// }
 
 exports.checkValidProfile = function validProfile (profile) {
   const profiles = exports.getProfiles()
@@ -289,28 +280,28 @@ exports.checkValidProfile = function validProfile (profile) {
 
 
 // (The actual command) TODO UPDATE - I think this is a redundant function?
-exports.importProfiles = async function importAllProfilesCmd () {
-  log.p()
+// exports.importProfiles = async function importAllProfilesCmd () {
+//   log.p()
 
-  if (!hasAWSCreds()) return log.i('You do not have any AWS Shared Credentials to import!\n')
+//   if (!hasAWSCreds()) return log.i('You do not have any AWS Shared Credentials to import!\n')
 
-  try {
-    const answer = await inq.prompt([
-      {
-        type: 'confirm',
-        message: 'Import your AWS Profiles for usage in CFDN?  This will overwrite any previously imported CFDN profiles.',
-        default: true,
-        name: 'import',
-      },
-    ])
-    if (answer.import) exports.importAWSProfiles()
-  } catch (error) {
-    throw error
-  }
+//   try {
+//     const answer = await inq.prompt([
+//       {
+//         type: 'confirm',
+//         message: 'Import your AWS Profiles for usage in CFDN?  This will overwrite any previously imported CFDN profiles.',
+//         default: true,
+//         name: 'import',
+//       },
+//     ])
+//     if (answer.import) exports.importAWSProfiles()
+//   } catch (error) {
+//     throw error
+//   }
 
-  log.p()
-  return log.i('Import complete!\n')
-}
+//   log.p()
+//   return log.i('Import complete!\n')
+// }
 
 // The `cfdn add-profile` method
 // exports.add = async function addProfile (env, opts) {
@@ -437,50 +428,50 @@ exports.selectProfile = async function selectProfile (profiles, message) {
 
 
 // TODO UPDATE
-exports.removeProfile = async function removeProfile (env) {
-  log.p()
-  const home = os.homedir()
-  const profiles = exports.getProfiles(home)
-  let name = env
-  let type = 'cfdn'
+// exports.removeProfile = async function removeProfile (env) {
+//   log.p()
+//   const home = os.homedir()
+//   const profiles = exports.getProfiles(home)
+//   let name = env
+//   let type = 'cfdn'
 
-  if (!name) {
-    const profile = await exports.selectProfile('remove', profiles)
-    name = profile.name
-  }
+//   if (!name) {
+//     const profile = await exports.selectProfile('remove', profiles)
+//     name = profile.name
+//   }
 
-  if (!profiles.cfdn[name] && !profiles.aws[name]) {
-    return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
-  }
+//   if (!profiles.cfdn[name] && !profiles.aws[name]) {
+//     return log.e(`Profile ${chk.cyan(name)} does not exist!\n`)
+//   }
 
-  if (profiles.aws[name]) type = 'aws'
+//   if (profiles.aws[name]) type = 'aws'
 
-  try {
-    if (type === 'aws') log.i(`Profile ${chk.cyan(name)} will only be removed from CFDN, but not from the AWS CLI.\n`)
+//   try {
+//     if (type === 'aws') log.i(`Profile ${chk.cyan(name)} will only be removed from CFDN, but not from the AWS CLI.\n`)
 
-    const message = `Are you sure you want to remove the profile ${chk.cyan(name)}?`
+//     const message = `Are you sure you want to remove the profile ${chk.cyan(name)}?`
 
-    const confirm = await inq.prompt([
-      {
-        type: 'confirm',
-        message,
-        default: false,
-        name: 'remove',
-      },
-    ])
+//     const confirm = await inq.prompt([
+//       {
+//         type: 'confirm',
+//         message,
+//         default: false,
+//         name: 'remove',
+//       },
+//     ])
 
-    if (!confirm.remove) return false
+//     if (!confirm.remove) return false
 
-    delete profiles[type][name]
+//     delete profiles[type][name]
 
-    fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
+//     fs.writeJsonSync(`${home}/.cfdn/profiles.json`, profiles, { spaces: 2 })
 
-    log.p()
-    return log.s(`Profile ${chk.cyan(name)} removed.\n`)
-  } catch (error) {
-    throw error
-  }
-}
+//     log.p()
+//     return log.s(`Profile ${chk.cyan(name)} removed.\n`)
+//   } catch (error) {
+//     throw error
+//   }
+// }
 
 
 // TODO UPDATE

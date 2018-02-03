@@ -51,5 +51,5 @@ module.exports = async function addProfile (env, opts) {
   const profileName = Object.keys(profile)[0]
 
   log.s(`Profile ${chk.cyan(profileName)} created.`, 1)
-  log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.`, 3)
+  return log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.`, 3)
 }
