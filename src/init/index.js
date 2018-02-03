@@ -10,7 +10,7 @@ const {
 
 const { hasAWSCreds } = require('../utils/aws')
 
-const pkgTpl = require('../tpls/user/package.json')
+const pkgTpl = require('../tpls/user/package.tpl.json')
 
 const { cyan, gray } = chk
 
@@ -161,11 +161,44 @@ module.exports = async function init () {
   const files = await fs.readdir(cwd)
 
   if (files.length > 0) {
-    return log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`, 2)
+    return log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`)
   }
 
+  log.p()
+
+  const project = await inq.prompt({
+    type: 'input',
+    name: 'name',
+    message: 'What is the name of your new project?',
+    default: 'CloudFoundationProject',
+    validate: (input) => {
+      const r = new RegExp('^(?:@[a-z0-9-~][a-z0-9-._~]*/)?[a-z0-9-~][a-z0-9-._~]*$')
+      if (!r.test(input)) return 'Project name must follow the pattern "^(?:@[a-z0-9-~][a-z0-9-._~]*/)?[a-z0-9-~][a-z0-9-._~]*$"'
+      return true
+    },
+  })
+
+  const vpc = await inq.prompt({
+    type: 'confirm',
+    name: 'use',
+    message: 'Would you like a production VPC template included?',
+    default: true,
+  })
+
+  const rds = vpc.use && await inq.prompt({
+    type: 'confirm',
+    name: 'rds',
+    message: 'Would you like an encrypted, multi-AZ RDS Aurora Database template included?',
+    default: true,
+  })
+
+  log.i('Creating project files...', 2)
+
+  const pkgjson = Object.assign({ name: project.name }, pkgTpl)
+
+  // This should actually come after we start the initial shit then.
   if (!fs.existsSync(`${home}/.cfdn/profiles.json`)) {
-    log.i(`To ${cyan('validate')}, ${cyan('deploy')}, ${cyan('update')}, and ${cyan('describe')} stacks with ${cyan('cfdn')}, AWS Credentials (Profiles) are needed:`, 2)
+    log.i(`To ${cyan('validate')}, ${cyan('deploy')}, ${cyan('update')}, and ${cyan('describe')} stacks with ${cyan('cfdn')}, AWS Credentials (Profiles) are needed:`)
   }
 
   // Always see if they'd like to set up a new profile
