@@ -2,7 +2,7 @@ const inq = require('inquirer')
 const chk = require('chalk')
 const fs = require('fs-extra')
 const os = require('os')
-const { importAWSProfiles, _addProfile } = require('../profiles/utils')
+const addProfile = require('../profiles/add.js')
 const {
   log,
   hasConfiguredCfdn,
@@ -14,7 +14,7 @@ const pkgTpl = require('../tpls/user/package.json')
 
 const { cyan, gray } = chk
 
-module.exports = async function init () {
+async function initOld () {
   const cwd = process.cwd()
   const home = os.homedir()
   let answers
@@ -24,8 +24,8 @@ module.exports = async function init () {
 
   const files = await fs.readdir(cwd)
 
-  if ((files.length === 1 && files[0] !== '.git') || files.length > 1) {
-    return log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`)
+  if (files.length > 0) {
+    return log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`, 2)
   }
 
 
@@ -153,4 +153,21 @@ module.exports = async function init () {
   log.p(chk.whiteBright(`To build the templates run ${chk.cyan('cfdn build')}\n`))
   // TODO insert github and post URLs
   return log.p(chk.whiteBright(`For more information run ${chk.cyan('cfdn --help')} or visit url\n`))
+}
+
+module.exports = async function init () {
+  const cwd = process.cwd()
+  const home = os.homedir()
+  const files = await fs.readdir(cwd)
+
+  if (files.length > 0) {
+    return log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`, 2)
+  }
+
+  if (!fs.existsSync(`${home}/.cfdn/profiles.json`)) {
+    log.i(`To ${cyan('validate')}, ${cyan('deploy')}, ${cyan('update')}, and ${cyan('describe')} stacks with ${cyan('cfdn')}, AWS Credentials (Profiles) are needed:`, 2)
+  }
+
+  // Always see if they'd like to set up a new profile
+  await addProfile()
 }

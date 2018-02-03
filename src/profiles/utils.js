@@ -101,8 +101,8 @@ exports.getScopedProfiles = async function getProfiles (global, local, action = 
       name: 'type',
       message: `Would you like to ${action} a Local or Global Profile?`,
       choices: [
-        { name: 'Local', value: 'local' },
-        { name: 'Global', value: 'global' },
+        { name: `Local ${chk.gray('(this project only)')}`, value: 'local' },
+        { name: `Global ${chk.gray('(all projects)')}`, value: 'global' },
       ],
     })
 

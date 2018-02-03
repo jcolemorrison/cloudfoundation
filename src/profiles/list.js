@@ -11,7 +11,7 @@ module.exports = async function listProfiles (opts) {
   log.p()
   const home = os.homedir()
   const cwd = process.cwd()
-  const { local, global } = opts
+  const { local, global } = opts || {}
   const all = !local && !global
   let locals
   let globals

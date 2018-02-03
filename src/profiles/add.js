@@ -15,7 +15,7 @@ const {
 module.exports = async function addProfile (env, opts) {
   log.p()
   const name = env
-  const { global, local, aws, cfdn } = opts
+  const { global, local, aws, cfdn } = opts || {}
   let profile
 
   if (aws && cfdn) throw new Error(`Select one of either ${chk.cyan('-a|--aws')} or ${chk.cyan('-c|--cfdn')}only.`)

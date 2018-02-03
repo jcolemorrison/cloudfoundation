@@ -22,7 +22,7 @@ cmd.version('1.0.0')
 cmd
   .command('init')
   .description('initialize a new CloudFoundation project')
-  .action((e, o) => checkValidProject('init', init, e, o))
+  .action((e, o) => checkValidProject('init', init, e, o, true))
 
 cmd
   .command('build [templatename]')

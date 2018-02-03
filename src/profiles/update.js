@@ -11,7 +11,7 @@ const {
 
 module.exports = async function updateProfile (env, opts) {
   log.p()
-  const { global, local } = opts
+  const { global, local } = opts || {}
   let name = env
   let profile
 
