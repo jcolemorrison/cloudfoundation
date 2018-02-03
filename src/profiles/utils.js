@@ -91,7 +91,7 @@ exports.getLocalProfiles = function getLocalProfiles (currentdir) {
 }
 
 // Returns both the scope of the profiles, and the profiles themselves
-exports.getScopedProfiles = async function getProfiles (global, local) {
+exports.getScopedProfiles = async function getProfiles (global, local, action = 'set up') {
   let profiles
   let scope
 
@@ -108,7 +108,7 @@ exports.getScopedProfiles = async function getProfiles (global, local) {
       type: 'list',
       default: 'local',
       name: 'type',
-      message: 'Would you like to set up a Local or Global Profile?',
+      message: `Would you like to ${action} a Local or Global Profile?`,
       choices: [
         { name: 'Local', value: 'local' },
         { name: 'Global', value: 'global' },
