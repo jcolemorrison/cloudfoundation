@@ -176,13 +176,7 @@ exports.inquireTemplateName = async (message) => {
 }
 
 exports.checkValidTemplate = (name) => {
-  let template
-
-  try {
-    template = fs.existsSync(`${process.cwd()}/src/${name}`)
-  } catch (error) {
-    throw error
-  }
+  const template = fs.existsSync(`${process.cwd()}/src/${name}`)
 
   if (!template) throw new Error(`Template ${chk.cyan(name)} does not exist!`)
 
@@ -1034,35 +1028,23 @@ exports.selectStackParams = async (Parameters, region, aws, prevParams) => {
     paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws, prevParams && prevParams[name]))
   ))
 
-  try {
-    log(chk.bold.whiteBright('Parameter Values to be used for the stack...\n'))
-    const choices = await inq.prompt(paramInq)
-    return choices
-  } catch (error) {
-    throw error
-  }
+  log(chk.bold.whiteBright('Parameter Values to be used for the stack...\n'))
+  const choices = await inq.prompt(paramInq)
+  return choices
 }
 
 exports.selectRegion = async (profile, message) => {
-  let region
+  const region = await inq.prompt([
+    {
+      type: 'list',
+      message,
+      choices: AWS_REGIONS,
+      name: 'selected',
+      default: profile.region || 'us-east-1',
+    },
+  ])
 
-  try {
-    const regions = await inq.prompt([
-      {
-        type: 'list',
-        message,
-        choices: AWS_REGIONS,
-        name: 'selected',
-        default: profile.region || 'us-east-1',
-      },
-    ])
-
-    region = regions.selected
-  } catch (error) {
-    throw error
-  }
-
-  return region
+  return region.selected
 }
 
 exports.hasConfiguredCfdn = (homedir) => {

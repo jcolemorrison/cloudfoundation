@@ -464,7 +464,7 @@ exports.reviewStackInfo = (name, stack, message, action) => {
 ${chk.green('General')}
 ------------------------
 Stack Name: ${name}
-Profile: ${profile.name}
+Profile: ${profile}
 Region: ${region}
 `
   info.push(generalInfo)
@@ -504,21 +504,16 @@ ${params}`
 }
 
 exports.confirmStack = async (templateName, name, stack, message, action) => {
-  try {
-    this.reviewStackInfo(name, stack, message, action)
-    // TODO: if update, we need to tell them that some parameters cannot be updated once a stack is deployed
+  exports.reviewStackInfo(name, stack, message, action)
 
-    const use = await inq.prompt({
-      type: 'confirm',
-      message: `${action} Stack ${chk.cyan(name)} with the above options?`,
-      name: 'stack',
-      default: true,
-    })
+  const use = await inq.prompt({
+    type: 'confirm',
+    message: `${action} Stack ${chk.cyan(name)} with the above options?`,
+    name: 'stack',
+    default: true,
+  })
 
-    return use.stack
-  } catch (error) {
-    throw error
-  }
+  return use.stack
 }
 
 exports.createStack = async (template, name, stack, aws) => {
