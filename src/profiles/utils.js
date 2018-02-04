@@ -225,6 +225,18 @@ exports.selectProfile = async function selectProfile (profiles, message) {
   }
 }
 
+
+// Get and Select from ALL Profiles.  Local take priority over Global.
+exports.getFromAllProfiles = function getFromAllProfiles (name) {
+  const global = exports.getGlobalProfiles()
+  const local = exports.getLocalProfiles()
+
+  if (local[name]) return { name, ...local[name] }
+  if (global[name]) return { name, ...global[name] }
+
+  throw new Error(`Profile ${chk.cyan(name)} not found!`)
+}
+
 exports.selectFromAllProfiles = async function selectFromAllProfiles (message) {
   const msg = message || 'Which profile would you like to use?'
 

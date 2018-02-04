@@ -76,11 +76,11 @@ exports.getCfnPropType = (prop) => {
   return `${name.charAt(0).toUpperCase()}${name.slice(1)}`
 }
 
-exports._reduceTemplateProps = (dir) => {
-  return glob.sync(`${dir}/**/*.+(js|json)`).reduce((files, file) => (
+exports.reduceTemplateProps = dir => (
+  glob.sync(`${dir}/**/*.+(js|json)`).reduce((files, file) => (
     Object.assign(files, require(path.resolve(file)))
   ), {})
-}
+)
 
 exports.getTemplateFiles = (name) => {
   const templateDir = `${process.cwd()}/src/${name}`
@@ -100,49 +100,31 @@ exports.getTemplateAsObject = (name) => {
   if (!fs.existsSync(templateDir)) {
     throw new Error(`${chk.cyan(name)} not found!`)
   }
-  // iterate over the folder and lint every js / json file
-  // to do so, I need to get the relevant path
-  // inside, get the TOP level paths.  Only those
-  // then we start another loop through each of the top level paths
-  // and we import those.
-  //
-  // so from the build file we're
+
   const template = { AWSTemplateFormatVersion: '2010-09-09' }
 
-  try {
-    glob.sync(`${templateDir}/*`).forEach((dir) => {
-      const isDir = fs.lstatSync(dir).isDirectory()
-      const cfnProp = exports.getCfnPropType(dir)
+  glob.sync(`${templateDir}/*`).forEach((dir) => {
+    const isDir = fs.lstatSync(dir).isDirectory()
+    const cfnProp = exports.getCfnPropType(dir)
 
-      // so no we're just finishing out the loop from the create tpls method
-      // where we need to deal with the Description template
-      // deal with the description template as directory
-      //
+    // if it's not a directory and it's not the Description, it's a json object
+    if (!isDir && cfnProp !== 'Description') {
+      template[cfnProp] = require(path.resolve(dir))
 
-      // if it's not a directory and it's not the Descriptoin, we're done, it's a json object of what we need
-      if (!isDir && cfnProp !== 'Description') {
-        template[cfnProp] = require(path.resolve(dir))
+    // otherwise if it's not a dir but it is Description then we have the description.json
+    } else if (!isDir && cfnProp === 'Description') {
+      template[cfnProp] = require(path.resolve(dir)).Description
 
-      // other wise if it's not a dir but it is Description then we have the description.json
-      } else if (!isDir && cfnProp === 'Description') {
-        template[cfnProp] = require(path.resolve(dir)).Description
+    // otherwise it's a dir, and it's named Description which is invalid
+    } else if (isDir && cfnProp === 'Description') {
+      throw new Error(`${chk.red('error')}: Description should be contained in "description.json" with one property "Description" and with a string value.`)
 
-      // otherwise it's a dir, and it's named Description, we tell them, hey, this is the only one that has to be
-      // a fuckin regular json object and can't be a directory
-      } else if (isDir && cfnProp === 'Description') {
-        throw new Error(`${chk.red('error')}: Description should be contained in "description.json" with one property "Description" and with a string value.`)
+    // otherwise, it's a whole thing of of related json, so smash it together
+    } else {
+      template[cfnProp] = exports.reduceTemplateProps(dir)
+    }
+  })
 
-      // otherwise, it's a whole thing of of related json, so we smash it together
-      } else {
-        template[cfnProp] = exports._reduceTemplateProps(dir)
-      }
-    })
-  } catch (error) {
-    throw error
-  }
-
-  // so we have the top level sections, now we need to ensure they're the right type
-  // from bulid this is like calling the createTpls... kind of.
   return template
 }
 
