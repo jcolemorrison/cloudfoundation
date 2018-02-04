@@ -3,6 +3,7 @@ const chk = require('chalk')
 const fs = require('fs-extra')
 const os = require('os')
 const addProfile = require('../profiles/add.js')
+const validatePkgName = require('validate-npm-package-name')
 const {
   log,
   hasConfiguredCfdn,
@@ -170,11 +171,13 @@ module.exports = async function init () {
     type: 'input',
     name: 'name',
     message: 'What is the name of your new project?',
-    default: 'CloudFoundationProject',
+    default: 'cloudfoundation-project',
     validate: (input) => {
-      const r = new RegExp('^(?:@[a-z0-9-~][a-z0-9-._~]*/)?[a-z0-9-~][a-z0-9-._~]*$')
-      if (!r.test(input)) return 'Project name must follow the pattern "^(?:@[a-z0-9-~][a-z0-9-._~]*/)?[a-z0-9-~][a-z0-9-._~]*$"'
-      return true
+      const { validForOldPackages, validForNewPackages } = validatePkgName(input)
+
+      if (validForOldPackages && validForNewPackages) return true
+
+      return 'Invalid Project Name Format - must follow NPM package naming conventions'
     },
   })
 
@@ -187,14 +190,25 @@ module.exports = async function init () {
 
   const rds = vpc.use && await inq.prompt({
     type: 'confirm',
-    name: 'rds',
+    name: 'use',
     message: 'Would you like an encrypted, multi-AZ RDS Aurora Database template included?',
     default: true,
   })
 
-  log.i('Creating project files...', 2)
+  log.i('Creating project files...')
 
   const pkgjson = Object.assign({ name: project.name }, pkgTpl)
+  fs.writeJsonSync(`${cwd}/package.json`, pkgjson, { spaces: 2, errorOnExist: true })
+  fs.copySync(`${__dirname}/../tpls/base/src`, cwd, { errorOnExist: true })
+  fs.copySync(`${__dirname}/../tpls/base/README.md`, `${cwd}/README.md`, { errorOnExist: true })
+  fs.copySync(`${__dirname}/../tpls/base/gitignore`, `${cwd}/.gitignore`, { errorOnExist: true })
+
+  if (vpc.use) fs.copySync(`${__dirname}/../tpls/vpc`, `${cwd}/src/vpc`, { errorOnExist: true })
+  if (rds.use) fs.copySync(`${__dirname}/../tpls/db`, `${cwd}/src/db`, { errorOnExist: true })
+
+  const settings = { project: project.name }
+
+  fs.writeJsonSync(`${cwd}/.cfdnrc`, settings)
 
   // This should actually come after we start the initial shit then.
   if (!fs.existsSync(`${home}/.cfdn/profiles.json`)) {
@@ -203,4 +217,8 @@ module.exports = async function init () {
 
   // Always see if they'd like to set up a new profile
   await addProfile()
+
+  log.s(`CloudFoundation project ${cyan(project.name)} successfully created!`, 0)
+
+  return log.i(`For more information and commands run ${chk.cyan('cfdn --help')} or visit url`, 3)
 }
