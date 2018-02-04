@@ -7,7 +7,7 @@ const jshint = require('jshint').JSHINT
 const { DESCRIPTION_ERROR_MSG } = require('../utils/constants')
 
 const {
-  _getProfile,
+  selectFromAllProfiles,
 } = require('../profiles/utils')
 
 const {
@@ -17,6 +17,7 @@ const {
   getTemplateAsObject,
   getCfnPropType,
   inquireTemplateName,
+  checkValidTemplate,
 } = require('../utils')
 
 const jshintOpts = {
@@ -25,7 +26,7 @@ const jshintOpts = {
   node: true,
 }
 
-module.exports = async function validate (env, opts) {
+async function validateOld (env, opts) {
   let aws
   let templateFiles
   let errors
@@ -143,4 +144,19 @@ module.exports = async function validate (env, opts) {
   // DONE: we just need to bring in inquirer JS and, if they don't supply a template
   // let them choose one and execute based on that.  This is eligible for helper function since
   // it's going to be used in Deploy and Update as well.
+}
+
+module.exports = async function validate (env, opts) {
+  let profile = opts && opts.profile
+  let name = env
+
+  // ask which template, assuming they haven't passed a name
+  // however, if they have passed a name, I need to check that it's an actual template
+  if (!name) name = await inquireTemplateName('Which template would you like to validate?')
+  else checkValidTemplate(name)
+
+  // now let's get the correct profile
+  // the annoying thing to do is probably to ask them for a valid profile, or force the usage of a flag each time...
+  // but other wise we're just guessing
+  if (!profile) profile = selectFromAllProfiles()
 }

@@ -176,24 +176,20 @@ exports.checkValidProject = (cmd, action, env, opts, isGlobal) => {
 }
 
 exports.inquireTemplateName = async (message) => {
-  let prompt
-  try {
-    const templates = glob.sync(`${process.cwd()}/src/*`).map((s) => {
-      const p = s.split('/')
-      return p[p.length - 1]
-    })
-    log()
-    prompt = await inq.prompt([
-      {
-        type: 'list',
-        name: 'templatename',
-        message,
-        choices: templates,
-      },
-    ])
-  } catch (error) {
-    throw error
-  }
+  const templates = glob.sync(`${process.cwd()}/src/*`).map((s) => {
+    const p = s.split('/')
+    return p[p.length - 1]
+  })
+
+  const prompt = await inq.prompt([
+    {
+      type: 'list',
+      name: 'templatename',
+      message,
+      choices: templates,
+    },
+  ])
+
   return prompt.templatename
 }
 

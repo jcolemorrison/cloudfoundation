@@ -207,6 +207,65 @@ exports.writeLocalProfiles = function writeLocalProfiles (profiles, dir) {
   fs.writeJsonSync(path, rc, { spaces: 2 })
 }
 
+// Profiles are an object of { profilename: { ...profileData } }, Message is the wording for selecting a profile
+exports.selectProfile = async function selectProfile (profiles, message) {
+  const msg = message || 'Which profile would you like to use?'
+  const choices = Object.keys(profiles)
+
+  const profile = await inq.prompt({
+    type: 'list',
+    message: msg,
+    name: 'choice',
+    choices,
+  })
+
+  return {
+    ...profiles[profile.choice],
+    name: profile.choice,
+  }
+}
+
+exports.selectFromAllProfiles = async function selectFromAllProfiles (message) {
+  const msg = message || 'Which profile would you like to use?'
+
+  const global = Object.entries(exports.getGlobalProfiles())
+    .map(([name, profile]) => ({
+      name,
+      value: { name, ...profile },
+    }))
+
+  const local = Object.entries(exports.getLocalProfiles())
+    .map(([name, profile]) => ({
+      name,
+      value: { name, ...profile },
+    }))
+
+  let choices = []
+
+  if (!local.length && !global.length) throw new Error('No CFDN Profiles set up.')
+
+  if (local.length) {
+    choices = choices.concat([
+      new inq.Separator('\n  [Local Profiles]'),
+    ], local)
+  }
+
+  if (global.length) {
+    choices = choices.concat([
+      new inq.Separator('\n  [Global Profiles]'),
+    ], global)
+  }
+
+  const profile = await inq.prompt({
+    type: 'list',
+    choices,
+    message: msg,
+    name: 'use',
+  })
+
+  return profile.use
+}
+
 // What should this do?
 // Well, we more or less need a local and global
 // If local, it needs to write it to the current directory's
@@ -373,23 +432,7 @@ exports.checkValidProfile = function validProfile (profile) {
 //   log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.\n`)
 // }
 
-// Profiles are an object of { profilename: { ...profileData } }, Message is the wording for selecting a profile
-exports.selectProfile = async function selectProfile (profiles, message) {
-  const msg = message || 'Which profile would you like to use?'
-  const choices = Object.keys(profiles)
 
-  const profile = await inq.prompt({
-    type: 'list',
-    message: msg,
-    name: 'choice',
-    choices,
-  })
-
-  return {
-    ...profiles[profile.choice],
-    name: profile.choice,
-  }
-}
 
 // TODO Update
 // exports.selectProfile = async function selectProfile (action, profiles, onlyCfdn) {
