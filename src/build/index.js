@@ -4,7 +4,7 @@ const chk = require('chalk')
 
 const { inquireTemplateName, log, getTemplateAsObject } = require('../utils')
 
-exports._buildTemplate = function buildTemplate (name) {
+exports.buildTemplate = function buildTemplate (name) {
   const cwd = process.cwd()
 
   try {
@@ -26,49 +26,31 @@ exports.build = async function buildOne (env) {
   let name = env
 
   if (!name) {
-    try {
-      name = await inquireTemplateName()
-    } catch (error) {
-      return log.e(error.message)
-    }
+    name = await inquireTemplateName('Which template would you like to build?')
   }
 
-  log.p()
-  log.i(`Building template ${chk.cyan(name)}...\n`)
+  log.i(`Building template ${chk.cyan(name)}...`)
 
-  try {
-    exports._buildTemplate(name)
-  } catch (error) {
-    return log.e(error.message)
-  }
+  exports.buildTemplate(name)
 
-  return log.s(chk.green(`Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} built in ${chk.cyan('./dist')}!\n`))
+  return log.s(`Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} built in ${chk.cyan('./dist')}!`, 2)
 }
 
-exports.buildAll = function buildAll () {
+exports.buildAll = async function buildAll () {
   const cwd = process.cwd()
-  log.p()
-  log.i('Building all templates...\n')
-  let names
-  try {
-    names = glob.sync(`${cwd}/src/*`).map((s) => {
-      const p = s.split('/')
-      return p[p.length - 1]
-    })
-    names.forEach((n) => {
-      try {
-        exports._buildTemplate(n)
-      } catch (error) {
-        throw error
-      }
-    })
-  } catch (error) {
-    return log.e(error.message)
-  }
+  log.i('Building all templates...')
 
-  log.s(chk.green('The following templates were successfully built\n'))
+  const names = glob.sync(`${cwd}/src/*`).map((s) => {
+    const p = s.split('/')
+    return p[p.length - 1]
+  })
+
+  names.forEach(n => exports.buildTemplate(n))
+
+  log.s('The following templates were successfully built:', 2)
+
   names.forEach(n => log.m(`${chk.cyan(`${n}.json`)} and ${chk.cyan(`${n}.min.json`)}`))
-  log.p()
-  return log.i(`Find the built templates in ${chk.cyan('./dist')}\n`)
+
+  return log.i(`Find the built templates in ${chk.cyan('./dist')}`, 2)
 }
 
