@@ -10,6 +10,7 @@ const {
   getTemplateAsObject,
   selectStackParams,
   selectRegion,
+  writeRcFile,
 } = require('../utils')
 
 const { selectStackOptions, confirmStack, createStack } = require('../utils/stacks')
@@ -190,7 +191,7 @@ async function deployOld (env, opts) {
     // They don't have to do this shit again.
     if (useExisting || saveSettings) {
       saveSettings = { ...stackFile, [stackName]: { ...stack } }
-      writeStackFile(templateDir, saveSettings)
+      writeRcFile(templateDir, saveSettings)
     }
 
     // DEPLOY GOES HERE
@@ -200,7 +201,7 @@ async function deployOld (env, opts) {
     if (useExisting || saveSettings) {
       saveSettings[stackName].deployed = true
       saveSettings[stackName].stackId = stackId
-      writeStackFile(templateDir, saveSettings)
+      writeRcFile(templateDir, saveSettings)
     }
 
     log.p()
@@ -298,8 +299,11 @@ module.exports = async function deploy (env, opts = {}) {
   // Write the stack file first, in case something fails, user won't have to re-input
   if (useExisting || saveSettings) {
     // This all need to chagne to write hte newly created stack to the RC file. .cfdnrc[TemplateName][StackName] = stack
-    saveSettings = { ...stackFile, [stackName]: { ...stack } }
-    writeStackFile(templateDir, saveSettings)
+    saveSettings = { ...rc }
+    saveSettings.templates[templateName] = {
+      [stackName]: { ...stack },
+    }
+    writeStackFile(cwd, saveSettings)
   }
 
   // DEPLOY GOES HERE
@@ -307,12 +311,10 @@ module.exports = async function deploy (env, opts = {}) {
 
   // and then after deploy
   if (useExisting || saveSettings) {
-    saveSettings[stackName].deployed = true
-    saveSettings[stackName].stackId = stackId
-    writeStackFile(templateDir, saveSettings)
+    saveSettings[templateName][stackName].stackId = stackId
+    writeStackFile(cwd, saveSettings)
   }
 
-  log.p()
   log.s(`Stack ${chk.cyan(stackName)} successfully deployed!`)
-  return log.i(`StackId: ${chk.cyan(stackId)}\n`)
+  return log.i(`StackId: ${chk.cyan(stackId)}`, 3)
 }
