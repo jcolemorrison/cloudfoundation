@@ -1,4 +1,6 @@
-const { log } = require('../index.js')
+const chk = require('chalk')
+const inq = require('inquirer')
+const { log } = require('./index.js')
 // PARAMETER INQUIRY TYPES
 
 // All params, when passed via CFN SDK, must be a string.
@@ -760,4 +762,21 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
   }
 
   return inquiry
+}
+
+
+exports.selectStackParams = async (Parameters, region, aws, prevParams) => {
+  const paramNames = Parameters && Object.keys(Parameters)
+
+  if (paramNames && paramNames.length < 1) return false
+
+  const paramInq = []
+
+  paramNames.forEach(name => (
+    paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws, prevParams && prevParams[name]))
+  ))
+
+  log.p(chk.bold.whiteBright('Parameter Values to be used for the stack...\n'))
+  const choices = await inq.prompt(paramInq)
+  return choices
 }

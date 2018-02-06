@@ -8,10 +8,10 @@ const {
   getStackFile,
   writeStackFile,
   getTemplateAsObject,
-  selectStackParams,
   selectRegion,
   writeRcFile,
 } = require('../utils')
+const { selectStackParams } = require('../utils/params.js')
 
 const { selectStackOptions, confirmStack, createStack } = require('../utils/stacks')
 
@@ -225,8 +225,6 @@ module.exports = async function deploy (env, opts = {}) {
   if (templateName) checkValidTemplate(templateName)
   else templateName = await inquireTemplateName('Which template would you like to deploy a stack for?')
 
-  const templateDir = `${cwd}/src/${templateName}`
-
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
   rc.templates = rc.templates || {}
 
@@ -265,7 +263,7 @@ module.exports = async function deploy (env, opts = {}) {
   else profile = getFromAllProfiles(profile)
 
   const aws = configAWS(profile)
-  const template = getTemplateAsObject(templateDir)
+  const template = getTemplateAsObject(templateName)
 
   // Create stack settings if unavailable
   if (!stack) {
@@ -298,21 +296,19 @@ module.exports = async function deploy (env, opts = {}) {
 
   // Write the stack file first, in case something fails, user won't have to re-input
   if (useExisting || saveSettings) {
-    // This all need to chagne to write hte newly created stack to the RC file. .cfdnrc[TemplateName][StackName] = stack
     saveSettings = { ...rc }
     saveSettings.templates[templateName] = {
       [stackName]: { ...stack },
     }
-    writeStackFile(cwd, saveSettings)
+    writeRcFile(cwd, saveSettings)
   }
 
-  // DEPLOY GOES HERE
   const stackId = await createStack(template, stackName, stack, aws)
 
-  // and then after deploy
+  // and then after deploy write the new stackId
   if (useExisting || saveSettings) {
-    saveSettings[templateName][stackName].stackId = stackId
-    writeStackFile(cwd, saveSettings)
+    saveSettings.templates[templateName][stackName].stackId = stackId
+    writeRcFile(cwd, saveSettings)
   }
 
   log.s(`Stack ${chk.cyan(stackName)} successfully deployed!`)

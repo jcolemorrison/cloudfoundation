@@ -4,7 +4,6 @@ const glob = require('glob')
 const path = require('path')
 const inq = require('inquirer')
 const os = require('os')
-const { buildParamInquiry } = require('./params.js')
 
 const { AWS_REGIONS } = require('./constants')
 
@@ -219,21 +218,6 @@ exports.writeRcFile = (dir, rc) => {
   fs.writeFileSync(rcFile, JSON.stringify(rc, null, 2), 'utf8')
 }
 
-exports.selectStackParams = async (Parameters, region, aws, prevParams) => {
-  const paramNames = Parameters && Object.keys(Parameters)
-
-  if (paramNames && paramNames.length < 1) return false
-
-  const paramInq = []
-
-  paramNames.forEach(name => (
-    paramInq.push(buildParamInquiry(Parameters[name], name, region, aws, prevParams && prevParams[name]))
-  ))
-
-  log(chk.bold.whiteBright('Parameter Values to be used for the stack...\n'))
-  const choices = await inq.prompt(paramInq)
-  return choices
-}
 
 exports.selectRegion = async (profile, message) => {
   const region = await inq.prompt([
