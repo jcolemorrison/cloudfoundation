@@ -2,7 +2,7 @@
   "ParamVPCCidrRange": {
     "Type": "Number",
     "Default": 0,
-    "Description": "The 'x' in 10.x.0.0/16 used to create the VPC's IPv4 Class B Network.  Means you can create 256 of these VPCs."
+    "Description": "The 'x' in 10.x.0.0/16 used to create the VPC's IPv4 Class B Network. 0 - 256."
   },
   "ParamNatGateway": {
     "Type": "String",
@@ -16,7 +16,7 @@
   },
   "ParamAllowSSHFromRange": {
     "Type": "String",
-    "Description": "IP CidrBlock to allow SSH access into for Bastions.  Don't forget your subnet mask! i.e. 100.100.100.100/32"
+    "Description": "IP CidrBlock to allow SSH access into for Bastions. i.e. 100.100.100.100/32"
   },
   "ParamBastionInstanceType": {
     "Description":"Bastion EC2 instance type",

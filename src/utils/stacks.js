@@ -90,8 +90,7 @@ exports.createSNSTopic = async (region, aws) => {
     ])
 
     const sns = new aws.SNS({ region })
-    log.p()
-    log.i('creating SNS Topic...\n')
+    log.i('creating SNS Topic...', 2)
     const { TopicArn } = await sns.createTopic({ Name: topic.name }).promise()
     await sns.subscribe({ TopicArn, Protocol: topic.protocol, Endpoint: topic.endpoint }).promise()
 
@@ -214,7 +213,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
     // Use or Reuse Tags
     if (prevOpts.tags) {
       log.p(this.displayTags(prevOpts.tags))
-      log.i('Previous tags found.\n')
+      log.i('Previous tags found.', 2)
 
       const reuse = await inq.prompt({
         type: 'confirm',
@@ -244,7 +243,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
     // Use or Reuse IAM Role
     if (prevOpts.iamRole) {
       log.p(this.displayIamRole(prevOpts.iamRole))
-      log.i('Previous IAM Role settings found.\n')
+      log.i('Previous IAM Role settings found.', 2)
 
       const reuse = await inq.prompt({
         type: 'confirm',
@@ -275,7 +274,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
 
     if (prevOpts.advanced) {
       log.p(this.displayAdvanced(prevOpts.advanced))
-      log.i('Previous Advanced settings found.\n')
+      log.i('Previous Advanced settings found.', 2)
 
       const reuse = await inq.prompt({
         type: 'confirm',
@@ -304,7 +303,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
 
     if (prevOpts.capabilityIam) {
       log.p(this.displayIamCapability(prevOpts.capabilityIam))
-      log.i('Previous IAM Capability settings found.\n')
+      log.i('Previous IAM Capability settings found.', 2)
 
       const reuse = await inq.prompt({
         type: 'confirm',
