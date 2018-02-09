@@ -338,6 +338,7 @@ exports.selectFromAllProfiles = async function selectFromAllProfiles (message) {
 //   }
 // }
 
+// Unneeded - getFromAllProfiles both validates the profile AND gets it
 exports.checkValidProfile = function validProfile (profile) {
   const profiles = exports.getProfiles()
   const profilesExist = Object.keys(profiles.cfdn).length + Object.keys(profiles.aws).length
