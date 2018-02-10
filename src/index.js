@@ -12,11 +12,14 @@ const listProfiles = require('./profiles/list')
 const updateProfile = require('./profiles/update')
 const removeProfile = require('./profiles/remove')
 const importProfiles = require('./profiles/import')
+const help = require('./help')
 const { checkValidProject } = require('./utils')
 
 
 cmd.version('1.0.0')
   .description('a tool and foundation for building production cloudformation templates')
+
+cmd.on('--help', help)
 
 cmd
   .command('init')
@@ -65,7 +68,7 @@ cmd
   .option('-i, --info', 'Include the advanced info of the stack')
   .option('-t, --tags', 'Include the tags of the stack')
   .option('-o, --outputs', 'Include the outputs of the stack')
-  .description('describe a stack created from [templatename] template - include all columns unless at least one is specified')
+  .description('describe a stack created from [templatename] - include all columns unless at least one specified')
   .action((e, o) => checkValidProject('describe [templatename]', describe, e, o))
 
 cmd
@@ -78,7 +81,7 @@ cmd
 cmd
   .command('delete [templatename]')
   .option('-s, --stackname <stackname>', 'Name of stack to delete')
-  .description('delete a stack created from [templatename] template')
+  .description('delete a stack created from [templatename] template\n')
   .action((e, o) => checkValidProject('delete [templatename]', deleteStack, e, o))
 
 cmd
