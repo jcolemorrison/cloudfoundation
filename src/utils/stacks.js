@@ -1,4 +1,3 @@
-const fs = require('fs-extra')
 const inq = require('inquirer')
 const chk = require('chalk')
 
@@ -29,12 +28,12 @@ exports.addTag = async () => {
 exports.addTags = async (tags = [], done) => {
   if (!done) {
     try {
-      const tag = await this.addTag()
+      const tag = await exports.addTag()
 
       if (tag) {
         tags.push(tag)
 
-        await this.addTags(tags, false)
+        await exports.addTags(tags, false)
       }
     } catch (error) {
       throw error
@@ -90,7 +89,7 @@ exports.createSNSTopic = async (region, aws) => {
     ])
 
     const sns = new aws.SNS({ region })
-    log.i('creating SNS Topic...', 2)
+    log.i('creating SNS Topic...')
     const { TopicArn } = await sns.createTopic({ Name: topic.name }).promise()
     await sns.subscribe({ TopicArn, Protocol: topic.protocol, Endpoint: topic.endpoint }).promise()
 
@@ -114,7 +113,7 @@ exports.setStackSNS = async (region, aws, prev) => {
     })
 
     if (sns.type === 'new') {
-      sns = await this.createSNSTopic(region, aws)
+      sns = await exports.createSNSTopic(region, aws)
     } else {
       sns = await inq.prompt({
         type: 'input',
@@ -142,7 +141,7 @@ exports.selectAdvancedStackOptions = async (region, aws, prevOpts = {}, isUpdate
     })
 
     if (sns) {
-      sns = await this.setStackSNS(region, aws, prevOpts.snsTopicArn)
+      sns = await exports.setStackSNS(region, aws, prevOpts.snsTopicArn)
 
       if (sns) options.snsTopicArn = sns
     }
@@ -202,134 +201,129 @@ exports.selectAdvancedStackOptions = async (region, aws, prevOpts = {}, isUpdate
 exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   const options = {}
 
-  // console.log(prevOpts)
+  let tags
+  let iamRole
+  let advanced
+  let capabilityIam
 
-  try {
-    let tags
-    let iamRole
-    let advanced
-    let capabilityIam
-
-    // Use or Reuse Tags
-    if (prevOpts.tags) {
-      log.p(this.displayTags(prevOpts.tags))
-      log.i('Previous tags found.', 2)
-
-      const reuse = await inq.prompt({
-        type: 'confirm',
-        message: 'Would you like to use these tags?',
-        default: true,
-        name: 'tags',
-      })
-
-      tags = reuse.tags && prevOpts.tags
-    }
-
-    if (!tags) {
-      tags = await inq.prompt({
-        type: 'confirm',
-        message: 'Would you like to add tags to this stack?',
-        default: false,
-        name: 'add',
-      })
-
-      tags = tags.add && await this.addTags()
-    }
-
-    if (tags && tags.length) options.tags = tags
-
+  // Use or Reuse Tags
+  if (prevOpts.tags) {
     log.p()
+    log.p(exports.displayTags(prevOpts.tags))
+    log.i('Previous tags found.', 3)
 
-    // Use or Reuse IAM Role
-    if (prevOpts.iamRole) {
-      log.p(this.displayIamRole(prevOpts.iamRole))
-      log.i('Previous IAM Role settings found.', 2)
+    const reuse = await inq.prompt({
+      type: 'confirm',
+      message: 'Would you like to use these tags?',
+      default: true,
+      name: 'tags',
+    })
 
-      const reuse = await inq.prompt({
-        type: 'confirm',
-        message: 'Would you like to use this IAM Role?',
-        default: true,
-        name: 'iamRole',
-      })
-
-      iamRole = reuse.iamRole && prevOpts.iamRole
-    }
-
-    if (!iamRole) {
-      iamRole = await inq.prompt({
-        type: 'confirm',
-        message: 'Would you like to use a separate IAM role to create / update this stack?',
-        default: false,
-        name: 'add',
-      })
-
-      iamRole = iamRole.add && await this.addIamRole(prevOpts.iamRole)
-    }
-
-    if (iamRole) options.iamRole = iamRole
-
-    log.p()
-
-    // Use and Reuse Advanced Settings
-
-    if (prevOpts.advanced) {
-      log.p(this.displayAdvanced(prevOpts.advanced))
-      log.i('Previous Advanced settings found.', 2)
-
-      const reuse = await inq.prompt({
-        type: 'confirm',
-        message: 'Would you like to use the above advanced settings?',
-        default: true,
-        name: 'advanced',
-      })
-
-      advanced = reuse.advanced && prevOpts.advanced
-    }
-
-    if (!advanced) {
-      advanced = await inq.prompt({
-        type: 'confirm',
-        message: 'Would you like to configure advanced options for your stack? i.e. notifications',
-        default: false,
-        name: 'add',
-      })
-
-      advanced = advanced.add && await this.selectAdvancedStackOptions(region, aws, prevOpts.advanced, isUpdate)
-    }
-
-    if (advanced) options.advanced = { ...advanced }
-
-    log.p()
-
-    if (prevOpts.capabilityIam) {
-      log.p(this.displayIamCapability(prevOpts.capabilityIam))
-      log.i('Previous IAM Capability settings found.', 2)
-
-      const reuse = await inq.prompt({
-        type: 'confirm',
-        message: 'Would you like to use this IAM Capability?',
-        default: true,
-        name: 'capability',
-      })
-
-      capabilityIam = reuse.capability && prevOpts.advanced
-    }
-
-    if (!capabilityIam) {
-      capabilityIam = await inq.prompt({
-        type: 'confirm',
-        message: 'Allow stack to create IAM resources?',
-        default: true,
-        name: 'add',
-      })
-
-      capabilityIam = capabilityIam.add
-    }
-
-    if (capabilityIam) options.capabilityIam = true
-  } catch (error) {
-    throw error
+    tags = reuse.tags && prevOpts.tags
   }
+
+  if (!tags) {
+    log.p()
+    tags = await inq.prompt({
+      type: 'confirm',
+      message: 'Would you like to add tags to this stack?',
+      default: false,
+      name: 'add',
+    })
+
+    tags = tags.add && await exports.addTags()
+  }
+
+  if (tags && tags.length) options.tags = tags
+
+  // Use or Reuse IAM Role
+  if (prevOpts.iamRole) {
+    log.p()
+    log.p(exports.displayIamRole(prevOpts.iamRole))
+    log.i('Previous IAM Role settings found.', 3)
+
+    const reuse = await inq.prompt({
+      type: 'confirm',
+      message: 'Would you like to use this IAM Role?',
+      default: true,
+      name: 'iamRole',
+    })
+
+    iamRole = reuse.iamRole && prevOpts.iamRole
+  }
+
+  if (!iamRole) {
+    log.p()
+    iamRole = await inq.prompt({
+      type: 'confirm',
+      message: 'Would you like to use a separate IAM role to create / update this stack?',
+      default: false,
+      name: 'add',
+    })
+
+    iamRole = iamRole.add && await exports.addIamRole(prevOpts.iamRole)
+  }
+
+  if (iamRole) options.iamRole = iamRole
+
+  // Use and Reuse Advanced Settings
+  if (prevOpts.advanced) {
+    log.p()
+    log.p(exports.displayAdvanced(prevOpts.advanced))
+    log.i('Previous Advanced settings found.', 3)
+
+    const reuse = await inq.prompt({
+      type: 'confirm',
+      message: 'Would you like to use the above advanced settings?',
+      default: true,
+      name: 'advanced',
+    })
+
+    advanced = reuse.advanced && prevOpts.advanced
+  }
+
+  if (!advanced) {
+    log.p()
+    advanced = await inq.prompt({
+      type: 'confirm',
+      message: 'Would you like to configure advanced options for your stack? i.e. notifications',
+      default: false,
+      name: 'add',
+    })
+
+    advanced = advanced.add && await exports.selectAdvancedStackOptions(region, aws, prevOpts.advanced, isUpdate)
+  }
+
+  if (advanced) options.advanced = { ...advanced }
+
+  if (prevOpts.capabilityIam) {
+    log.p()
+    log.p(exports.displayIamCapability(prevOpts.capabilityIam))
+    log.i('Previous IAM Capability settings found.', 3)
+
+    const reuse = await inq.prompt({
+      type: 'confirm',
+      message: 'Would you like to use this IAM Capability?',
+      default: true,
+      name: 'capability',
+    })
+
+    capabilityIam = reuse.capability && prevOpts.advanced
+  }
+
+  if (!capabilityIam) {
+    log.p()
+    capabilityIam = await inq.prompt({
+      type: 'confirm',
+      message: 'Allow stack to create IAM resources?',
+      default: true,
+      name: 'add',
+    })
+
+    capabilityIam = capabilityIam.add
+  }
+
+  if (capabilityIam) options.capabilityIam = true
 
   return options
 }
@@ -469,17 +463,17 @@ Region: ${region}
   info.push(generalInfo)
 
   // Add Stack Option Info
-  info.push(this.displayIamRole(opts.iamRole))
-  info.push(this.displayIamCapability(opts.capabilityIam))
+  info.push(exports.displayIamRole(opts.iamRole))
+  info.push(exports.displayIamCapability(opts.capabilityIam))
 
   // Add Tags Info
   if (opts.tags) {
-    info.push(this.displayTags(opts.tags))
+    info.push(exports.displayTags(opts.tags))
   }
 
   // Add Advanced Settings Info
   if (opts.advanced && Object.keys(opts.advanced).length) {
-    info.push(this.displayAdvanced(opts.advanced))
+    info.push(exports.displayAdvanced(opts.advanced))
   }
 
   // Add Parameter Info
@@ -495,10 +489,10 @@ ${params}`
 
   log.p(info.join('\n'))
 
-  if (message) log.p(`${chk.green(message)} ${chk.gray('(scroll up to see all)')}\n`)
+  if (message) log.p(`${chk.green(message)} ${chk.gray('(scroll up to see all)')}`)
   if (action === 'Update') {
     log.i('Termination Protection, Timeout in Minutes, and On Failure Behavior can only be set on creation of stacks.')
-    log.i('Stack Name, Profile, and Region cannot be changed on a stack once deployed.\n')
+    log.i('Stack Name, Profile, and Region cannot be changed on a stack once deployed.', 2)
   }
 }
 
@@ -602,15 +596,15 @@ Description: ${Description}
 `
   const display = [stackInfo]
 
-  if (!columns || columns.status) display.push(this.displayStackStatus(StackStatus, CreationTime, LastUpdatedTime))
+  if (!columns || columns.status) display.push(exports.displayStackStatus(StackStatus, CreationTime, LastUpdatedTime))
 
-  if (!columns || columns.parameters) display.push(this.displayStackParameters(Parameters))
+  if (!columns || columns.parameters) display.push(exports.displayStackParameters(Parameters))
 
-  if (!columns || columns.info) display.push(this.displayStackOptions(NotificationARNs, TimeoutInMinutes, Capabilities, EnableTerminationProtection))
+  if (!columns || columns.info) display.push(exports.displayStackOptions(NotificationARNs, TimeoutInMinutes, Capabilities, EnableTerminationProtection))
 
-  if (!columns || columns.tags) display.push(this.displayTags(Tags))
+  if (!columns || columns.tags) display.push(exports.displayTags(Tags))
 
-  if (!columns || columns.outputs) display.push(this.displayStackOutputs(Outputs))
+  if (!columns || columns.outputs) display.push(exports.displayStackOutputs(Outputs))
 
   return log.p(display.join('\n'))
 }

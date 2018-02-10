@@ -76,10 +76,8 @@ module.exports = async function deploy (env, opts = {}) {
   if (!stack) {
     region = await selectRegion(profile, 'Which region would you like to deploy this stack to?')
 
-    log.p()
     const params = await selectStackParams(template.Parameters, region, aws)
 
-    log.p()
     const options = await selectStackOptions(region, aws)
 
     stack = {

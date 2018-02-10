@@ -776,7 +776,7 @@ exports.selectStackParams = async (Parameters, region, aws, prevParams) => {
     paramInq.push(exports.buildParamInquiry(Parameters[name], name, region, aws, prevParams && prevParams[name]))
   ))
 
-  log.p(chk.bold.whiteBright('Parameter Values to be used for the stack...\n'))
+  log.p(chk.bold.whiteBright('\nParameter Values to be used for the stack...\n'))
   const choices = await inq.prompt(paramInq)
   return choices
 }
