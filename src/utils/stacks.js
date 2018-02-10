@@ -304,8 +304,8 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   return options
 }
 
-exports.selectStackName = async (templateName, stackFile, includeAll) => {
-  const choices = Object.keys(stackFile)
+exports.selectStackName = async (templateName, stacks, includeAll) => {
+  const choices = Object.keys(stacks)
   if (includeAll) choices.unshift('all')
   const stackInq = await inq.prompt([
     {

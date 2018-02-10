@@ -1,3 +1,4 @@
+const fs = require('fs-extra')
 const chk = require('chalk')
 const inq = require('inquirer')
 const {
@@ -5,11 +6,11 @@ const {
   inquireTemplateName,
   checkValidTemplate,
   getStackFile,
-  configAWS,
 } = require('../utils')
 
 const { selectStackName, displayStack } = require('../utils/stacks')
-const { _getProfile, parseProfileOption } = require('../profiles/utils')
+const { _getProfile, parseProfileOption, getFromAllProfiles } = require('../profiles/utils')
+const { configAWS } = require('../utils/aws.js')
 
 exports.describeAll = async function describeAll (env, opts) {
   const cwd = process.cwd()
@@ -119,28 +120,29 @@ exports.describe = async function describe (env, opts) {
 
   if (!templateName) templateName = await inquireTemplateName('Which template has the stack you want to update?')
 
-  const templateDir = `${cwd}/src/${templateName}`
-  const stackFile = getStackFile(templateDir)
+  const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
+
+  rc.templates = rc.templates || {}
+
+  const stacks = rc.templates[templateName]
 
   const stackName = opts && opts.stackname
     ? opts.stackname
-    : await selectStackName(templateName, stackFile)
+    : await selectStackName(templateName, stacks)
 
-  const stack = stackFile[stackName]
+  const stack = stacks[stackName]
 
-  if (!stack) {
-    log.p()
-    return log.i(`Stack ${stackName} not found.`)
-  }
+  if (!stack) log.e(`Stack ${stackName} not found.`, 2)
 
   const region = stack.region
 
-  const profile = _getProfile(stack.profile.name, stack.profile.type)
-  const aws = configAWS(profile || 'default')
+  const profile = getFromAllProfiles(stack.profile)
+  const aws = configAWS(profile)
 
   const cfn = new aws.CloudFormation({ region })
-  log.p()
-  log.i('Fetching stack info...\n')
+
+  log.i('Fetching stack info...', 2)
+
   const { Stacks } = await cfn.describeStacks({ StackName: stackName }).promise()
 
   return displayStack(Stacks[0], columns)
