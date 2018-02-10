@@ -18,7 +18,7 @@ module.exports = async function importProfiles () {
   const { profiles } = await getScopedProfiles(true)
   const awsProfiles = getAWSProfiles()
   const updated = { ...profiles, ...awsProfiles }
-  
+
   writeGlobalProfiles(updated)
 
   return log.s('Profiles successfully imported!', 2)

@@ -7,7 +7,6 @@ const deploy = require('./deploy')
 const update = require('./update')
 const deleteStack = require('./delete')
 const { describe, describeAll } = require('./describe')
-const test = require('./test')
 const addProfile = require('./profiles/add')
 const listProfiles = require('./profiles/list')
 const updateProfile = require('./profiles/update')
@@ -117,23 +116,8 @@ cmd
   .description('import all profile data from your shared AWS Credentials for global use with CloudFoundation')
   .action((e, o) => checkValidProject('import-profiles [name]', importProfiles, e, o, true))
 
-cmd
-  .command('test')
-  .description('test')
-  .action(test)
-
-cmd
-  .command('add <filepath>')
-  .description('add an AWS resource to the specified file')
-  .option('-r, --resource [resource]', 'exact name of the CFN resource to add to the file i.e. AWS::EC2::Instance')
-  .action((env, options) => {
-    console.log(env, options)
-  })
-
 cmd.parse(process.argv)
 
-// console.log(process.argv)
-// console.log(cmd.args)
 const validArgs = [
   'init',
   'build',
@@ -152,7 +136,6 @@ const validArgs = [
   'remove-profile',
   'update-profile',
 ]
-// console.log(cmd.args,  cmd._execs)
 
 if (cmd.args.length < 1 || validArgs.indexOf(cmd.args[cmd.args.length - 1]._name) === -1) {
   cmd.help()
