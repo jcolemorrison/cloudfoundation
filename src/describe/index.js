@@ -5,32 +5,35 @@ const {
   log,
   inquireTemplateName,
   checkValidTemplate,
-  getStackFile,
 } = require('../utils')
 
 const { selectStackName, displayStack } = require('../utils/stacks')
-const { _getProfile, parseProfileOption, getFromAllProfiles } = require('../profiles/utils')
+const { getFromAllProfiles } = require('../profiles/utils')
 const { configAWS } = require('../utils/aws.js')
 
 exports.describeAll = async function describeAll (env, opts) {
   const cwd = process.cwd()
   let templateName = env && checkValidTemplate(env)
-  let profile = opts && opts.profile && parseProfileOption(opts.profile)
+  let profile = opts && opts.profile
   let region = opts && opts.region
 
   if (!templateName) templateName = await inquireTemplateName('Which template has the stack you want to update?')
 
-  const templateDir = `${cwd}/src/${templateName}`
-  const stackFile = getStackFile(templateDir)
-  const stacks = Object.entries(stackFile)
+  const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
+
+  rc.templates = rc.templates || {}
+
+  const stacks = rc.templates[templateName] && Object.entries(rc.templates[templateName])
+
+  if (!stacks || !stacks.length) throw new Error(`No stacks for ${templateName} found.`)
 
   const validProfiles = stacks.reduce((profiles, [, stack]) => {
-    if (!profiles.find(p => p.name === stack.profile.name)) profiles.push({ ...stack.profile, value: stack.profile })
+    if (!profiles.find(p => p === stack.profile)) profiles.push(stack.profile)
     return profiles
   }, [])
 
-  if (profile && !validProfiles.find(p => p.name === profile.name)) {
-    throw new Error(`${chk.cyan(profile.name)} is not used for any of ${chk.cyan(templateName)}'s stacks.`)
+  if (profile && !validProfiles.find(p => p === profile)) {
+    throw new Error(`${chk.cyan(profile)} is not used for any of ${chk.cyan(templateName)}'s stacks.`)
   } else if (!profile) {
     profile = await inq.prompt({
       type: 'list',
@@ -42,21 +45,19 @@ exports.describeAll = async function describeAll (env, opts) {
     if (profile.use) profile = profile.use
   }
 
-  const profileStacks = stacks.filter(([, s]) => s.profile.name === profile.name && s.profile.type === profile.type)
+  const profileStacks = stacks.filter(([, s]) => s.profile === profile)
+
   const validRegions = stacks.reduce((regions, [, stack]) => {
-    if (profileStacks.find(([, ps]) => ps.profile.name === stack.profile.name)) {
+    if (profileStacks.find(([, ps]) => ps.profile === stack.profile)) {
       if (!regions.find(r => r === stack.region)) regions.push(stack.region)
     }
     return regions
   }, []).sort()
 
-  if (!validRegions.length) {
-    log.p()
-    return log.i(`No stacks found for Profile ${chk.cyan(profile.name)}\n`)
-  }
+  if (!validRegions.length) return log.e(`No stacks found for Profile ${chk.cyan(profile)}`, 2)
 
   if (region && !validRegions.find(r => r === region)) {
-    throw new Error(`${chk.cyan(region)} is not used for any of ${chk.cyan(profile.name)}'s stacks.`)
+    throw new Error(`${chk.cyan(region)} is not used for any of ${chk.cyan(profile)}'s stacks.`)
   } else if (!region) {
     region = await inq.prompt({
       type: 'list',
@@ -68,27 +69,28 @@ exports.describeAll = async function describeAll (env, opts) {
     if (region.use) region = region.use
   }
 
-  profile = _getProfile(profile.name, profile.type)
-  const aws = configAWS(profile || 'default')
+  profile = getFromAllProfiles(profile)
+
+  const aws = configAWS(profile)
   const cfn = new aws.CloudFormation({ region })
 
-  log.p()
   log.i('fetching stacks...')
+
   const { Stacks } = await cfn.describeStacks().promise()
 
   if (!Stacks.length) {
-    log.p()
-    return log.i(`No stacks found for Template ${chk.cyan(templateName)} for Profile ${chk.cyan(profile.name)} in Region ${chk.cyan(region)}\n`)
+    return log.i(`No stacks found for Template ${chk.cyan(templateName)} for Profile ${chk.cyan(profile.name)} in Region ${chk.cyan(region)}`, 2)
   }
 
   let info = `
 Stacks for Template ${chk.cyan(templateName)} for Profile ${chk.cyan(profile.name)} in Region ${chk.cyan(region)}
 
-Name, Created, Status, Description
+${chk.cyan('Name')}, Created, Status, Description
 ----------------------------------`
+
   Stacks.forEach((s) => {
     info += `
-${s.StackName}, ${new Date(s.CreationTime).toLocaleString()}, ${s.StackStatus}, ${s.Description}
+${chk.cyan(s.StackName)}, ${new Date(s.CreationTime).toLocaleString()}, ${s.StackStatus}, ${s.Description}
 `
   })
 
@@ -125,6 +127,8 @@ exports.describe = async function describe (env, opts) {
   rc.templates = rc.templates || {}
 
   const stacks = rc.templates[templateName]
+
+  if (!stacks) throw new Error(`No stacks for ${templateName} found.`)
 
   const stackName = opts && opts.stackname
     ? opts.stackname
