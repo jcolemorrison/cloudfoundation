@@ -1,16 +1,16 @@
+const fs = require('fs-extra')
 const chk = require('chalk')
 const inq = require('inquirer')
 const {
   log,
   inquireTemplateName,
   checkValidTemplate,
-  getStackFile,
-  configAWS,
-  writeStackFile,
+  writeRcFile,
 } = require('../utils')
 
 const { selectStackName } = require('../utils/stacks')
-const { _getProfile } = require('../profiles/utils')
+const { getFromAllProfiles } = require('../profiles/utils')
+const { configAWS } = require('../utils/aws.js')
 
 module.exports = async function deleteStack (env, opts) {
   const cwd = process.cwd()
@@ -18,19 +18,21 @@ module.exports = async function deleteStack (env, opts) {
 
   if (!templateName) templateName = await inquireTemplateName('Which template has the stack you want to delete?')
 
-  const templateDir = `${cwd}/src/${templateName}`
-  const stackFile = getStackFile(templateDir)
+  const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
+
+  rc.templates = rc.templates || {}
+
+  const stacks = rc.templates[templateName]
+
+  if (!stacks) throw new Error(`No stacks for ${templateName} found.`)
 
   const stackName = opts && opts.stackname
     ? opts.stackname
-    : await selectStackName(templateName, stackFile)
+    : await selectStackName(templateName, stacks)
 
-  const stack = stackFile[stackName]
+  const stack = stacks[stackName]
 
-  if (!stack) {
-    log.p()
-    return log.i(`Stack ${stackName} not found.\n`)
-  }
+  if (!stack) return log.e(`Stack ${stackName} not found.`, 2)
 
   const ensure = await inq.prompt({
     type: 'confirm',
@@ -43,16 +45,18 @@ module.exports = async function deleteStack (env, opts) {
 
   const region = stack.region
 
-  const profile = _getProfile(stack.profile.name, stack.profile.type)
-  const aws = configAWS(profile || 'default')
+  const profile = getFromAllProfiles(stack.profile)
+  const aws = configAWS(profile)
 
   const cfn = new aws.CloudFormation({ region })
 
   await cfn.deleteStack({ StackName: stack.stackId }).promise()
 
-  delete stackFile[stackName]
-  writeStackFile(templateDir, stackFile)
+  const saveSettings = { ...rc }
 
-  log.p()
-  return log.s(`Stack ${chk.cyan(stackName)} is being removed.  Run ${chk.cyan(`cfdn describe ${templateName} -s ${stackName} -a`)} to see the status.\n`)
+  delete saveSettings.templates[templateName][stackName]
+
+  writeRcFile(cwd, saveSettings)
+
+  return log.s(`Stack ${chk.cyan(stackName)} is being removed.`, 2)
 }

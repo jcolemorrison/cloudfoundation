@@ -136,7 +136,7 @@ exports.describe = async function describe (env, opts) {
 
   const stack = stacks[stackName]
 
-  if (!stack) log.e(`Stack ${stackName} not found.`, 2)
+  if (!stack) return log.e(`Stack ${stackName} not found.`, 2)
 
   const region = stack.region
 
