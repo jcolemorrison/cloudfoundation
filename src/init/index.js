@@ -4,7 +4,7 @@ const fs = require('fs-extra')
 const os = require('os')
 const addProfile = require('../profiles/add.js')
 const validatePkgName = require('validate-npm-package-name')
-const { log } = require('../utils')
+const ut = require('../utils')
 const pkgTpl = require('../tpls/user/package.tpl.json')
 
 const { cyan } = chk
@@ -15,10 +15,10 @@ module.exports = async function init () {
   const files = await fs.readdir(cwd)
 
   if (files.length > 0) {
-    return log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`)
+    return ut.log.e(`${chk.cyan('cfdn init')} should be used in an empty project directory`)
   }
 
-  log.p()
+  ut.log.p()
 
   const project = await inq.prompt({
     type: 'input',
@@ -48,7 +48,7 @@ module.exports = async function init () {
     default: true,
   })
 
-  log.i('Creating project files...')
+  ut.log.i('Creating project files...')
 
   const pkgjson = Object.assign({ name: project.name }, pkgTpl)
   fs.writeJsonSync(`${cwd}/package.json`, pkgjson, { spaces: 2, errorOnExist: true })
@@ -61,17 +61,16 @@ module.exports = async function init () {
 
   const settings = { project: project.name }
 
-  fs.writeJsonSync(`${cwd}/.cfdnrc`, settings)
+  fs.writeJsonSync(`${cwd}/.cfdnrc`, settings, { spaces: 2, errorOnExist: true })
 
-  // This should actually come after we start the initial shit then.
   if (!fs.existsSync(`${home}/.cfdn/profiles.json`)) {
-    log.i(`To ${cyan('validate')}, ${cyan('deploy')}, ${cyan('update')}, and ${cyan('describe')} stacks with ${cyan('cfdn')}, AWS Credentials (Profiles) are needed:`)
+    ut.log.i(`To ${cyan('validate')}, ${cyan('deploy')}, ${cyan('update')}, and ${cyan('describe')} stacks with ${cyan('cfdn')}, AWS Credentials (Profiles) are needed:`)
   }
 
   // Always see if they'd like to set up a new profile
   await addProfile()
 
-  log.s(`CloudFoundation project ${cyan(project.name)} successfully created!`, 0)
+  ut.log.s(`CloudFoundation project ${cyan(project.name)} successfully created!`, 0)
 
-  return log.i(`For more information and commands run ${chk.cyan('cfdn --help')} or visit url`, 3)
+  return ut.log.i(`For more information and commands run ${cyan('cfdn --help')} or visit url`, 3)
 }

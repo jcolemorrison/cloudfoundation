@@ -1,19 +1,5 @@
 {
   "version": "1.0.0",
   "description": "A CloudFormation project - generated with CloudFoundation",
-  "keywords": [
-    "aws",
-    "vpc",
-    "template",
-    "subnet",
-    "network-acl",
-    "route-table",
-    "readable"
-  ],
-  "author": "J Cole Morrison",
-  "license": "MIT",
-  "devDependencies": {
-    "glob": "^7.1.2"
-  },
   "cloudfoundation": true
 }

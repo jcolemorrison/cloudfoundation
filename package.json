@@ -23,6 +23,7 @@
     "start": "node .",
     "test": "nyc -r text-summary yarn test:unit",
     "test:unit": "NODE_ENV=test mocha --recursive",
+    "test:unit:cover": "nyc -r text-summary yarn test:unit && yarn test:unit:report",
     "test:unit:report": "nyc -r html report",
     "test:unit:run": "mocha -R spec",
     "test:unit:watch": "mocha -w -R spec",

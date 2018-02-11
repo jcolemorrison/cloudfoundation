@@ -12,7 +12,11 @@ const {
   getScopedProfiles,
 } = require('./utils')
 
-module.exports = async function addProfile (env, opts) {
+module.exports = function exportAddProfile (...args) {
+  return module.exports.addProfile.apply(this, args)
+}
+
+module.exports.addProfile = async function addProfile (env, opts) {
   log.p()
   const name = env
   const { global, local, aws, cfdn } = opts || {}
