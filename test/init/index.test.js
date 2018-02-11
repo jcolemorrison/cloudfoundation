@@ -101,27 +101,27 @@ describe('Init Function', () => {
       ])
 
       // Base Project
-      expect(copySync.getCall(0).args[0].split('tpls')[1]).to.equal('/base/src')
+      expect(copySync.getCall(0).args[0].includes('/base/src')).to.be.true
       expect(copySync.getCall(0).args[1]).to.equal(cwd)
       expect(copySync.getCall(0).args[2]).to.deep.equal({ errorOnExist: true })
 
       // README
-      expect(copySync.getCall(1).args[0].split('tpls')[1]).to.equal('/base/README.md')
+      expect(copySync.getCall(1).args[0].includes('/base/README.md')).to.be.true
       expect(copySync.getCall(1).args[1]).to.equal(`${cwd}/README.md`)
       expect(copySync.getCall(1).args[2]).to.deep.equal({ errorOnExist: true })
 
       // .gitignore
-      expect(copySync.getCall(2).args[0].split('tpls')[1]).to.equal('/base/gitignore')
+      expect(copySync.getCall(2).args[0].includes('/base/gitignore')).to.be.true
       expect(copySync.getCall(2).args[1]).to.equal(`${cwd}/.gitignore`)
       expect(copySync.getCall(2).args[2]).to.deep.equal({ errorOnExist: true })
 
       // use vpc
-      expect(copySync.getCall(3).args[0].split('tpls')[1]).to.equal('/vpc')
+      expect(copySync.getCall(3).args[0].includes('/vpc')).to.be.true
       expect(copySync.getCall(3).args[1]).to.equal(`${cwd}/src/vpc`)
       expect(copySync.getCall(3).args[2]).to.deep.equal({ errorOnExist: true })
 
       // use db
-      expect(copySync.getCall(4).args[0].split('tpls')[1]).to.equal('/db')
+      expect(copySync.getCall(4).args[0].includes('/db')).to.be.true
       expect(copySync.getCall(4).args[1]).to.equal(`${cwd}/src/db`)
       expect(copySync.getCall(4).args[2]).to.deep.equal({ errorOnExist: true })
 

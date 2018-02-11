@@ -2,14 +2,14 @@ const inq = require('inquirer')
 const chk = require('chalk')
 const fs = require('fs-extra')
 
-const { log } = require('../utils')
+const ut = require('../utils')
 
 module.exports = async function create (env) {
   const cwd = process.cwd()
   let settings = { templatename: env }
 
   if (!settings.templatename) {
-    log.p()
+    ut.log.p()
     settings = await inq.prompt({
       type: 'input',
       name: 'templatename',
@@ -21,16 +21,16 @@ module.exports = async function create (env) {
   const dir = `${cwd}/src/${settings.templatename}`
 
   if (fs.existsSync(dir)) {
-    return log.e(`Template ${chk.cyan(`${settings.templatename}`)} already exists!`)
+    return ut.log.e(`Template ${chk.cyan(`${settings.templatename}`)} already exists!`)
   }
 
-  await fs.copy(`${__dirname}/../tpls/new`, dir, { errorOnExist: true })
+  fs.copySync(`${__dirname}/../tpls/new`, dir, { errorOnExist: true })
 
   const desc = {
     Description: `${settings.templatename} cloudformation template template`,
   }
 
-  await fs.writeJSON(`${dir}/description.json`, desc, { spaces: 2 })
+  fs.writeJsonSync(`${dir}/description.json`, desc, { spaces: 2 })
 
-  return log.s(`Template ${chk.cyan(`${settings.templatename}`)} template created!`, 2)
+  return ut.log.s(`Template ${chk.cyan(`${settings.templatename}`)} template created!`, 2)
 }
