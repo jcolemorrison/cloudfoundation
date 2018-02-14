@@ -2,14 +2,14 @@ const inq = require('inquirer')
 const chk = require('chalk')
 const fs = require('fs-extra')
 
-const ut = require('../utils')
+const utils = require('../utils')
 
 module.exports = async function create (env) {
   const cwd = process.cwd()
   let settings = { templatename: env }
 
   if (!settings.templatename) {
-    ut.log.p()
+    utils.log.p()
     settings = await inq.prompt({
       type: 'input',
       name: 'templatename',
@@ -21,7 +21,7 @@ module.exports = async function create (env) {
   const dir = `${cwd}/src/${settings.templatename}`
 
   if (fs.existsSync(dir)) {
-    return ut.log.e(`Template ${chk.cyan(`${settings.templatename}`)} already exists!`)
+    return utils.log.e(`Template ${chk.cyan(`${settings.templatename}`)} already exists!`)
   }
 
   fs.copySync(`${__dirname}/../tpls/new`, dir, { errorOnExist: true })
@@ -32,5 +32,5 @@ module.exports = async function create (env) {
 
   fs.writeJsonSync(`${dir}/description.json`, desc, { spaces: 2 })
 
-  return ut.log.s(`Template ${chk.cyan(`${settings.templatename}`)} template created!`, 2)
+  return utils.log.s(`Template ${chk.cyan(`${settings.templatename}`)} template created!`, 2)
 }

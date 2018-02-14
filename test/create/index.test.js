@@ -1,7 +1,7 @@
 const expect = require('chai').expect
 const sinon = require('sinon')
 const chk = require('chalk')
-const ut = require('../../src/utils')
+const utils = require('../../src/utils')
 const fs = require('fs-extra')
 const inq = require('inquirer')
 const create = require('../../src/create')
@@ -15,11 +15,11 @@ describe('Create Template Function', () => {
 
   beforeEach(() => {
     log = {
-      p: sinon.stub(ut.log, 'p'),
-      e: sinon.stub(ut.log, 'e'),
-      s: sinon.stub(ut.log, 's'),
-      i: sinon.stub(ut.log, 'i'),
-      m: sinon.stub(ut.log, 'm'),
+      p: sinon.stub(utils.log, 'p'),
+      e: sinon.stub(utils.log, 'e'),
+      s: sinon.stub(utils.log, 's'),
+      i: sinon.stub(utils.log, 'i'),
+      m: sinon.stub(utils.log, 'm'),
     }
     inqPrompt = sinon.stub(inq, 'prompt')
     existsSync = sinon.stub(fs, 'existsSync')
