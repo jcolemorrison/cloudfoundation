@@ -51,6 +51,7 @@ exports.validateTemplateFilesJSON = (templateFiles) => {
   return errors
 }
 
+// Command
 exports.validate = async (env, opts) => {
   utils.log.p()
   let profile = opts && opts.profile
