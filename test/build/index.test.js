@@ -3,7 +3,6 @@ const sinon = require('sinon')
 const chk = require('chalk')
 const ut = require('../../src/utils')
 const fs = require('fs-extra')
-const inq = require('inquirer')
 const glob = require('glob')
 const cmd = require('../../src/build')
 
