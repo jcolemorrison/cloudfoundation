@@ -4,7 +4,7 @@ const fs = require('fs-extra')
 const chk = require('chalk')
 const inq = require('inquirer')
 const initialize = require('../../src/init')
-const ut = require('../../src/utils')
+const utils = require('../../src/utils')
 const addProfileCmd = require('../../src/profiles/add.js')
 
 const { cyan } = chk
@@ -27,11 +27,11 @@ describe('Init Function', () => {
     existsSync = sinon.stub(fs, 'existsSync')
     addProfile = sinon.stub(addProfileCmd, 'addProfile')
     log = {
-      p: sinon.stub(ut.log, 'p'),
-      e: sinon.stub(ut.log, 'e'),
-      s: sinon.stub(ut.log, 's'),
-      i: sinon.stub(ut.log, 'i'),
-      m: sinon.stub(ut.log, 'm'),
+      p: sinon.stub(utils.log, 'p'),
+      e: sinon.stub(utils.log, 'e'),
+      s: sinon.stub(utils.log, 's'),
+      i: sinon.stub(utils.log, 'i'),
+      m: sinon.stub(utils.log, 'm'),
     }
   })
 
