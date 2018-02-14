@@ -2,11 +2,11 @@ const fs = require('fs-extra')
 const glob = require('glob')
 const chk = require('chalk')
 
-const ut = require('../utils')
+const utils = require('../utils')
 
 exports.buildTemplate = function buildTemplate (name) {
   const cwd = process.cwd()
-  const templateObject = ut.getTemplateAsObject(name)
+  const templateObject = utils.getTemplateAsObject(name)
   const dist = `${cwd}/dist`
 
   fs.ensureDirSync(dist)
@@ -22,19 +22,19 @@ exports.build = async function buildOne (env) {
   let name = env
 
   if (!name) {
-    name = await ut.inquireTemplateName('Which template would you like to build?')
+    name = await utils.inquireTemplateName('Which template would you like to build?')
   }
 
-  ut.log.i(`Building template ${chk.cyan(name)}...`)
+  utils.log.i(`Building template ${chk.cyan(name)}...`)
 
   exports.buildTemplate(name)
 
-  return ut.log.s(`Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} built in ${chk.cyan('./dist')}!`, 2)
+  return utils.log.s(`Template ${chk.cyan(`${name}.json`)} and ${chk.cyan(`${name}.min.json`)} built in ${chk.cyan('./dist')}!`, 2)
 }
 
 exports.buildAll = async function buildAll () {
   const cwd = process.cwd()
-  ut.log.i('Building all templates...')
+  utils.log.i('Building all templates...')
 
   const names = glob.sync(`${cwd}/src/*`).map((s) => {
     const p = s.split('/')
@@ -43,10 +43,10 @@ exports.buildAll = async function buildAll () {
 
   names.forEach(n => exports.buildTemplate(n))
 
-  ut.log.s('The following templates were successfully built:', 2)
+  utils.log.s('The following templates were successfully built:', 2)
 
-  names.forEach(n => ut.log.m(`${chk.cyan(`${n}.json`)} and ${chk.cyan(`${n}.min.json`)}`))
+  names.forEach(n => utils.log.m(`${chk.cyan(`${n}.json`)} and ${chk.cyan(`${n}.min.json`)}`))
 
-  return ut.log.i(`Find the built templates in ${chk.cyan('./dist')}`, 2)
+  return utils.log.i(`Find the built templates in ${chk.cyan('./dist')}`, 2)
 }
 

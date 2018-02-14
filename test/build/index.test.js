@@ -1,7 +1,7 @@
 const expect = require('chai').expect
 const sinon = require('sinon')
 const chk = require('chalk')
-const ut = require('../../src/utils')
+const utils = require('../../src/utils')
 const fs = require('fs-extra')
 const glob = require('glob')
 const cmd = require('../../src/build')
@@ -11,11 +11,11 @@ describe('Build Template Functions', () => {
 
   beforeEach(() => {
     log = {
-      p: sinon.stub(ut.log, 'p'),
-      e: sinon.stub(ut.log, 'e'),
-      s: sinon.stub(ut.log, 's'),
-      i: sinon.stub(ut.log, 'i'),
-      m: sinon.stub(ut.log, 'm'),
+      p: sinon.stub(utils.log, 'p'),
+      e: sinon.stub(utils.log, 'e'),
+      s: sinon.stub(utils.log, 's'),
+      i: sinon.stub(utils.log, 'i'),
+      m: sinon.stub(utils.log, 'm'),
     }
   })
 
@@ -33,7 +33,7 @@ describe('Build Template Functions', () => {
     let writeFileSync
 
     beforeEach(() => {
-      getTemplateAsObject = sinon.stub(ut, 'getTemplateAsObject')
+      getTemplateAsObject = sinon.stub(utils, 'getTemplateAsObject')
       ensureDirSync = sinon.stub(fs, 'ensureDirSync')
       writeFileSync = sinon.stub(fs, 'writeFileSync')
     })
@@ -71,7 +71,7 @@ describe('Build Template Functions', () => {
 
     beforeEach(() => {
       buildTemplate = sinon.stub(cmd, 'buildTemplate')
-      inquireTemplateName = sinon.stub(ut, 'inquireTemplateName')
+      inquireTemplateName = sinon.stub(utils, 'inquireTemplateName')
     })
 
     afterEach(() => {
