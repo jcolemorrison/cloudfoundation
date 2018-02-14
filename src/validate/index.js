@@ -4,13 +4,11 @@ const path = require('path')
 const glob = require('glob')
 const jshint = require('jshint')
 
-const { DESCRIPTION_ERROR_MSG } = require('../utils/constants')
-
 const profileUtils = require('../profiles/utils')
-
 const awsUtils = require('../utils/aws.js')
-
 const utils = require('../utils')
+
+const { DESCRIPTION_ERROR_MSG } = require('../utils/constants')
 
 const jshintOpts = {
   asi: true,
@@ -18,22 +16,9 @@ const jshintOpts = {
   node: true,
 }
 
-module.exports = async function validate (env, opts) {
-  utils.log.p()
-  let profile = opts && opts.profile
-  let name = env
-
-  if (!name) name = await utils.inquireTemplateName('Which template would you like to validate?')
-  else utils.checkValidTemplate(name)
-
-  if (!profile) profile = await profileUtils.selectFromAllProfiles()
-  else profile = profileUtils.getFromAllProfiles(profile)
-
-  const aws = awsUtils.configAWS(profile)
-  const templateFiles = utils.getTemplateFiles(name)
+exports.getJSONErrors = (templateFiles) => {
   const errors = []
 
-  // Validate each file individually for better error reports
   templateFiles.forEach((tf) => {
     const isDir = fs.lstatSync(tf).isDirectory()
     const cfnProp = utils.getCfnPropType(tf)
@@ -56,6 +41,24 @@ module.exports = async function validate (env, opts) {
       })
     }
   })
+
+  return errors
+}
+
+exports.validate = async (env, opts) => {
+  utils.log.p()
+  let profile = opts && opts.profile
+  let name = env
+
+  if (!name) name = await utils.inquireTemplateName('Which template would you like to validate?')
+  else utils.checkValidTemplate(name)
+
+  if (!profile) profile = await profileUtils.selectFromAllProfiles()
+  else profile = profileUtils.getFromAllProfiles(profile)
+
+  const aws = awsUtils.configAWS(profile)
+  const templateFiles = utils.getTemplateFiles(name)
+  const errors = exports.getJSONErrors(templateFiles)
 
   // Log JSON Errors
   let ecount = 0
