@@ -16,28 +16,34 @@ const jshintOpts = {
   node: true,
 }
 
-exports.getJSONErrors = (templateFiles) => {
+// Singular
+exports.validateTemplateFileJSON = (templateFile) => {
   const errors = []
+
+  const j = fs.readFileSync(path.resolve(templateFile), 'utf8')
+
+  jshint.JSHINT(j, jshintOpts)
+
+  if (jshint.JSHINT.errors.length > 0) errors.push({ file: templateFile, errors: jshint.JSHINT.errors })
+
+  return errors
+}
+
+// Multiple
+exports.validateTemplateFilesJSON = (templateFiles) => {
+  let errors = []
 
   templateFiles.forEach((tf) => {
     const isDir = fs.lstatSync(tf).isDirectory()
     const cfnProp = utils.getCfnPropType(tf)
 
     if (!isDir) {
-      const j = fs.readFileSync(path.resolve(tf), 'utf8')
-
-      jshint.JSHINT(j, jshintOpts)
-
-      if (jshint.JSHINT.errors.length > 0) errors.push({ file: tf, errors: jshint.errors })
+      errors = errors.concat(exports.validateTemplateFileJSON(tf))
     } else {
       if (cfnProp === 'Description') throw new Error(DESCRIPTION_ERROR_MSG)
 
       glob.sync(`${tf}/**/*.+(js|json)`).forEach((f) => {
-        const j = fs.readFileSync(path.resolve(f), 'utf8')
-
-        jshint.JSHINT(j, jshintOpts)
-
-        if (jshint.JSHINT.errors.length > 0) errors.push({ file: f, errors: jshint.errors })
+        errors = errors.concat(exports.validateTemplateFileJSON(f))
       })
     }
   })
@@ -58,7 +64,7 @@ exports.validate = async (env, opts) => {
 
   const aws = awsUtils.configAWS(profile)
   const templateFiles = utils.getTemplateFiles(name)
-  const errors = exports.getJSONErrors(templateFiles)
+  const errors = exports.validateTemplateFilesJSON(templateFiles)
 
   // Log JSON Errors
   let ecount = 0
