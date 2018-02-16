@@ -1,14 +1,8 @@
 const fs = require('fs-extra')
 const inq = require('inquirer')
 const chk = require('chalk')
-const {
-  log,
-  inquireTemplateName,
-  checkValidTemplate,
-  getTemplateAsObject,
-  selectRegion,
-  writeRcFile,
-} = require('../utils')
+const utils = require('../utils')
+
 const { selectStackParams } = require('../utils/params.js')
 const { selectStackOptions, confirmStack, createStack } = require('../utils/stacks')
 const {
@@ -29,8 +23,8 @@ module.exports = async function deploy (env, opts = {}) {
   let saveSettings
   let useExisting
 
-  if (templateName) checkValidTemplate(templateName)
-  else templateName = await inquireTemplateName('Which template would you like to deploy a stack for?')
+  if (templateName) utils.checkValidTemplate(templateName)
+  else templateName = await utils.inquireTemplateName('Which template would you like to deploy a stack for?')
 
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
   rc.templates = rc.templates || {}
@@ -63,18 +57,18 @@ module.exports = async function deploy (env, opts = {}) {
     useExisting = await confirmStack(templateName, stackName, stack, msg, 'Deploy')
 
     if (useExisting) profile = stack.profile
-    else return log.e(`Stack ${cyan(stackName)} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`)
+    else return utils.log.e(`Stack ${cyan(stackName)} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`)
   }
 
   if (!profile) profile = await selectFromAllProfiles('Which profile would you like to use to deploy this stack?')
   else profile = getFromAllProfiles(profile)
 
   const aws = configAWS(profile)
-  const template = getTemplateAsObject(templateName)
+  const template = utils.getTemplateAsObject(templateName)
 
   // Create stack settings if unavailable
   if (!stack) {
-    region = await selectRegion(profile, 'Which region would you like to deploy this stack to?')
+    region = await utils.selectRegion(profile, 'Which region would you like to deploy this stack to?')
 
     const params = await selectStackParams(template.Parameters, region, aws)
 
@@ -106,7 +100,7 @@ module.exports = async function deploy (env, opts = {}) {
       ...saveSettings.templates[templateName],
       [stackName]: { ...stack },
     }
-    writeRcFile(cwd, saveSettings)
+    utils.writeRcFile(cwd, saveSettings)
   }
 
   const stackId = await createStack(template, stackName, stack, aws)
@@ -114,9 +108,9 @@ module.exports = async function deploy (env, opts = {}) {
   // and then after deploy write the new stackId
   if (useExisting || saveSettings) {
     saveSettings.templates[templateName][stackName].stackId = stackId
-    writeRcFile(cwd, saveSettings)
+    utils.writeRcFile(cwd, saveSettings)
   }
 
-  log.s(`Stack ${chk.cyan(stackName)} successfully deployed!`)
-  return log.i(`StackId: ${chk.cyan(stackId)}`, 3)
+  utils.log.s(`Stack ${chk.cyan(stackName)} successfully deployed!`)
+  return utils.log.i(`StackId: ${chk.cyan(stackId)}`, 3)
 }
