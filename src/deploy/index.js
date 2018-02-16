@@ -4,12 +4,8 @@ const chk = require('chalk')
 const utils = require('../utils')
 const paramUtils = require('../utils/params.js')
 const stackUtils = require('../utils/stacks')
-
-const {
-  getFromAllProfiles,
-  selectFromAllProfiles,
-} = require('../profiles/utils')
-const { configAWS } = require('../utils/aws.js')
+const profileUtils = require('../profiles/utils')
+const awsUtils = require('../utils/aws.js')
 
 const { cyan } = chk
 
@@ -60,10 +56,10 @@ module.exports = async function deploy (env, opts = {}) {
     else return utils.log.e(`Stack ${cyan(stackName)} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`)
   }
 
-  if (!profile) profile = await selectFromAllProfiles('Which profile would you like to use to deploy this stack?')
-  else profile = getFromAllProfiles(profile)
+  if (!profile) profile = await profileUtils.selectFromAllProfiles('Which profile would you like to use to deploy this stack?')
+  else profile = profileUtils.getFromAllProfiles(profile)
 
-  const aws = configAWS(profile)
+  const aws = awsUtils.configAWS(profile)
   const template = utils.getTemplateAsObject(templateName)
 
   // Create stack settings if unavailable
