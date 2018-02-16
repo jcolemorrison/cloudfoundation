@@ -1,6 +1,5 @@
 const expect = require('chai').expect
 const sinon = require('sinon')
-const chk = require('chalk')
 const fs = require('fs-extra')
 const path = require('path')
 const glob = require('glob')
@@ -66,7 +65,7 @@ describe('Validate Functions', () => {
       validateTemplateFilesJSON.restore()
       getTemplateAsObject.restore()
     })
-    
+
     it('should fully validate the template and log an information message', () => {
       const env = 'test'
       const opts = { profile: 'TestProfile' }
