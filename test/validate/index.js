@@ -189,38 +189,107 @@ describe('Validate Functions', () => {
   })
 
   describe('#validateTemplateFilesJSON', () => {
+    let validateTemplateFileJSON
+    let globSync
+    let getCfnPropType
+    let lstatSync
+    let isDirectory
+
+    beforeEach(() => {
+      validateTemplateFileJSON = sinon.stub(cmd, 'validateTemplateFileJSON')
+      globSync = sinon.stub(glob, 'sync')
+      getCfnPropType = sinon.stub(utils, 'getCfnPropType')
+      lstatSync = sinon.stub(fs, 'lstatSync')
+      isDirectory = sinon.stub()
+    })
+
+    afterEach(() => {
+      validateTemplateFileJSON.restore()
+      globSync.restore()
+      getCfnPropType.restore()
+      lstatSync.restore()
+    })
+
     it('should return an array of json errors', () => {
       const templateFiles = [
-        '/Users/test/project/src/test/one.json',
-        '/Users/test/project/src/test/two.json',
-        '/Users/test/project/src/test/three.json',
+        '/Users/test/project/src/test/description.json',
+        '/Users/test/project/src/test/metadata.json',
+        '/Users/test/project/src/test/ec2/',
       ]
+      const ec2Files = [
+        '/Users/test/project/src/test/ec2/instance.json',
+        '/Users/test/project/src/test/ec2/loadbalancer.json',
+      ]
+
+      isDirectory.onCall(0).returns(false)
+      isDirectory.onCall(1).returns(false)
+      isDirectory.onCall(2).returns(true)
+      lstatSync.returns({ isDirectory })
+      validateTemplateFileJSON.returns(['error'])
+      globSync.returns(ec2Files)
+
       const result = cmd.validateTemplateFilesJSON(templateFiles)
-      
-      expect(result.length).to.equal(3)
+
+      expect(result.length).to.equal(4)
+      expect(result).to.deep.equal([
+        'error',
+        'error',
+        'error',
+        'error',
+      ])
+    })
+
+    it('should throw an error if Description is a directory', () => {
+      const templateFiles = [
+        '/Users/test/project/src/test/description',
+      ]
+
+      isDirectory.onCall(0).returns(true)
+      lstatSync.returns({ isDirectory })
+      getCfnPropType.returns('Description')
+
+
+      const result = () => cmd.validateTemplateFilesJSON(templateFiles)
+
+      expect(result).to.throw().with.property('message', 'Description should be in "description.json" with one property "Description" and with a string value.')
+    })
+  })
+
+  describe('#validateTemplateFileJSON', () => {
+    const originalHint = jshint.JSHINT
+    let resolvePath
+    let readFileSync
+
+    beforeEach(() => {
+      resolvePath = sinon.stub(path, 'resolve').returns('/resolved/path/')
+      readFileSync = sinon.stub(fs, 'readFileSync').returns({ test: 'json' })
+    })
+
+    afterEach(() => {
+      resolvePath.restore()
+      readFileSync.restore()
+      jshint.JSHINT = originalHint
+    })
+
+    it('should return any errors found by JSHINT', () => {
+      jshint.JSHINT = function errors () { this.JSHINT.errors = ['error'] }
+
+      const result = cmd.validateTemplateFileJSON('testfile.json')
+
       expect(result).to.deep.equal([
         {
-          file: '/Users/test/project/src/test/one.json',
-          errors: [
-            { line: 1, reason: 'test' },
-            { line: 2, reason: 'test' },
-          ],
-        },
-        {
-          file: '/Users/test/project/src/test/two.json',
-          errors: [
-            { line: 1, reason: 'test' },
-          ],
-        },
-        {
-          file: '/Users/test/project/src/test/three.json',
-          errors: [
-            { line: 1, reason: 'test' },
-            { line: 2, reason: 'test' },
-            { line: 3, reason: 'test' },
-          ],
+          errors: ['error'],
+          file: 'testfile.json',
         },
       ])
+    })
+
+    it('should not return errors if none found by JSHINT', () => {
+      jshint.JSHINT = function errors () { this.JSHINT.errors = [] }
+
+      const result = cmd.validateTemplateFileJSON('testfile.json')
+
+      expect(result).to.deep.equal([])
     })
   })
 })
