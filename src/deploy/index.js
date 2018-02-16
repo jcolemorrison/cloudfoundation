@@ -2,9 +2,9 @@ const fs = require('fs-extra')
 const inq = require('inquirer')
 const chk = require('chalk')
 const utils = require('../utils')
+const paramUtils = require('../utils/params.js')
+const stackUtils = require('../utils/stacks')
 
-const { selectStackParams } = require('../utils/params.js')
-const { selectStackOptions, confirmStack, createStack } = require('../utils/stacks')
 const {
   getFromAllProfiles,
   selectFromAllProfiles,
@@ -54,7 +54,7 @@ module.exports = async function deploy (env, opts = {}) {
     }
 
     const msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}`
-    useExisting = await confirmStack(templateName, stackName, stack, msg, 'Deploy')
+    useExisting = await stackUtils.confirmStack(templateName, stackName, stack, msg, 'Deploy')
 
     if (useExisting) profile = stack.profile
     else return utils.log.e(`Stack ${cyan(stackName)} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`)
@@ -70,9 +70,9 @@ module.exports = async function deploy (env, opts = {}) {
   if (!stack) {
     region = await utils.selectRegion(profile, 'Which region would you like to deploy this stack to?')
 
-    const params = await selectStackParams(template.Parameters, region, aws)
+    const params = await paramUtils.selectStackParams(template.Parameters, region, aws)
 
-    const options = await selectStackOptions(region, aws)
+    const options = await stackUtils.selectStackOptions(region, aws)
 
     stack = {
       profile: profile.name,
@@ -83,7 +83,7 @@ module.exports = async function deploy (env, opts = {}) {
   }
 
   if (!useExisting) {
-    if (!await confirmStack(templateName, stackName, stack, false, 'Deploy')) return false
+    if (!await stackUtils.confirmStack(templateName, stackName, stack, false, 'Deploy')) return false
 
     saveSettings = await inq.prompt({
       type: 'confirm',
@@ -103,7 +103,7 @@ module.exports = async function deploy (env, opts = {}) {
     utils.writeRcFile(cwd, saveSettings)
   }
 
-  const stackId = await createStack(template, stackName, stack, aws)
+  const stackId = await stackUtils.createStack(template, stackName, stack, aws)
 
   // and then after deploy write the new stackId
   if (useExisting || saveSettings) {
