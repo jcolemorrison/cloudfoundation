@@ -370,7 +370,7 @@ describe('Deploy Functions', () => {
           'testTemplateName',
         ])
         expect(log.e.lastCall.args).to.deep.equal([
-          `Stack ${chk.cyan('testStackName')} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`
+          `Stack ${chk.cyan('testStackName')} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`,
         ])
       })
     })
@@ -454,6 +454,152 @@ describe('Deploy Functions', () => {
         ])
 
         expect(writeRcFile.called).to.be.false
+      })
+    })
+  })
+
+  describe('#inqStackName', () => {
+    let inqPrompt
+
+    beforeEach(() => {
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      inqPrompt.restore()
+    })
+
+    it('should return the selected stackName', () => {
+      inqPrompt.returns({ name: 'testStackName' })
+
+      return cmd.inqStackName('testTemplateName').then((d) => {
+        expect(d).to.equal('testStackName')
+
+        const validateFn = inqPrompt.getCall(0).args[0].validate
+
+        expect(validateFn()).to.equal('A name for the stack is required!')
+        expect(validateFn('wrong.thing')).to.equal('Stack names can only contain alphanumeric characters and hyphens')
+        expect(validateFn('toolong'.repeat(20))).to.equal('Stack names can only be 128 characters long')
+        expect(validateFn('goodname')).to.be.true
+      })
+    })
+  })
+
+  describe('#useExistingDeploy', () => {
+    let confirmStack
+
+    beforeEach(() => {
+      confirmStack = sinon.stub(stackUtils, 'confirmStack')
+    })
+
+    afterEach(() => {
+      confirmStack.restore()
+    })
+
+    it('should return the call to the confirmStack', () => {
+      const stack = {}
+      confirmStack.returns(true)
+
+      return cmd.useExistingDeploy(stack, 'testStackName', 'testTemplateName').then((d) => {
+        expect(d).to.be.true
+        expect(confirmStack.lastCall.args).to.deep.equal([
+          'testTemplateName',
+          'testStackName',
+          {},
+          `Stack with name ${chk.cyan('testStackName')} found for template ${chk.cyan('testTemplateName')}`,
+          'Deploy',
+        ])
+      })
+    })
+
+    it('should throw an error if the stack is already deployed', () => {
+      const stack = { stackId: 'test:stack:id' }
+
+      return cmd.useExistingDeploy(stack, 'testStackName', 'testTemplateName').catch((e) => {
+        expect(e.message).to.equal(chk.red(`Stack ${chk.cyan('testStackName')} already exists.  Run ${chk.cyan(`cfdn update ${'testTemplateName'} --stackname ${'testStackName'}`)} to modify it.`))
+      })
+    })
+  })
+
+  describe('#createStackSettings', () => {
+    let selectRegion
+    let selectStackParams
+    let selectStackOptions
+
+    beforeEach(() => {
+      selectRegion = sinon.stub(utils, 'selectRegion')
+      selectStackParams = sinon.stub(paramUtils, 'selectStackParams')
+      selectStackOptions = sinon.stub(stackUtils, 'selectStackOptions')
+    })
+
+    afterEach(() => {
+      selectRegion.restore()
+      selectStackParams.restore()
+      selectStackOptions.restore()
+    })
+
+    it('should return the stack settings based on the user selection prompts', () => {
+      const profile = { name: 'testProfile' }
+      const templateParams = { ParamOne: 'one', ParamTwo: 'two' }
+
+      selectRegion.returns('us-east-1')
+      selectStackParams.returns({ ParamOne: 'one', ParamTwo: 'two' })
+      selectStackOptions.returns('options')
+
+      return cmd.createStackSettings(profile, templateParams, 'configuredAWS').then((d) => {
+        expect(d).to.deep.equal({
+          profile: 'testProfile',
+          region: 'us-east-1',
+          options: 'options',
+          parameters: { ParamOne: 'one', ParamTwo: 'two' },
+        })
+      })
+    })
+  })
+
+  describe('#createSaveSettings', () => {
+    it('should properly structure the RC file with new settings', () => {
+      const rc = {
+        project: 'test-project',
+        profiles: {
+          testProfile: {
+            aws_access_key_id: 'abcd',
+            aws_secret_access_key: 'efgh',
+            region: 'us-east-1',
+          },
+        },
+        templates: {
+          other: {},
+          testTemplateName: {
+            otherStack: {},
+          },
+        },
+      }
+      const stack = {
+        profile: 'testProfile',
+        parameters: {},
+      }
+      const result = cmd.createSaveSettings(rc, 'testTemplateName', 'testStackName', stack)
+
+      expect(result).to.deep.equal({
+        project: 'test-project',
+        profiles: {
+          testProfile: {
+            aws_access_key_id: 'abcd',
+            aws_secret_access_key: 'efgh',
+            region: 'us-east-1',
+          },
+        },
+        templates: {
+          other: {},
+          testTemplateName: {
+            otherStack: {},
+            testStackName: {
+              profile: 'testProfile',
+              parameters: {},
+            },
+          },
+        },
       })
     })
   })
