@@ -82,7 +82,7 @@ exports.deploy = async function deploy (env, opts = {}) {
 
   // Load predefined stack settings if available
   if (stack) {
-    useExisting = await this.exports.useExistingDeploy(stack, stackName, templateName)
+    useExisting = await exports.useExistingDeploy(stack, stackName, templateName)
 
     if (useExisting) profile = stack.profile
     else return utils.log.e(`Stack ${cyan(stackName)} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`)
@@ -112,16 +112,17 @@ exports.deploy = async function deploy (env, opts = {}) {
 
   // Write the updated RC file first, in case something fails, user won't have to re-input
   if (useExisting || saveSettings.use) {
-    saveSettings = exports.createSaveSettings(rc, templateName, stackName, stack)
-    utils.writeRcFile(cwd, saveSettings)
+    const settings = exports.createSaveSettings(rc, templateName, stackName, stack)
+    utils.writeRcFile(cwd, settings)
   }
 
   const stackId = await stackUtils.createStack(template, stackName, stack, aws)
 
   // and then after deploy write the new stackId
-  if (useExisting || saveSettings) {
-    saveSettings.templates[templateName][stackName].stackId = stackId
-    utils.writeRcFile(cwd, saveSettings)
+  if (useExisting || saveSettings.use) {
+    const settings = exports.createSaveSettings(rc, templateName, stackName, stack)
+    settings.templates[templateName][stackName].stackId = stackId
+    utils.writeRcFile(cwd, settings)
   }
 
   utils.log.s(`Stack ${chk.cyan(stackName)} successfully deployed!`)

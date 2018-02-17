@@ -36,9 +36,12 @@ describe('Deploy Functions', () => {
 
   describe('#deploy', () => {
     let readJsonSync
+    let useExistingDeploy
     let inquireTemplateName
+    let checkValidTemplate
     let inqStackName
     let selectFromAllProfiles
+    let getFromAllProfiles
     let configAWS
     let getTemplateAsObject
     let createStackSettings
@@ -50,9 +53,12 @@ describe('Deploy Functions', () => {
 
     beforeEach(() => {
       readJsonSync = sinon.stub(fs, 'readJsonSync')
+      useExistingDeploy = sinon.stub(cmd, 'useExistingDeploy')
       inquireTemplateName = sinon.stub(utils, 'inquireTemplateName')
+      checkValidTemplate = sinon.stub(utils, 'checkValidTemplate')
       inqStackName = sinon.stub(cmd, 'inqStackName')
       selectFromAllProfiles = sinon.stub(profileUtils, 'selectFromAllProfiles')
+      getFromAllProfiles = sinon.stub(profileUtils, 'getFromAllProfiles')
       configAWS = sinon.stub(awsUtils, 'configAWS')
       getTemplateAsObject = sinon.stub(utils, 'getTemplateAsObject')
       createStackSettings = sinon.stub(cmd, 'createStackSettings')
@@ -65,9 +71,12 @@ describe('Deploy Functions', () => {
 
     afterEach(() => {
       readJsonSync.restore()
+      useExistingDeploy.restore()
       inquireTemplateName.restore()
+      checkValidTemplate.restore()
       inqStackName.restore()
       selectFromAllProfiles.restore()
+      getFromAllProfiles.restore()
       configAWS.restore()
       getTemplateAsObject.restore()
       createStackSettings.restore()
@@ -158,112 +167,294 @@ describe('Deploy Functions', () => {
         ])
       })
     })
+
+    it('should deploy the stack with cli options, but no predefined stack', () => {
+      const testTemplate = { Parameters: { ParamOne: 'Test', ParamTwo: 'Test' } }
+
+      const env = 'testTemplateName'
+      const opts = { profile: 'testProfile', stackname: 'testStackName' }
+
+      readJsonSync.returns({})
+      checkValidTemplate.returns(true)
+      getFromAllProfiles.returns('selectedProfile')
+      configAWS.returns('configuredAWS')
+      getTemplateAsObject.returns(testTemplate)
+      createStackSettings.returns({ test: 'stack' })
+      confirmStack.returns(true)
+      inqPrompt.returns({ use: true })
+      createSaveSettings.returns({
+        templates: {
+          testTemplateName: {
+            testStackName: {
+              test: 'stack',
+            },
+          },
+        },
+      })
+      createStack.returns('test:stack:id')
+
+      return cmd.deploy(env, opts).then(() => {
+        expect(configAWS.lastCall.args[0]).to.deep.equal('selectedProfile')
+        expect(getTemplateAsObject.lastCall.args[0]).to.equal('testTemplateName')
+        expect(createStackSettings.lastCall.args).to.deep.equal([
+          'selectedProfile',
+          testTemplate.Parameters,
+          'configuredAWS',
+        ])
+        expect(confirmStack.lastCall.args).to.deep.equal([
+          'testTemplateName',
+          'testStackName',
+          { test: 'stack' },
+          false,
+          'Deploy',
+        ])
+        // Whether ot save settings
+        expect(inqPrompt.lastCall.args[0]).to.deep.equal({
+          type: 'confirm',
+          name: 'use',
+          message: 'Would you like to save these options for later deploys and updates?',
+          default: true,
+        })
+        expect(createSaveSettings.firstCall.args).to.deep.equal([
+          { templates: {} },
+          'testTemplateName',
+          'testStackName',
+          { test: 'stack' },
+        ])
+
+        expect(createStack.getCall(0).args).to.deep.equal([
+          testTemplate,
+          'testStackName',
+          { test: 'stack' },
+          'configuredAWS',
+        ])
+
+        expect(writeRcFile.lastCall.args).to.deep.equal([
+          cwd,
+          {
+            templates: {
+              testTemplateName: {
+                testStackName: {
+                  test: 'stack',
+                  stackId: 'test:stack:id',
+                },
+              },
+            },
+          },
+        ])
+
+        expect(log.i.lastCall.args).to.deep.equal([
+          `StackId: ${chk.cyan('test:stack:id')}`,
+          3,
+        ])
+      })
+    })
+
+    it('should deploy with predefined stack settings', () => {
+      const testTemplate = { Parameters: { ParamOne: 'Test', ParamTwo: 'Test' } }
+
+      const env = 'testTemplateName'
+      const opts = { profile: 'testProfile', stackname: 'testStackName' }
+
+      readJsonSync.returns({
+        templates: {
+          testTemplateName: {
+            testStackName: {
+              profile: 'stackProfile',
+              test: 'stack',
+            },
+          },
+        },
+      })
+      useExistingDeploy.returns(true)
+      checkValidTemplate.returns(true)
+      getFromAllProfiles.returns('selectedProfile')
+      configAWS.returns('configuredAWS')
+      getTemplateAsObject.returns(testTemplate)
+      createSaveSettings.returns({
+        templates: {
+          testTemplateName: {
+            testStackName: {
+              test: 'stack',
+            },
+          },
+        },
+      })
+      createStack.returns('test:stack:id')
+
+      return cmd.deploy(env, opts).then(() => {
+        expect(useExistingDeploy.firstCall.args).to.deep.equal([
+          {
+            profile: 'stackProfile',
+            test: 'stack',
+          },
+          'testStackName',
+          'testTemplateName',
+        ])
+        expect(configAWS.lastCall.args[0]).to.deep.equal('selectedProfile')
+        expect(getTemplateAsObject.lastCall.args[0]).to.equal('testTemplateName')
+
+        expect(createSaveSettings.firstCall.args).to.deep.equal([
+          {
+            templates: {
+              testTemplateName: {
+                testStackName: {
+                  profile: 'stackProfile',
+                  test: 'stack',
+                },
+              },
+            },
+          },
+          'testTemplateName',
+          'testStackName',
+          {
+            profile: 'stackProfile',
+            test: 'stack',
+          },
+        ])
+
+        expect(createStack.getCall(0).args).to.deep.equal([
+          testTemplate,
+          'testStackName',
+          {
+            profile: 'stackProfile',
+            test: 'stack',
+          },
+          'configuredAWS',
+        ])
+
+        expect(writeRcFile.lastCall.args).to.deep.equal([
+          cwd,
+          {
+            templates: {
+              testTemplateName: {
+                testStackName: {
+                  test: 'stack',
+                  stackId: 'test:stack:id',
+                },
+              },
+            },
+          },
+        ])
+
+        expect(log.i.lastCall.args).to.deep.equal([
+          `StackId: ${chk.cyan('test:stack:id')}`,
+          3,
+        ])
+      })
+    })
+
+    it('should return an error message if they have a predefined stack but don\'t want to use it', () => {
+      const env = 'testTemplateName'
+      const opts = { profile: 'testProfile', stackname: 'testStackName' }
+
+      readJsonSync.returns({
+        templates: {
+          testTemplateName: {
+            testStackName: {
+              profile: 'stackProfile',
+              test: 'stack',
+            },
+          },
+        },
+      })
+      useExistingDeploy.returns(false)
+
+      return cmd.deploy(env, opts).then(() => {
+        expect(useExistingDeploy.firstCall.args).to.deep.equal([
+          {
+            profile: 'stackProfile',
+            test: 'stack',
+          },
+          'testStackName',
+          'testTemplateName',
+        ])
+        expect(log.e.lastCall.args).to.deep.equal([
+          `Stack ${chk.cyan('testStackName')} already exists.  Either use the settings you have configured, choose a different stackname, or delete the stack from your ${chk.cyan('.stacks')} file.`
+        ])
+      })
+    })
+
+    it('should return false if they create a stack and don\'t want to deploy it', () => {
+      const testTemplate = { Parameters: { ParamOne: 'Test', ParamTwo: 'Test' } }
+
+      readJsonSync.returns({})
+      inquireTemplateName.returns('testTemplateName')
+      inqStackName.returns('testStackName')
+      selectFromAllProfiles.returns('selectedProfile')
+      configAWS.returns('configuredAWS')
+      getTemplateAsObject.returns(testTemplate)
+      createStackSettings.returns({ test: 'stack' })
+      confirmStack.returns(false)
+
+      return cmd.deploy().then((d) => {
+        expect(inqStackName.lastCall.args[0]).to.equal('testTemplateName')
+        expect(configAWS.lastCall.args[0]).to.deep.equal('selectedProfile')
+        expect(getTemplateAsObject.lastCall.args[0]).to.equal('testTemplateName')
+        expect(createStackSettings.lastCall.args).to.deep.equal([
+          'selectedProfile',
+          testTemplate.Parameters,
+          'configuredAWS',
+        ])
+        expect(confirmStack.lastCall.args).to.deep.equal([
+          'testTemplateName',
+          'testStackName',
+          { test: 'stack' },
+          false,
+          'Deploy',
+        ])
+        expect(d).to.equal(false)
+      })
+    })
+
+    it('should not write the RC file if the user doesn\'t want to save settings', () => {
+      const testTemplate = { Parameters: { ParamOne: 'Test', ParamTwo: 'Test' } }
+
+      readJsonSync.returns({})
+      inquireTemplateName.returns('testTemplateName')
+      inqStackName.returns('testStackName')
+      selectFromAllProfiles.returns('selectedProfile')
+      configAWS.returns('configuredAWS')
+      getTemplateAsObject.returns(testTemplate)
+      createStackSettings.returns({ test: 'stack' })
+      confirmStack.returns(true)
+      inqPrompt.returns({ use: false })
+      createStack.returns('test:stack:id')
+
+      return cmd.deploy().then(() => {
+        expect(inqStackName.lastCall.args[0]).to.equal('testTemplateName')
+        expect(configAWS.lastCall.args[0]).to.deep.equal('selectedProfile')
+        expect(getTemplateAsObject.lastCall.args[0]).to.equal('testTemplateName')
+        expect(createStackSettings.lastCall.args).to.deep.equal([
+          'selectedProfile',
+          testTemplate.Parameters,
+          'configuredAWS',
+        ])
+        expect(confirmStack.lastCall.args).to.deep.equal([
+          'testTemplateName',
+          'testStackName',
+          { test: 'stack' },
+          false,
+          'Deploy',
+        ])
+        // Whether ot save settings
+        expect(inqPrompt.lastCall.args[0]).to.deep.equal({
+          type: 'confirm',
+          name: 'use',
+          message: 'Would you like to save these options for later deploys and updates?',
+          default: true,
+        })
+        expect(createSaveSettings.called).to.be.false
+
+        expect(createStack.getCall(0).args).to.deep.equal([
+          testTemplate,
+          'testStackName',
+          { test: 'stack' },
+          'configuredAWS',
+        ])
+
+        expect(writeRcFile.called).to.be.false
+      })
+    })
   })
-  // it('should deploy the stack and return a success and info log', () => {
-  //   const template = {
-  //     Parameters: {
-  //       ParamOne: { Type: 'String' },
-  //       ParamTwo: { Type: 'String' },
-  //     },
-  //   }
-  //   const rc = {
-  //     project: 'test',
-  //     profiles: {
-  //       testProfile: {
-  //         aws_access_key_id: 'abcd',
-  //         aws_secret_access_key: 'efgh',
-  //         region: 'us-east-1',
-  //       },
-  //     },
-  //   }
-  //   const stack = {
-  //     profile: 'testProfile',
-  //     region: 'us-east-1',
-  //     options: {
-  //       tags: [
-  //         {
-  //           Key: 'update',
-  //           Value: 'test',
-  //         },
-  //         {
-  //           Key: 'updated',
-  //           Value: 'tested',
-  //         },
-  //       ],
-  //       advanced: {
-  //         snsTopicArn: 'arn:aws:sns:us-east-1:1234567890:testsns',
-  //         terminationProtection: true,
-  //         timeout: 100,
-  //         onFailure: 'ROLLBACK',
-  //       },
-  //       capabilityIam: true,
-  //     },
-  //     parameters: {
-  //       paramOne: 'test',
-  //       paramTwo: 'test',
-  //     },
-  //   }
-
-  //   const fetchedProfile = {
-  //     aws_access_key_id: 'abcd',
-  //     aws_secret_access_key: 'efgh',
-  //     region: 'us-east-1',
-  //     name: 'testProfile',
-  //   }
-
-  //   const saveSettings = {
-  //     ...rc,
-  //     templates: {
-  //       test: {
-  //         teststack: stack,
-  //       },
-  //     },
-  //   }
-  //   return deploy(env, opts).then(() => {
-
-  //     expect(configAWS.getCall(0).args[0]).to.deep.equal(fetchedProfile)
-  //     expect(getTemplateAsObject.getCall(0).args[0]).to.equal('test')
-  //     expect(selectRegion.getCall(0).args).to.deep.equal([
-  //       fetchedProfile,
-  //       'Which region would you like to deploy this stack to?',
-  //     ])
-  //     expect(selectStackParams.getCall(0).args).to.deep.equal([
-  //       template.Parameters,
-  //       'us-east-1',
-  //       'configuredAws',
-  //     ])
-  //     expect(selectStackOptions.getCall(0).args).to.deep.equal([
-  //       'us-east-1',
-  //       'configuredAws',
-  //     ])
-  //     expect(inqPrompt.lastCall.args[0]).to.deep.equal({
-  //       type: 'confirm',
-  //       name: 'yes',
-  //       message: 'Would you like to save these options for later deploys and updates?',
-  //       default: true,
-  //     })
-  //     expect(writeRcFile.firstCall.args[0]).to.deep.equal([
-  //       cwd,
-  //       saveSettings,
-  //     ])
-
-  //     expect(createStack.getCall(0).args).to.deep.equal([
-  //       template,
-  //       'teststack',
-  //       stack,
-  //       'configuredAws',
-  //     ])
-
-  //     saveSettings.templates.test.teststack.stackId = 'test:stack:id'
-
-  //     expect(writeRcFile.lastCall.args[0]).to.deep.equal([
-  //       cwd,
-  //       saveSettings,
-  //     ])
-  //     expect(log.i.lastCall.args[0]).to.deep.equal([
-  //       `StackId: ${chk.cyan('test:stack:id')}`,
-  //       3,
-  //     ])
-  //   })
-  // })
 })
