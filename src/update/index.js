@@ -149,11 +149,8 @@ exports.update = async function update (env, opts = {}) {
   }
 
   // Save new stack values
-  const saveSettings = { ...rc }
-  saveSettings.templates[templateName] = {
-    ...saveSettings.templates[templateName],
-    [stackName]: { ...stack },
-  }
+  const saveSettings = utils.createSaveSettings(rc, templateName, stackName, stack)
+
   utils.writeRcFile(cwd, saveSettings)
 
   // Deploy the update

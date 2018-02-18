@@ -64,7 +64,7 @@ describe('Deploy Functions', () => {
       createStackSettings = sinon.stub(cmd, 'createStackSettings')
       confirmStack = sinon.stub(stackUtils, 'confirmStack')
       inqPrompt = sinon.stub(inq, 'prompt')
-      createSaveSettings = sinon.stub(cmd, 'createSaveSettings')
+      createSaveSettings = sinon.stub(utils, 'createSaveSettings')
       createStack = sinon.stub(stackUtils, 'createStack')
       writeRcFile = sinon.stub(utils, 'writeRcFile')
     })
