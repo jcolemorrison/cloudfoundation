@@ -284,7 +284,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
       name: 'capability',
     })
 
-    capabilityIam = reuse.capability && prevOpts.advanced
+    capabilityIam = reuse.capability
   }
 
   if (!capabilityIam) {

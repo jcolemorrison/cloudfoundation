@@ -119,7 +119,7 @@ exports.updateParams = async (templateName, template, stackName, stack, aws) => 
 // Main Command
 exports.update = async function update (env, opts = {}) {
   const cwd = process.cwd()
-  const templateName = exports.getValidTemplate(env)
+  const templateName = await exports.getValidTemplate(env)
   let stack
 
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
