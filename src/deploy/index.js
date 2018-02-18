@@ -50,17 +50,6 @@ exports.createStackSettings = async (profile, templateParams, aws) => {
   }
 }
 
-exports.createSaveSettings = (rc, templateName, stackName, stack) => {
-  const saveSettings = { ...rc }
-
-  saveSettings.templates[templateName] = {
-    ...saveSettings.templates[templateName],
-    [stackName]: { ...stack },
-  }
-
-  return saveSettings
-}
-
 exports.deploy = async function deploy (env, opts = {}) {
   const cwd = process.cwd()
   let templateName = env
@@ -112,7 +101,7 @@ exports.deploy = async function deploy (env, opts = {}) {
 
   // Write the updated RC file first, in case something fails, user won't have to re-input
   if (useExisting || saveSettings.use) {
-    const settings = exports.createSaveSettings(rc, templateName, stackName, stack)
+    const settings = utils.createSaveSettings(rc, templateName, stackName, stack)
     utils.writeRcFile(cwd, settings)
   }
 
@@ -120,7 +109,7 @@ exports.deploy = async function deploy (env, opts = {}) {
 
   // and then after deploy write the new stackId
   if (useExisting || saveSettings.use) {
-    const settings = exports.createSaveSettings(rc, templateName, stackName, stack)
+    const settings = utils.createSaveSettings(rc, templateName, stackName, stack)
     settings.templates[templateName][stackName].stackId = stackId
     utils.writeRcFile(cwd, settings)
   }

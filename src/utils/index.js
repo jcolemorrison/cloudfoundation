@@ -237,3 +237,14 @@ exports.hasConfiguredCfdn = (homedir) => {
   const home = homedir || os.homedir()
   return fs.existsSync(`${home}/.cfdn/profiles.json`)
 }
+
+exports.createSaveSettings = (rc, templateName, stackName, stack) => {
+  const saveSettings = { ...rc }
+
+  saveSettings.templates[templateName] = {
+    ...saveSettings.templates[templateName],
+    [stackName]: { ...stack },
+  }
+
+  return saveSettings
+}
