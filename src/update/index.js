@@ -1,18 +1,11 @@
 const fs = require('fs-extra')
 const inq = require('inquirer')
 const chk = require('chalk')
-const {
-  log,
-  inquireTemplateName,
-  checkValidTemplate,
-  getTemplateAsObject,
-  writeRcFile,
-} = require('../utils')
-
-const { selectStackParams } = require('../utils/params.js')
-const { selectStackOptions, confirmStack, updateStack } = require('../utils/stacks')
-const { getFromAllProfiles } = require('../profiles/utils')
-const { configAWS } = require('../utils/aws.js')
+const utils = require('../utils')
+const paramUtils = require('../utils/params.js')
+const stackUtils = require('../utils/stacks.js')
+const profileUtils = require('../profiles/utils.js')
+const awsUtils = require('../utils/aws.js')
 
 const { cyan } = chk
 
@@ -23,8 +16,8 @@ module.exports = async function update (env, opts = {}) {
   let stack
   let msg
 
-  if (templateName) checkValidTemplate(templateName)
-  else templateName = await inquireTemplateName('Which template would you like to deploy a stack for?')
+  if (templateName) utils.checkValidTemplate(templateName)
+  else templateName = await utils.inquireTemplateName('Which template would you like to deploy a stack for?')
 
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
   rc.templates = rc.templates || {}
@@ -55,9 +48,9 @@ module.exports = async function update (env, opts = {}) {
   if (!stack) throw new Error(`Stack ${stackName} does not exist!`)
   if (!stack.stackId) throw new Error(`Stack ${stackName} has not been deployed yet. Run ${cyan(`cfdn deploy ${templateName} --stackname ${stackName}`)} to deploy it.`)
 
-  const profile = getFromAllProfiles(stack.profile)
-  const aws = configAWS(profile)
-  const template = getTemplateAsObject(templateName)
+  const profile = profileUtils.getFromAllProfiles(stack.profile)
+  const aws = awsUtils.configAWS(profile)
+  const template = utils.getTemplateAsObject(templateName)
 
   msg = `Stack with name ${chk.cyan(stackName)} found for template ${chk.cyan(templateName)}`
 
@@ -81,9 +74,9 @@ module.exports = async function update (env, opts = {}) {
 
 
   if (newParamKeys.length > 0) {
-    log.i(`New Parameters ${chk.cyan(newParamKeys.join(', '))} found.`)
+    utils.log.i(`New Parameters ${chk.cyan(newParamKeys.join(', '))} found.`)
 
-    const params = await selectStackParams(newParams, stack.region, aws)
+    const params = await paramUtils.selectStackParams(newParams, stack.region, aws)
 
     stack.parameters = {
       ...stack.parameters,
@@ -94,7 +87,7 @@ module.exports = async function update (env, opts = {}) {
   }
 
   // Ask if they want to use the current parameters
-  const useExisting = await confirmStack(templateName, stackName, stack, msg, 'Update')
+  const useExisting = await stackUtils.confirmStack(templateName, stackName, stack, msg, 'Update')
 
   // Walk though param selection if they want different values
   if (!useExisting) {
@@ -105,11 +98,11 @@ module.exports = async function update (env, opts = {}) {
       default: true,
     })
 
-    if (!update.params) return log.e('Either use the existing parameters for an update, or update it to use new ones.')
+    if (!update.params) return utils.log.e('Either use the existing parameters for an update, or update it to use new ones.')
 
-    const params = await selectStackParams(template.Parameters, stack.region, aws, stack.parameters)
+    const params = await paramUtils.selectStackParams(template.Parameters, stack.region, aws, stack.parameters)
 
-    const options = await selectStackOptions(stack.region, aws, stack.options, true)
+    const options = await stackUtils.selectStackOptions(stack.region, aws, stack.options, true)
 
     stack = {
       ...stack,
@@ -119,7 +112,7 @@ module.exports = async function update (env, opts = {}) {
 
     msg = `Use the above options for ${chk.cyan(stackName)} update?`
 
-    const useNew = await confirmStack(templateName, stackName, stack, msg, 'Update')
+    const useNew = await stackUtils.confirmStack(templateName, stackName, stack, msg, 'Update')
 
     if (!useNew) return false
   }
@@ -130,10 +123,10 @@ module.exports = async function update (env, opts = {}) {
     ...saveSettings.templates[templateName],
     [stackName]: { ...stack },
   }
-  writeRcFile(cwd, saveSettings)
+  utils.writeRcFile(cwd, saveSettings)
 
   // Deploy the update
-  await updateStack(template, stackName, stack, aws)
+  await stackUtils.updateStack(template, stackName, stack, aws)
 
-  return log.s(`Stack ${chk.cyan(stackName)} successfully updated!`, 2)
+  return utils.log.s(`Stack ${chk.cyan(stackName)} successfully updated!`, 2)
 }
