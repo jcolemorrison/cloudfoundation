@@ -11,8 +11,6 @@ const awsUtils = require('../../src/utils/aws.js')
 
 const cmd = require('../../src/update')
 
-const cwd = process.cwd()
-
 describe('Update Functions', () => {
   let log
 
