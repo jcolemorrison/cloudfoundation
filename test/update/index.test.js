@@ -323,4 +323,43 @@ describe('Update Functions', () => {
       })
     })
   })
+
+  describe('#checkStackExists', () => {
+    it('should return the stack if it exists', () => {
+      const rc = {
+        templateName: {
+          stackName: {
+            test: 'stack',
+            stackId: 'test:stack:id',
+          },
+        },
+      }
+      const result = cmd.checkStackExists(rc, 'templateName', 'stackName')
+      expect(result).to.deep.equal({
+        test: 'stack',
+        stackId: 'test:stack:id',
+      })
+    })
+
+    it('should throw an error if the stack does not have a stackId', () => {
+      const rc = {
+        templateName: {
+          stackName: {
+            test: 'stack',
+          },
+        },
+      }
+      const result = () => { cmd.checkStackExists(rc, 'templateName', 'stackName') }
+      expect(result).throws().with.property('message', `Stack stackName has not been deployed yet. Run ${chk.cyan('cfdn deploy templateName --stackname stackName')} to deploy it.`)
+    })
+
+    it('should throw an error if no stack can be found', () => {
+      const rc = {
+        templateName: {
+        },
+      }
+      const result = () => { cmd.checkStackExists(rc, 'templateName', 'stackName') }
+      expect(result).throws().with.property('message', 'Stack stackName does not exist!')
+    })
+  })
 })
