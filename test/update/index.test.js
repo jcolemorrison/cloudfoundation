@@ -69,10 +69,8 @@ describe('Update Functions', () => {
       }
       testTemplate = { Parameters: { ParamOne: 'Test', ParamTwo: 'Test' } }
       testStack = {
-        testStackName: {
-          profile: 'stackProfile',
-          test: 'stack',
-        },
+        profile: 'stackProfile',
+        test: 'stack',
       }
       saveSettings = {
         templates: {
@@ -182,6 +180,70 @@ describe('Update Functions', () => {
 
       return cmd.update().catch((e) => {
         expect(e.message).to.equal(`Template ${chk.cyan('wrong')} not found!`)
+      })
+    })
+  })
+
+  describe('#updateParams', () => {
+    let testTemplate
+    let testStack
+
+    let confirmStack
+    let selectStackOptions
+    let selectStackParams
+    let inqPrompt
+
+    beforeEach(() => {
+      testTemplate = { Parameters: { ParamOne: 'Test', ParamTwo: 'Test' } }
+      testStack = {
+        profile: 'stackProfile',
+        test: 'stack',
+      }
+
+      confirmStack = sinon.stub(stackUtils, 'confirmStack')
+      selectStackOptions = sinon.stub(stackUtils, 'selectStackOptions')
+      selectStackParams = sinon.stub(paramUtils, 'selectStackParams')
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      confirmStack.restore()
+      selectStackOptions.restore()
+      selectStackParams.restore()
+      inqPrompt.restore()
+    })
+
+    it('should return the structured stack', () => {
+      inqPrompt.returns({ params: true })
+      selectStackParams.returns('new params')
+      selectStackOptions.returns('new options')
+      confirmStack.returns(true)
+
+      return cmd.updateParams('testTemplateName', testTemplate, 'testStackName', testStack, 'configuredAWS').then((d) => {
+        expect(d).to.deep.equal({
+          ...testStack,
+          options: 'new options',
+          parameters: 'new params',
+        })
+      })
+    })
+
+    it('should return false if they do not want to update existing params', () => {
+      inqPrompt.returns({ params: false })
+
+      return cmd.updateParams('testTemplateName', testTemplate, 'testStackName', testStack, 'configuredAWS').then((d) => {
+        expect(d).to.be.false
+      })
+    })
+
+    it('should return false if they update the params and say they do not want to use them ... again', () => {
+      inqPrompt.returns({ params: true })
+      selectStackParams.returns('new params')
+      selectStackOptions.returns('new options')
+      confirmStack.returns(false)
+
+      return cmd.updateParams('testTemplateName', testTemplate, 'testStackName', testStack, 'configuredAWS').then((d) => {
+        expect(d).to.be.false
       })
     })
   })

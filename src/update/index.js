@@ -95,7 +95,10 @@ exports.updateParams = async (templateName, template, stackName, stack, aws) => 
     default: true,
   })
 
-  if (!update.params) return utils.log.e('Either use the existing parameters for an update, or update it to use new ones.')
+  if (!update.params) {
+    utils.log.e('Either use the existing parameters for an update, or update it to use new ones.')
+    return false
+  }
 
   const params = await paramUtils.selectStackParams(template.Parameters, stack.region, aws, stack.parameters)
 
