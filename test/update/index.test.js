@@ -247,4 +247,80 @@ describe('Update Functions', () => {
       })
     })
   })
+
+  describe('#getParamChanges', () => {
+    let selectStackParams
+
+    beforeEach(() => {
+      selectStackParams = sinon.stub(paramUtils, 'selectStackParams')
+    })
+
+    afterEach(() => {
+      selectStackParams.restore()
+    })
+
+    it('should return the stack with new params added and old params removed', () => {
+      const template = {
+        Parameters: {
+          ParamOne: { type: 'String' },
+          ParamNew: { type: 'String' },
+        },
+      }
+      const stack = {
+        test: 'stack',
+        region: 'us-east-1',
+        parameters: {
+          ParamOne: 'one',
+          ParamOld: 'old',
+        },
+      }
+
+      selectStackParams.returns({ ParamOne: 'one', ParamNew: 'new' })
+
+      return cmd.getParamChanges(template, stack, 'configuredAWS').then((d) => {
+        expect(selectStackParams.lastCall.args).to.deep.equal([
+          { ParamNew: { type: 'String' } },
+          'us-east-1',
+          'configuredAWS',
+        ])
+        expect(d).to.deep.equal({
+          test: 'stack',
+          region: 'us-east-1',
+          parameters: {
+            ParamOne: 'one',
+            ParamNew: 'new',
+          },
+        })
+      })
+    })
+
+    it('should not call to the `selectStackParams` if there are no new params', () => {
+      const template = {
+        Parameters: {
+          ParamOne: { type: 'String' },
+          ParamOld: { type: 'String' },
+        },
+      }
+      const stack = {
+        test: 'stack',
+        region: 'us-east-1',
+        parameters: {
+          ParamOne: 'one',
+          ParamOld: 'old',
+        },
+      }
+
+      return cmd.getParamChanges(template, stack, 'configuredAWS').then((d) => {
+        expect(selectStackParams.called).to.be.false
+        expect(d).to.deep.equal({
+          test: 'stack',
+          region: 'us-east-1',
+          parameters: {
+            ParamOne: 'one',
+            ParamOld: 'old',
+          },
+        })
+      })
+    })
+  })
 })
