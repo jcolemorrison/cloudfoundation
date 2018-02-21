@@ -362,4 +362,51 @@ describe('Update Functions', () => {
       expect(result).throws().with.property('message', 'Stack stackName does not exist!')
     })
   })
+
+  describe('#getValidStackName', () => {
+    let inqPrompt
+
+    beforeEach(() => {
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      inqPrompt.restore()
+    })
+
+    it('should return the name if no stackName option is passed', () => {
+      const rc = {
+        templateName: {
+          stackName: {},
+        },
+      }
+
+      inqPrompt.returns({ name: 'stackName' })
+      return cmd.getValidStackName(undefined, rc, 'templateName').then((d) => {
+        expect(d).to.equal('stackName')
+      })
+    })
+
+    it('should return the name if it was passed', () => {
+      const rc = {
+        templateName: {
+          stackName: {},
+        },
+      }
+
+      return cmd.getValidStackName('stackName', rc, 'templateName').then((d) => {
+        expect(d).to.equal('stackName')
+      })
+    })
+
+    it('should throw an error if the template has no stacks', () => {
+      const rc = {
+        templateName: {},
+      }
+
+      return cmd.getValidStackName('stackName', rc, 'templateName').catch((e) => {
+        expect(e.message).to.equal(`Template ${chk.cyan('templateName')} has no stacks!`)
+      })
+    })
+  })
 })
