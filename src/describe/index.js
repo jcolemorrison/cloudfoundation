@@ -1,23 +1,17 @@
 const fs = require('fs-extra')
 const chk = require('chalk')
 const inq = require('inquirer')
-const {
-  log,
-  inquireTemplateName,
-  checkValidTemplate,
-} = require('../utils')
+const utils = require('../utils')
 
-const { selectStackName, displayStack } = require('../utils/stacks')
-const { getFromAllProfiles } = require('../profiles/utils')
-const { configAWS } = require('../utils/aws.js')
+const stackUtils = require('../utils/stacks')
+const profileUtils = require('../profiles/utils.js')
+const awsUtils = require('../utils/aws.js')
 
-exports.describeAll = async function describeAll (env, opts) {
+exports.describeAll = async function describeAll (env, opts = {}) {
   const cwd = process.cwd()
-  let templateName = env && checkValidTemplate(env)
-  let profile = opts && opts.profile
-  let region = opts && opts.region
-
-  if (!templateName) templateName = await inquireTemplateName('Which template has the stack you want to update?')
+  const templateName = await utils.getValidTemplateName(env)
+  let profile = opts.profile
+  let region = opts.region
 
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
 
@@ -54,7 +48,7 @@ exports.describeAll = async function describeAll (env, opts) {
     return regions
   }, []).sort()
 
-  if (!validRegions.length) return log.e(`No stacks found for Profile ${chk.cyan(profile)}`, 2)
+  if (!validRegions.length) return utils.log.e(`No stacks found for Profile ${chk.cyan(profile)}`, 2)
 
   if (region && !validRegions.find(r => r === region)) {
     throw new Error(`${chk.cyan(region)} is not used for any of ${chk.cyan(profile)}'s stacks.`)
@@ -69,17 +63,17 @@ exports.describeAll = async function describeAll (env, opts) {
     if (region.use) region = region.use
   }
 
-  profile = getFromAllProfiles(profile)
+  profile = profileUtils.getFromAllProfiles(profile)
 
-  const aws = configAWS(profile)
+  const aws = awsUtils.configAWS(profile)
   const cfn = new aws.CloudFormation({ region })
 
-  log.i('fetching stacks...')
+  utils.log.i('fetching stacks...')
 
   const { Stacks } = await cfn.describeStacks().promise()
 
   if (!Stacks.length) {
-    return log.i(`No stacks found for Template ${chk.cyan(templateName)} for Profile ${chk.cyan(profile.name)} in Region ${chk.cyan(region)}`, 2)
+    return utils.log.i(`No stacks found for Template ${chk.cyan(templateName)} for Profile ${chk.cyan(profile.name)} in Region ${chk.cyan(region)}`, 2)
   }
 
   let info = `
@@ -94,7 +88,7 @@ ${chk.cyan(s.StackName)}, ${new Date(s.CreationTime).toLocaleString()}, ${s.Stac
 `
   })
 
-  return log.p(info)
+  return utils.log.p(info)
 }
 
 exports.describe = async function describe (env, opts) {
@@ -107,7 +101,7 @@ exports.describe = async function describe (env, opts) {
     info,
   } = opts
 
-  let templateName = env && checkValidTemplate(env)
+  let templateName = env && utils.checkValidTemplate(env)
   let columns
 
   if (status || parameters || outputs || tags || info) {
@@ -120,7 +114,7 @@ exports.describe = async function describe (env, opts) {
     }
   }
 
-  if (!templateName) templateName = await inquireTemplateName('Which template has the stack you want to update?')
+  if (!templateName) templateName = await utils.inquireTemplateName('Which template has the stack you want to update?')
 
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
 
@@ -132,22 +126,22 @@ exports.describe = async function describe (env, opts) {
 
   const stackName = opts && opts.stackname
     ? opts.stackname
-    : await selectStackName(templateName, stacks)
+    : await stackUtils.selectStackName(templateName, stacks)
 
   const stack = stacks[stackName]
 
-  if (!stack) return log.e(`Stack ${stackName} not found.`, 2)
+  if (!stack) return utils.log.e(`Stack ${stackName} not found.`, 2)
 
   const region = stack.region
 
-  const profile = getFromAllProfiles(stack.profile)
-  const aws = configAWS(profile)
+  const profile = profileUtils.getFromAllProfiles(stack.profile)
+  const aws = awsUtils.configAWS(profile)
 
   const cfn = new aws.CloudFormation({ region })
 
-  log.i('Fetching stack info...', 2)
+  utils.log.i('Fetching stack info...', 2)
 
   const { Stacks } = await cfn.describeStacks({ StackName: stackName }).promise()
 
-  return displayStack(Stacks[0], columns)
+  return stackUtils.displayStack(Stacks[0], columns)
 }
