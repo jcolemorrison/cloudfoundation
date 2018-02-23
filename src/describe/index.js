@@ -107,7 +107,7 @@ ${chk.cyan(s.StackName)}, ${new Date(s.CreationTime).toLocaleString()}, ${s.Stac
   return utils.log.p(info)
 }
 
-exports.describe = async function describe (env, opts) {
+exports.describe = async function describe (env, opts = {}) {
   const cwd = process.cwd()
   const {
     status,
@@ -117,7 +117,7 @@ exports.describe = async function describe (env, opts) {
     info,
   } = opts
 
-  let templateName = env && utils.checkValidTemplate(env)
+  const templateName = await utils.getValidTemplateName(env)
   let columns
 
   if (status || parameters || outputs || tags || info) {
@@ -130,8 +130,6 @@ exports.describe = async function describe (env, opts) {
     }
   }
 
-  if (!templateName) templateName = await utils.inquireTemplateName('Which template has the stack you want to update?')
-
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
 
   rc.templates = rc.templates || {}
@@ -140,9 +138,7 @@ exports.describe = async function describe (env, opts) {
 
   if (!stacks) throw new Error(`No stacks for ${templateName} found.`)
 
-  const stackName = opts && opts.stackname
-    ? opts.stackname
-    : await stackUtils.selectStackName(templateName, stacks)
+  const stackName = opts.stackname || await stackUtils.selectStackName(templateName, stacks)
 
   const stack = stacks[stackName]
 
