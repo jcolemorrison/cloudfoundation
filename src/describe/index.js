@@ -7,24 +7,14 @@ const stackUtils = require('../utils/stacks')
 const profileUtils = require('../profiles/utils.js')
 const awsUtils = require('../utils/aws.js')
 
-exports.describeAll = async function describeAll (env, opts = {}) {
-  const cwd = process.cwd()
-  const templateName = await utils.getValidTemplateName(env)
-  let profile = opts.profile
-  let region = opts.region
-
-  const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
-
-  rc.templates = rc.templates || {}
-
-  const stacks = rc.templates[templateName] && Object.entries(rc.templates[templateName])
-
-  if (!stacks || !stacks.length) throw new Error(`No stacks for ${templateName} found.`)
-
+// Given a template with stacks, return a profile that is being used for a stack in the template
+exports.getValidTemplateProfile = async (profile, templateName, stacks) => {
+  // Profiles actually being used for the template
   const validProfiles = stacks.reduce((profiles, [, stack]) => {
     if (!profiles.find(p => p === stack.profile)) profiles.push(stack.profile)
     return profiles
   }, [])
+
 
   if (profile && !validProfiles.find(p => p === profile)) {
     throw new Error(`${chk.cyan(profile)} is not used for any of ${chk.cyan(templateName)}'s stacks.`)
@@ -39,6 +29,11 @@ exports.describeAll = async function describeAll (env, opts = {}) {
     if (profile.use) profile = profile.use
   }
 
+  return profile
+}
+
+// Give a valid tempalte profile, select all related regions and let them choose
+exports.getValidTemplateRegion = async (region, profile, stacks) => {
   const profileStacks = stacks.filter(([, s]) => s.profile === profile)
 
   const validRegions = stacks.reduce((regions, [, stack]) => {
@@ -62,6 +57,27 @@ exports.describeAll = async function describeAll (env, opts = {}) {
 
     if (region.use) region = region.use
   }
+
+  return region
+}
+
+exports.describeAll = async function describeAll (env, opts = {}) {
+  const cwd = process.cwd()
+  const templateName = await utils.getValidTemplateName(env)
+  let profile = opts.profile
+  let region = opts.region
+
+  const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
+
+  rc.templates = rc.templates || {}
+
+  const stacks = rc.templates[templateName] && Object.entries(rc.templates[templateName])
+
+  if (!stacks || !stacks.length) throw new Error(`No stacks for ${templateName} found.`)
+
+  profile = await exports.getValidTemplateProfile(profile, templateName, stacks)
+
+  region = await exports.getValidTemplateRegion(region, profile, stacks)
 
   profile = profileUtils.getFromAllProfiles(profile)
 
