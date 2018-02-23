@@ -38,7 +38,7 @@ describe('Update Functions', () => {
     let testStack
     let saveSettings
 
-    let getValidTemplate
+    let getValidTemplateName
     let readJsonSync
     let getValidStackName
     let checkStackExists
@@ -80,10 +80,10 @@ describe('Update Functions', () => {
         },
       }
 
-      getValidTemplate = sinon.stub(cmd, 'getValidTemplate')
+      getValidTemplateName = sinon.stub(utils, 'getValidTemplateName')
       readJsonSync = sinon.stub(fs, 'readJsonSync')
-      getValidStackName = sinon.stub(cmd, 'getValidStackName')
-      checkStackExists = sinon.stub(cmd, 'checkStackExists')
+      getValidStackName = sinon.stub(stackUtils, 'getValidStackName')
+      checkStackExists = sinon.stub(stackUtils, 'checkStackExists')
       getFromAllProfiles = sinon.stub(profileUtils, 'getFromAllProfiles')
       configAWS = sinon.stub(awsUtils, 'configAWS')
       getTemplateAsObject = sinon.stub(utils, 'getTemplateAsObject')
@@ -97,7 +97,7 @@ describe('Update Functions', () => {
     })
 
     afterEach(() => {
-      getValidTemplate.restore()
+      getValidTemplateName.restore()
       readJsonSync.restore()
       getValidStackName.restore()
       checkStackExists.restore()
@@ -114,7 +114,7 @@ describe('Update Functions', () => {
     })
 
     it('should return a success message after calling to the `updateStack` method when no options or name is passed up', () => {
-      getValidTemplate.returns('testTemplateName')
+      getValidTemplateName.returns('testTemplateName')
       readJsonSync.returns(testRc)
       getValidStackName.returns('testStackName')
       checkStackExists.returns(testStack)
@@ -134,7 +134,7 @@ describe('Update Functions', () => {
     })
 
     it('should call to `updateParams` if the user does not want to use existing params', () => {
-      getValidTemplate.returns('testTemplateName')
+      getValidTemplateName.returns('testTemplateName')
       readJsonSync.returns(testRc)
       getValidStackName.returns('testStackName')
       checkStackExists.returns(testStack)
@@ -155,7 +155,7 @@ describe('Update Functions', () => {
     })
 
     it('should return false if `updateParams` is called and no stack is returned', () => {
-      getValidTemplate.returns('testTemplateName')
+      getValidTemplateName.returns('testTemplateName')
       readJsonSync.returns(testRc)
       getValidStackName.returns('testStackName')
       checkStackExists.returns(testStack)
@@ -173,7 +173,7 @@ describe('Update Functions', () => {
     })
 
     it('should throw an error if no template exists by the given name', () => {
-      getValidTemplate.returns('wrong')
+      getValidTemplateName.returns('wrong')
       readJsonSync.returns({})
 
       return cmd.update().catch((e) => {
@@ -320,122 +320,5 @@ describe('Update Functions', () => {
         })
       })
     })
-  })
-
-  describe('#checkStackExists', () => {
-    it('should return the stack if it exists', () => {
-      const rc = {
-        templateName: {
-          stackName: {
-            test: 'stack',
-            stackId: 'test:stack:id',
-          },
-        },
-      }
-      const result = cmd.checkStackExists(rc, 'templateName', 'stackName')
-      expect(result).to.deep.equal({
-        test: 'stack',
-        stackId: 'test:stack:id',
-      })
-    })
-
-    it('should throw an error if the stack does not have a stackId', () => {
-      const rc = {
-        templateName: {
-          stackName: {
-            test: 'stack',
-          },
-        },
-      }
-      const result = () => { cmd.checkStackExists(rc, 'templateName', 'stackName') }
-      expect(result).throws().with.property('message', `Stack stackName has not been deployed yet. Run ${chk.cyan('cfdn deploy templateName --stackname stackName')} to deploy it.`)
-    })
-
-    it('should throw an error if no stack can be found', () => {
-      const rc = {
-        templateName: {
-        },
-      }
-      const result = () => { cmd.checkStackExists(rc, 'templateName', 'stackName') }
-      expect(result).throws().with.property('message', 'Stack stackName does not exist!')
-    })
-  })
-
-  describe('#getValidStackName', () => {
-    let inqPrompt
-
-    beforeEach(() => {
-      inqPrompt = sinon.stub(inq, 'prompt')
-    })
-
-    afterEach(() => {
-      inqPrompt.restore()
-    })
-
-    it('should return the name if no stackName option is passed', () => {
-      const rc = {
-        templateName: {
-          stackName: {},
-        },
-      }
-
-      inqPrompt.returns({ name: 'stackName' })
-      return cmd.getValidStackName(undefined, rc, 'templateName').then((d) => {
-        expect(d).to.equal('stackName')
-      })
-    })
-
-    it('should return the name if it was passed', () => {
-      const rc = {
-        templateName: {
-          stackName: {},
-        },
-      }
-
-      return cmd.getValidStackName('stackName', rc, 'templateName').then((d) => {
-        expect(d).to.equal('stackName')
-      })
-    })
-
-    it('should throw an error if the template has no stacks', () => {
-      const rc = {
-        templateName: {},
-      }
-
-      return cmd.getValidStackName('stackName', rc, 'templateName').catch((e) => {
-        expect(e.message).to.equal(`Template ${chk.cyan('templateName')} has no stacks!`)
-      })
-    })
-  })
-
-  describe('#getValidTemplate', () => {
-    let checkValidTemplate
-    let inquireTemplateName
-
-    beforeEach(() => {
-      checkValidTemplate = sinon.stub(utils, 'checkValidTemplate')
-      inquireTemplateName = sinon.stub(utils, 'inquireTemplateName')
-    })
-
-    afterEach(() => {
-      checkValidTemplate.restore()
-      inquireTemplateName.restore()
-    })
-
-    it('should return the inquired template name if no templateName is passed', () => {
-      inquireTemplateName.returns('templateName')
-
-      return cmd.getValidTemplate().then((d) => {
-        expect(inquireTemplateName.called).to.be.true
-        expect(d).to.equal('templateName')
-      })
-    })
-
-    it('should call to check the template name if a templateName is passed', () => (
-      cmd.getValidTemplate('templateName').then((d) => {
-        expect(checkValidTemplate.called).to.be.true
-        expect(d).to.equal('templateName')
-      })
-    ))
   })
 })

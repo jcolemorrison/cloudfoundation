@@ -49,4 +49,35 @@ describe('Utility Functions', () => {
       })
     })
   })
+
+  describe('#getValidTemplateName', () => {
+    let checkValidTemplate
+    let inquireTemplateName
+
+    beforeEach(() => {
+      checkValidTemplate = sinon.stub(utils, 'checkValidTemplate')
+      inquireTemplateName = sinon.stub(utils, 'inquireTemplateName')
+    })
+
+    afterEach(() => {
+      checkValidTemplate.restore()
+      inquireTemplateName.restore()
+    })
+
+    it('should return the inquired template name if no templateName is passed', () => {
+      inquireTemplateName.returns('templateName')
+
+      return utils.getValidTemplateName().then((d) => {
+        expect(inquireTemplateName.called).to.be.true
+        expect(d).to.equal('templateName')
+      })
+    })
+
+    it('should call to check the template name if a templateName is passed', () => (
+      utils.getValidTemplateName('templateName').then((d) => {
+        expect(checkValidTemplate.called).to.be.true
+        expect(d).to.equal('templateName')
+      })
+    ))
+  })
 })

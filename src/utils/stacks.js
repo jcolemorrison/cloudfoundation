@@ -580,3 +580,36 @@ Description: ${Description}
 
   return log.p(display.join('\n'))
 }
+
+// ultimately return a valid stackname
+exports.getValidStackName = async (stackName, rcTemplates, templateName) => {
+  let name = stackName
+
+  const stackList = Object.keys(rcTemplates[templateName])
+
+  if (!stackList.length) throw new Error(`Template ${chk.cyan(templateName)} has no stacks!`)
+
+  if (!name) {
+    const stackInq = await inq.prompt([
+      {
+        type: 'list',
+        name: 'name',
+        message: `Which stack, using template ${chk.cyan(templateName)}, would you like to update?`,
+        choices: stackList,
+      },
+    ])
+
+    name = stackInq.name
+  }
+
+  return name
+}
+
+exports.checkStackExists = (rcTemplates, templateName, stackName) => {
+  const stack = rcTemplates[templateName][stackName]
+
+  if (!stack) throw new Error(`Stack ${stackName} does not exist!`)
+  if (!stack.stackId) throw new Error(`Stack ${stackName} has not been deployed yet. Run ${chk.cyan(`cfdn deploy ${templateName} --stackname ${stackName}`)} to deploy it.`)
+
+  return stack
+}

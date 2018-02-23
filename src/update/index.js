@@ -9,48 +9,6 @@ const awsUtils = require('../utils/aws.js')
 
 const { cyan } = chk
 
-exports.getValidTemplate = async (templateName) => {
-  let tplName = templateName
-
-  if (tplName) utils.checkValidTemplate(templateName)
-  else tplName = await utils.inquireTemplateName('Which template would you like to deploy a stack for?')
-
-  return tplName
-}
-
-// ultimately return a valid stackname
-exports.getValidStackName = async (stackName, rcTemplates, templateName) => {
-  let name = stackName
-
-  const stackList = Object.keys(rcTemplates[templateName])
-
-  if (!stackList.length) throw new Error(`Template ${chk.cyan(templateName)} has no stacks!`)
-
-  if (!name) {
-    const stackInq = await inq.prompt([
-      {
-        type: 'list',
-        name: 'name',
-        message: `Which stack, using template ${chk.cyan(templateName)}, would you like to update?`,
-        choices: stackList,
-      },
-    ])
-
-    name = stackInq.name
-  }
-
-  return name
-}
-
-exports.checkStackExists = (rcTemplates, templateName, stackName) => {
-  const stack = rcTemplates[templateName][stackName]
-
-  if (!stack) throw new Error(`Stack ${stackName} does not exist!`)
-  if (!stack.stackId) throw new Error(`Stack ${stackName} has not been deployed yet. Run ${cyan(`cfdn deploy ${templateName} --stackname ${stackName}`)} to deploy it.`)
-
-  return stack
-}
-
 // The following two fns overwrite the stack param, but since the
 // calls themselves overwrite a `let` it doesn't matter.
 exports.getParamChanges = async (template, stack, aws) => {
@@ -122,7 +80,7 @@ exports.updateParams = async (templateName, template, stackName, stack, aws) => 
 // Main Command
 exports.update = async function update (env, opts = {}) {
   const cwd = process.cwd()
-  const templateName = await exports.getValidTemplate(env)
+  const templateName = await utils.getValidTemplateName(env)
   let stack
 
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
@@ -131,9 +89,9 @@ exports.update = async function update (env, opts = {}) {
 
   if (!rc.templates[templateName]) throw new Error(`Template ${chk.cyan(templateName)} not found!`)
 
-  const stackName = await exports.getValidStackName(opts.stackname, rc.templates, templateName)
+  const stackName = await stackUtils.getValidStackName(opts.stackname, rc.templates, templateName)
 
-  stack = exports.checkStackExists(rc.templates, templateName, stackName)
+  stack = stackUtils.checkStackExists(rc.templates, templateName, stackName)
 
   const profile = profileUtils.getFromAllProfiles(stack.profile)
   const aws = awsUtils.configAWS(profile)
