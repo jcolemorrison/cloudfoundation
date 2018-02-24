@@ -26,7 +26,7 @@ exports.getValidTemplateProfile = async (profile, templateName, stacks) => {
       choices: validProfiles,
     })
 
-    if (profile.use) profile = profile.use
+    profile = profile.use
   }
 
   return profile
@@ -34,12 +34,12 @@ exports.getValidTemplateProfile = async (profile, templateName, stacks) => {
 
 // Give a valid tempalte profile, select all related regions and let them choose
 exports.getValidTemplateRegion = async (region, profile, stacks) => {
+  // all stacks that match a profile
   const profileStacks = stacks.filter(([, s]) => s.profile === profile)
 
-  const validRegions = stacks.reduce((regions, [, stack]) => {
-    if (profileStacks.find(([, ps]) => ps.profile === stack.profile)) {
-      if (!regions.find(r => r === stack.region)) regions.push(stack.region)
-    }
+  // all regions from stacks that match the given profile
+  const validRegions = profileStacks.reduce((regions, [, stack]) => {
+    if (!regions.find(r => r === stack.region)) regions.push(stack.region)
     return regions
   }, []).sort()
 
@@ -55,7 +55,7 @@ exports.getValidTemplateRegion = async (region, profile, stacks) => {
       choices: validRegions,
     })
 
-    if (region.use) region = region.use
+    region = region.use
   }
 
   return region

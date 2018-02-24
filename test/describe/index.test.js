@@ -2,6 +2,7 @@ const expect = require('chai').expect
 const sinon = require('sinon')
 const fs = require('fs-extra')
 const chk = require('chalk')
+const inq = require('inquirer')
 const utils = require('../../src/utils/index.js')
 const profileUtils = require('../../src/profiles/utils.js')
 const stackUtils = require('../../src/utils/stacks.js')
@@ -275,6 +276,90 @@ describe('Describe Stack Functions', () => {
 
       return cmd.describe(undefined, { status: true }).catch((e) => {
         expect(e.message).to.equal('No stacks for testTemplateName found.')
+      })
+    })
+  })
+
+  describe('#getValidTemplateProfile', () => {
+    const stacks = [
+      ['testStack', { profile: 'testProfile1' }],
+      ['testStack2', { profile: 'testProfile1' }],
+      ['testStack3', { profile: 'testProfile3' }],
+    ]
+    let inqPrompt
+
+    beforeEach(() => {
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      inqPrompt.restore()
+    })
+
+    it('should return a valid profile being used in a template\'s stacks', () => (
+      cmd.getValidTemplateProfile('testProfile1', 'testTemplateName', stacks).then((d) => {
+        expect(d).to.equal('testProfile1')
+      })
+    ))
+
+    it('should throw an error if the passed profile does not match any template stack profiles', () => (
+      cmd.getValidTemplateProfile('testProfile2', 'testTemplateName', stacks).catch((e) => {
+        expect(e.message).to.equal(`${chk.cyan('testProfile2')} is not used for any of ${chk.cyan('testTemplateName')}'s stacks.`)
+      })
+    ))
+
+    it('should inquire the user about which profile they want to use if none is specified via options', () => {
+      inqPrompt.returns({ use: 'testProfile1' })
+
+      return cmd.getValidTemplateProfile(undefined, 'testTemplateName', stacks).then((d) => {
+        expect(d).to.equal('testProfile1')
+      })
+    })
+  })
+
+  describe('#getValidTemplateRegion', () => {
+    const stacks = [
+      ['testStack', { profile: 'testProfile1', region: 'us-east-1' }],
+      ['testStack2', { profile: 'testProfile1', region: 'us-west-2' }],
+      ['testStack3', { profile: 'testProfile3', region: 'us-east-1' }],
+      ['testStack4', { profile: 'testProfile1', region: 'us-west-2' }],
+    ]
+    let inqPrompt
+
+    beforeEach(() => {
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      inqPrompt.restore()
+    })
+
+    it('should return the region if it is valid', () => (
+      cmd.getValidTemplateRegion('us-east-1', 'testProfile1', stacks).then((d) => {
+        expect(d).to.equal('us-east-1')
+      })
+    ))
+
+    it('should return an error message if no valid regions are found for a given profile and template', () => (
+      cmd.getValidTemplateRegion('us-east-1', 'testProfile4', stacks).then(() => {
+        expect(log.e.lastCall.args).to.deep.equal([
+          `No stacks found for Profile ${chk.cyan('testProfile4')}`,
+          2,
+        ])
+      })
+    ))
+
+    it('should throw an error if a region is passed but matches no stacks', () => (
+      cmd.getValidTemplateRegion('us-east-3', 'testProfile1', stacks).catch((e) => {
+        expect(e.message).to.equal(`${chk.cyan('us-east-3')} is not used for any of ${chk.cyan('testProfile1')}'s stacks.`)
+      })
+    ))
+
+    it('should inquire the user for a region from the list of valid regions if no region option is passed', () => {
+      inqPrompt.returns({ use: 'us-east-1' })
+
+      return cmd.getValidTemplateRegion(undefined, 'testProfile1', stacks).then((d) => {
+        expect(d).to.equal('us-east-1')
       })
     })
   })
