@@ -249,11 +249,11 @@ exports.createSaveSettings = (rc, templateName, stackName, stack) => {
   return saveSettings
 }
 
-exports.getValidTemplateName = async (templateName) => {
+exports.getValidTemplateName = async (templateName, message) => {
   let tplName = templateName
 
   if (tplName) exports.checkValidTemplate(templateName)
-  else tplName = await exports.inquireTemplateName('Which template would you like to deploy a stack for?')
+  else tplName = await exports.inquireTemplateName(message)
 
   return tplName
 }

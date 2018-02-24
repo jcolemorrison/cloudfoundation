@@ -63,7 +63,7 @@ exports.getValidTemplateRegion = async (region, profile, stacks) => {
 
 exports.describeAll = async function describeAll (env, opts = {}) {
   const cwd = process.cwd()
-  const templateName = await utils.getValidTemplateName(env)
+  const templateName = await utils.getValidTemplateName(env, 'Which template\'s stacks would you like to describe?')
   let profile = opts.profile
   let region = opts.region
 
@@ -117,7 +117,7 @@ exports.describe = async function describe (env, opts = {}) {
     info,
   } = opts
 
-  const templateName = await utils.getValidTemplateName(env)
+  const templateName = await utils.getValidTemplateName(env, 'Which template has the stack you\'d like to describe?')
   let columns
 
   if (status || parameters || outputs || tags || info) {

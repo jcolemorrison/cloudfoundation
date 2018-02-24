@@ -7,8 +7,6 @@ const stackUtils = require('../utils/stacks.js')
 const profileUtils = require('../profiles/utils.js')
 const awsUtils = require('../utils/aws.js')
 
-const { cyan } = chk
-
 // The following two fns overwrite the stack param, but since the
 // calls themselves overwrite a `let` it doesn't matter.
 exports.getParamChanges = async (template, stack, aws) => {
@@ -80,7 +78,7 @@ exports.updateParams = async (templateName, template, stackName, stack, aws) => 
 // Main Command
 exports.update = async function update (env, opts = {}) {
   const cwd = process.cwd()
-  const templateName = await utils.getValidTemplateName(env)
+  const templateName = await utils.getValidTemplateName(env, 'Which template has the stack you\'d like to update?')
   let stack
 
   const rc = fs.readJsonSync(`${cwd}/.cfdnrc`)
