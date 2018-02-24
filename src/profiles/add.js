@@ -1,35 +1,26 @@
 const inq = require('inquirer')
 const chk = require('chalk')
-const {
-  log,
-} = require('../utils')
-
-const {
-  importAWSProfile,
-  setupCFDNProfile,
-  writeGlobalProfiles,
-  writeLocalProfiles,
-  getScopedProfiles,
-} = require('./utils')
+const utils = require('../utils')
+const profileUtils = require('./utils.js')
 
 module.exports = function exportAddProfile (...args) {
   return module.exports.addProfile.apply(this, args)
 }
 
-module.exports.addProfile = async function addProfile (env, opts) {
-  log.p()
+module.exports.addProfile = async function addProfile (env, opts = {}) {
+  utils.log.p()
   const name = env
-  const { global, local, aws, cfdn } = opts || {}
+  const { global, local, aws, cfdn } = opts
   let profile
 
   if (aws && cfdn) throw new Error(`Select one of either ${chk.cyan('-a|--aws')} or ${chk.cyan('-c|--cfdn')}only.`)
 
-  const { profiles, scope } = await getScopedProfiles(global, local)
+  const { profiles, scope } = await profileUtils.getScopedProfiles(global, local)
 
   if (aws) {
-    profile = await importAWSProfile(name, profiles)
+    profile = await profileUtils.importAWSProfile(name, profiles)
   } else if (cfdn) {
-    profile = await setupCFDNProfile(name, profiles)
+    profile = await profileUtils.setupCFDNProfile(name, profiles)
   } else {
     const add = await inq.prompt({
       type: 'list',
@@ -43,17 +34,17 @@ module.exports.addProfile = async function addProfile (env, opts) {
     })
 
     profile = add.type === 'aws'
-      ? await importAWSProfile(name, profiles)
-      : await setupCFDNProfile(name, profiles)
+      ? await profileUtils.importAWSProfile(name, profiles)
+      : await profileUtils.setupCFDNProfile(name, profiles)
   }
 
   const updatedProfiles = { ...profiles, ...profile }
 
-  if (scope === 'global') writeGlobalProfiles(updatedProfiles)
-  else writeLocalProfiles(updatedProfiles)
+  if (scope === 'global') profileUtils.writeGlobalProfiles(updatedProfiles)
+  else profileUtils.writeLocalProfiles(updatedProfiles)
 
   const profileName = Object.keys(profile)[0]
 
-  log.s(`Profile ${chk.cyan(profileName)} created.`, 1)
-  return log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.`, 3)
+  utils.log.s(`Profile ${chk.cyan(profileName)} created.`, 1)
+  return utils.log.i(`Use ${chk.cyan(`--profile ${profileName}`)} with ${chk.cyan('deploy, update, or validate')} to make use of the credentials and region.`, 3)
 }
