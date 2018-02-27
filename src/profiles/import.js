@@ -1,10 +1,10 @@
 const inq = require('inquirer')
-const { log } = require('../utils')
-const { getScopedProfiles, writeGlobalProfiles } = require('./utils.js')
-const { getAWSProfiles } = require('../utils/aws.js')
+const utils = require('../utils')
+const profileUtils = require('./utils.js')
+const awsUtils = require('../utils/aws.js')
 
 module.exports = async function importProfiles () {
-  log.i('This will overwrite any existing profiles with the same name.', 2)
+  utils.log.i('This will overwrite any existing profiles with the same name.', 2)
 
   const confirm = await inq.prompt({
     type: 'confirm',
@@ -15,11 +15,11 @@ module.exports = async function importProfiles () {
 
   if (!confirm.use) return false
 
-  const { profiles } = await getScopedProfiles(true)
-  const awsProfiles = getAWSProfiles()
+  const { profiles } = await profileUtils.getScopedProfiles(true)
+  const awsProfiles = awsUtils.getAWSProfiles()
   const updated = { ...profiles, ...awsProfiles }
 
-  writeGlobalProfiles(updated)
+  profileUtils.writeGlobalProfiles(updated)
 
-  return log.s('Profiles successfully imported!', 2)
+  return utils.log.s('Profiles successfully imported!', 2)
 }
