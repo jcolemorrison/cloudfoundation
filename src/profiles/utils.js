@@ -176,7 +176,7 @@ exports.setupCFDNProfile = async function setupProfile (name, existingProfiles) 
 
   const profile = await inq.prompt(inqs)
 
-  let profileName = name || 'default'
+  let profileName = name || 'main'
 
   if (profile.name) profileName = profile.name
   if (Object.keys(existingProfiles).includes(profileName)) throw new Error(`${chk.cyan(profileName)} already exists!`)
