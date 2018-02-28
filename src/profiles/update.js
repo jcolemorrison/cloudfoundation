@@ -1,33 +1,12 @@
 const inq = require('inquirer')
 const chk = require('chalk')
-const { log } = require('../utils')
+const utils = require('../utils')
+const profileUtils = require('./utils')
 
-const {
-  getScopedProfiles,
-  selectProfile,
-  writeGlobalProfiles,
-  writeLocalProfiles,
-} = require('./utils')
-
-module.exports = async function updateProfile (env, opts) {
-  log.p()
-  const { global, local } = opts || {}
-  let name = env
-  let profile
-
-  const { profiles, scope } = await getScopedProfiles(global, local, 'update')
-
-  if (name) {
-    if (!Object.keys(profiles).includes(name)) throw new Error(`Profile ${name} does not exist!`)
-    profile = { ...profiles[name], name }
-  } else {
-    profile = await selectProfile(profiles, 'Which profile would you like to update?')
-    name = profile.name
-  }
-
+exports.updateProfileInquiry = async function updateProfileInquiry (profile, name) {
   const { aws_access_key_id, aws_secret_access_key, region } = profile
 
-  const update = await inq.prompt([
+  return inq.prompt([
     {
       type: 'input',
       name: 'aws_access_key_id',
@@ -47,6 +26,25 @@ module.exports = async function updateProfile (env, opts) {
       default: region,
     },
   ])
+}
+
+exports.updateProfile = async function updateProfile (env, opts) {
+  utils.log.p()
+  const { global, local } = opts || {}
+  let name = env
+  let profile
+
+  const { profiles, scope } = await profileUtils.getScopedProfiles(global, local, 'update')
+
+  if (name) {
+    if (!Object.keys(profiles).includes(name)) throw new Error(`Profile ${name} does not exist!`)
+    profile = { ...profiles[name], name }
+  } else {
+    profile = await profileUtils.selectProfile(profiles, 'Which profile would you like to update?')
+    name = profile.name
+  }
+
+  const update = await exports.updateProfileInquiry(profile, name)
 
   const updatedProfiles = {
     ...profiles,
@@ -55,8 +53,8 @@ module.exports = async function updateProfile (env, opts) {
     },
   }
 
-  if (scope === 'local') writeLocalProfiles(updatedProfiles)
-  else writeGlobalProfiles(updatedProfiles)
+  if (scope === 'local') profileUtils.writeLocalProfiles(updatedProfiles)
+  else profileUtils.writeGlobalProfiles(updatedProfiles)
 
-  return log.s(`Profile ${chk.cyan(name)} successfully updated!`, 2)
+  return utils.log.s(`Profile ${chk.cyan(name)} successfully updated!`, 2)
 }

@@ -127,7 +127,7 @@ describe('Profile Remove Function', () => {
     })
   })
 
-  it('should write the local profiles if name passed via options', () => {
+  it('should throw an error if the profile name passed via options does not exist', () => {
     getScopedProfiles.returns({
       profiles: {
         oldProfileName: {},
@@ -135,7 +135,6 @@ describe('Profile Remove Function', () => {
       },
       scope: 'local',
     })
-    inqPrompt.returns({ remove: true })
 
     return cmd('missing').catch((e) => {
       expect(e.message).to.equal('Profile missing does not exist!')
