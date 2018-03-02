@@ -2,8 +2,8 @@ const inq = require('inquirer')
 const fs = require('fs-extra')
 const os = require('os')
 const chk = require('chalk')
-const { log } = require('../utils')
-const { getAWSProfiles } = require('../utils/aws')
+const utils = require('../utils')
+const awsUtils = require('../utils/aws')
 
 exports.hasGlobalProfiles = function hasGlobalProfiles (homedir) {
   const home = homedir || os.homedir()
@@ -69,13 +69,13 @@ exports.getScopedProfiles = async function getProfiles (global, local, action = 
 
 // Accepts a Profiles Object
 exports.importAWSProfile = async function importAwsProfile (name, existingProfiles) {
-  const awsProfiles = getAWSProfiles()
+  const awsProfiles = awsUtils.getAWSProfiles()
   const existing = existingProfiles && Object.keys(existingProfiles)
   let profileName = name
 
   const choices = Object.keys(awsProfiles).filter(p => existing && !existing.includes(p))
 
-  log.i('Profiles already imported are omitted from the below choices.', 2)
+  utils.log.i('Profiles already imported are omitted from the below choices.', 2)
 
   if (!profileName) {
     const profile = await inq.prompt({
