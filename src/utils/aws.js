@@ -2,9 +2,6 @@ const chk = require('chalk')
 const AWS = require('aws-sdk')
 const os = require('os')
 const fs = require('fs-extra')
-
-const { log } = require('./index.js')
-
 const { NO_AWS_CREDENTIALS } = require('./constants')
 
 exports.configAWS = (profile) => {
@@ -59,7 +56,7 @@ exports.parseAWSCreds = (file, isConfig) => {
 
   let profile
 
-  const profiles = data.reduce((prev, curr, i) => {
+  const profiles = data.reduce((prev, curr) => {
     const line = curr.split(/(^|\s)[;#]/)[0]
     const prof = curr.match(/^\s*\[([^[\]]+)\]\s*$/)
 
@@ -69,7 +66,10 @@ exports.parseAWSCreds = (file, isConfig) => {
       if (isConfig) p = p.replace(/^profile\s/, '')
 
       profile = p
-    } else if (profile) {
+    // the only way an `else if (profile)` is needed is if there's a corrupt creds / config
+    // file where the first line isn't either `[profile]` or `[profile name]`
+    // but instead begins with the key value pairs `region = us-east-1`
+    } else {
       const val = line.match(/^\s*(.+?)\s*=\s*(.+?)\s*$/)
 
       if (val) {
