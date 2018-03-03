@@ -11,13 +11,26 @@ const profileUtils = require('../../src/profiles/utils.js')
 
 describe('Profile Utility Functions', () => {
   let homedir
+  let log
 
   beforeEach(() => {
     homedir = sinon.stub(os, 'homedir')
+    log = {
+      p: sinon.stub(utils.log, 'p'),
+      e: sinon.stub(utils.log, 'e'),
+      s: sinon.stub(utils.log, 's'),
+      i: sinon.stub(utils.log, 'i'),
+      m: sinon.stub(utils.log, 'm'),
+    }
   })
 
   afterEach(() => {
     homedir.restore()
+    log.p.restore()
+    log.e.restore()
+    log.s.restore()
+    log.i.restore()
+    log.m.restore()
   })
 
   describe('#hasGlobalProfiles', () => {
@@ -105,7 +118,6 @@ describe('Profile Utility Functions', () => {
     })
   })
 
-  
   describe('#getScopedProfiles', () => {
     let getGlobalProfiles
     let getLocalProfiles
@@ -322,6 +334,262 @@ describe('Profile Utility Functions', () => {
 
       return profileUtils.setupCFDNProfile('one', existing).catch((e) => {
         expect(e.message).to.equal(`${chk.cyan('one')} already exists!`)
+      })
+    })
+  })
+
+  describe('#writeGlobalProfiles', () => {
+    let ensureDirSync
+    let writeJsonSync
+
+    beforeEach(() => {
+      ensureDirSync = sinon.stub(fs, 'ensureDirSync')
+      writeJsonSync = sinon.stub(fs, 'writeJsonSync')
+    })
+
+    afterEach(() => {
+      ensureDirSync.restore()
+      writeJsonSync.restore()
+    })
+
+    it('should write to the global profiles file if no home is passed', () => {
+      profileUtils.writeGlobalProfiles()
+      expect(homedir.called).to.be.true
+      expect(ensureDirSync.called).to.be.true
+      expect(writeJsonSync.called).to.be.true
+    })
+  })
+
+  describe('#writeLocalProfiles', () => {
+    let readJsonSync
+    let writeJsonSync
+
+    beforeEach(() => {
+      readJsonSync = sinon.stub(fs, 'readJsonSync')
+      writeJsonSync = sinon.stub(fs, 'writeJsonSync')
+    })
+
+    afterEach(() => {
+      readJsonSync.restore()
+      writeJsonSync.restore()
+    })
+
+    it('should write to the global profiles file if no home is passed', () => {
+      readJsonSync.returns({ profiles: {} })
+
+      profileUtils.writeLocalProfiles({})
+
+      expect(readJsonSync.called).to.be.true
+      expect(writeJsonSync.called).to.be.true
+    })
+  })
+
+  describe('#selectProfile', () => {
+    let inqPrompt
+
+    beforeEach(() => {
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      inqPrompt.restore()
+    })
+
+    it('should return the selected profile with the name added as a key', () => {
+      const profiles = {
+        testProfile: {
+          aws_access_key_id: 'abcd',
+          aws_secret_access_key: 'efgh',
+          region: 'us-east-1',
+        },
+        otherProfile: {
+          aws_access_key_id: 'qwerjlj',
+          aws_secret_access_key: 'vbnm',
+          region: 'us-east-2',
+        },
+      }
+      inqPrompt.returns({ choice: 'testProfile' })
+
+      return profileUtils.selectProfile(profiles, 'choose profile').then((d) => {
+        expect(d).to.deep.equal({
+          aws_access_key_id: 'abcd',
+          aws_secret_access_key: 'efgh',
+          region: 'us-east-1',
+          name: 'testProfile',
+        })
+      })
+    })
+
+    it('should return the selected profile with the name added as a key if no message is passed', () => {
+      const profiles = {
+        testProfile: {
+          aws_access_key_id: 'abcd',
+          aws_secret_access_key: 'efgh',
+          region: 'us-east-1',
+        },
+        otherProfile: {
+          aws_access_key_id: 'qwerjlj',
+          aws_secret_access_key: 'vbnm',
+          region: 'us-east-2',
+        },
+      }
+      inqPrompt.returns({ choice: 'testProfile' })
+
+      return profileUtils.selectProfile(profiles).then((d) => {
+        expect(d).to.deep.equal({
+          aws_access_key_id: 'abcd',
+          aws_secret_access_key: 'efgh',
+          region: 'us-east-1',
+          name: 'testProfile',
+        })
+      })
+    })
+  })
+
+
+  describe('#getFromAllProfiles', () => {
+    let getGlobalProfiles
+    let getLocalProfiles
+
+    beforeEach(() => {
+      getGlobalProfiles = sinon.stub(profileUtils, 'getGlobalProfiles')
+      getLocalProfiles = sinon.stub(profileUtils, 'getLocalProfiles')
+    })
+
+    afterEach(() => {
+      getGlobalProfiles.restore()
+      getLocalProfiles.restore()
+    })
+
+    it('should return a local profile with its name as a key', () => {
+      getLocalProfiles.returns({
+        testProfile: {
+          aws_access_key_id: 'abcd',
+          aws_secret_access_key: 'efgh',
+          region: 'us-east-1',
+        },
+      })
+      getGlobalProfiles.returns({})
+
+      const profile = profileUtils.getFromAllProfiles('testProfile')
+
+      expect(profile).to.deep.equal({
+        aws_access_key_id: 'abcd',
+        aws_secret_access_key: 'efgh',
+        region: 'us-east-1',
+        name: 'testProfile',
+      })
+    })
+
+    it('should return a global profile with its name as a key', () => {
+      getLocalProfiles.returns({})
+      getGlobalProfiles.returns({
+        testProfile: {
+          aws_access_key_id: 'abcd',
+          aws_secret_access_key: 'efgh',
+          region: 'us-east-1',
+        },
+      })
+
+      const profile = profileUtils.getFromAllProfiles('testProfile')
+
+      expect(profile).to.deep.equal({
+        aws_access_key_id: 'abcd',
+        aws_secret_access_key: 'efgh',
+        region: 'us-east-1',
+        name: 'testProfile',
+      })
+    })
+
+    it('throw an error if the profile is not found', () => {
+      getLocalProfiles.returns({})
+      getGlobalProfiles.returns({})
+
+      const result = () => { profileUtils.getFromAllProfiles('testProfile') }
+
+      expect(result).to.throw().with.property('message', `Profile ${chk.cyan('testProfile')} not found!`)
+    })
+  })
+
+  describe('#selectFromAllProfiles', () => {
+    const localProfiles = {
+      localOne: {
+        aws_access_key_id: 'abc',
+        aws_secret_access_key: 'def',
+        region: 'us-east-1',
+      },
+      localTwo: {
+        aws_access_key_id: 'abc',
+        aws_secret_access_key: 'def',
+        region: 'us-east-2',
+      },
+    }
+
+    const globalProfiles = {
+      globalOne: {
+        aws_access_key_id: 'abc',
+        aws_secret_access_key: 'def',
+        region: 'us-west-1',
+      },
+      globalTwo: {
+        aws_access_key_id: 'abc',
+        aws_secret_access_key: 'def',
+        region: 'us-west-2',
+      },
+    }
+
+    let getGlobalProfiles
+    let getLocalProfiles
+    let inqPrompt
+
+    beforeEach(() => {
+      getGlobalProfiles = sinon.stub(profileUtils, 'getGlobalProfiles')
+      getLocalProfiles = sinon.stub(profileUtils, 'getLocalProfiles')
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      getGlobalProfiles.restore()
+      getLocalProfiles.restore()
+      inqPrompt.restore()
+    })
+
+    it('should return a selected profile if both valid global and local profiles exist', () => {
+      getLocalProfiles.returns(localProfiles)
+      getGlobalProfiles.returns(globalProfiles)
+      inqPrompt.returns({ use: 'localOne' })
+
+      return profileUtils.selectFromAllProfiles().then((d) => {
+        expect(d).to.equal('localOne')
+      })
+    })
+
+    it('should return a selected profile if only valid global profiles exist', () => {
+      getLocalProfiles.returns({})
+      getGlobalProfiles.returns(globalProfiles)
+      inqPrompt.returns({ use: 'globalOne' })
+
+      return profileUtils.selectFromAllProfiles().then((d) => {
+        expect(d).to.equal('globalOne')
+      })
+    })
+
+    it('should return a selected profile if only valid local profiles exist', () => {
+      getLocalProfiles.returns(localProfiles)
+      getGlobalProfiles.returns({})
+      inqPrompt.returns({ use: 'localOne' })
+
+      return profileUtils.selectFromAllProfiles().then((d) => {
+        expect(d).to.equal('localOne')
+      })
+    })
+
+    it('should throw an error if neither local or global profiles exist', () => {
+      getLocalProfiles.returns({})
+      getGlobalProfiles.returns({})
+
+      return profileUtils.selectFromAllProfiles().catch((e) => {
+        expect(e.message).to.equal('No CFDN Profiles set up.')
       })
     })
   })
