@@ -124,11 +124,9 @@ and description.json
   })
 
   describe('#checkValidProject', () => {
-    const action = () => {
-      return {
-        catch: (cb) => { cb('error') },
-      }
-    }
+    const action = () => ({
+      catch: (cb) => { cb('error') },
+    })
     let log
     let existsSync
 
