@@ -1,0 +1,6 @@
+{
+  "ParamAuthorName": {
+    "Type": "String",
+    "Description": "This will be added as a tag called 'Owner' to every resource for easier management."
+  }
+}

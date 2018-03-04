@@ -82,8 +82,9 @@ exports.reduceTemplateProps = dir => (
   ), {})
 )
 
-exports.getTemplateAsObject = (name) => {
-  const templateDir = `${process.cwd()}/src/${name}`
+exports.getTemplateAsObject = (name, dir) => {
+  const cwd = dir || `${process.cwd()}/src`
+  const templateDir = `${cwd}/${name}`
 
   if (!fs.existsSync(templateDir)) {
     throw new Error(`${chk.cyan(name)} not found!`)

@@ -107,6 +107,22 @@ and description.json
     })
   })
 
+  describe('#getTemplateAsObject', () => {
+    it('should properly require a valid template directory', () => {
+      utils.getTemplateAsObject('db', `${__dirname}/../../src/tpls`)
+    })
+    it('should throw an error if Description is a directory', () => {
+      const result = () => utils.getTemplateAsObject('error', `${__dirname}/tpls`)
+      expect(result).to.throw().with.property('message', `${chk.red('error')}: Description should be contained in "description.json" with one property "Description" and with a string value.`)
+    })
+    it('should throw an error if the template does not exist', () => {
+      const existsSync = sinon.stub(fs, 'existsSync').returns(false)
+      const result = () => utils.getTemplateAsObject('error')
+      expect(result).to.throw().with.property('message', `${chk.cyan('error')} not found!`)
+      existsSync.restore()
+    })
+  })
+
   describe('#createSaveSettings', () => {
     it('should properly structure the RC file with new settings', () => {
       const rc = {
