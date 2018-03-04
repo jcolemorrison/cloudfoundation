@@ -2,6 +2,7 @@ const expect = require('chai').expect
 const sinon = require('sinon')
 const glob = require('glob')
 const chk = require('chalk')
+const inq = require('inquirer')
 const fs = require('fs-extra')
 const utils = require('../../src/utils/index.js')
 
@@ -165,6 +166,33 @@ and description.json
       existsSync.returns(true)
       utils.checkValidProject('test', action, 'env', 'opts', false)
       expect(log.p.called).to.be.true
+    })
+  })
+
+  describe('#inquireTemplateName', () => {
+    let globSync
+    let inqPrompt
+
+    beforeEach(() => {
+      globSync = sinon.stub(glob, 'sync')
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      globSync.restore()
+      inqPrompt.restore()
+    })
+
+    it('should return the selected template name', () => {
+      globSync.returns([
+        '/test',
+        '/testTwo',
+      ])
+      inqPrompt.returns({ templatename: 'testTwo' })
+
+      return utils.inquireTemplateName('message').then((d) => {
+        expect(d).to.equal('testTwo')
+      })
     })
   })
 
