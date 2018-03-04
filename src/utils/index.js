@@ -82,41 +82,6 @@ exports.reduceTemplateProps = dir => (
   ), {})
 )
 
-exports.getTemplateAsObject = (name, dir) => {
-  const cwd = dir || `${process.cwd()}/src`
-  const templateDir = `${cwd}/${name}`
-
-  if (!fs.existsSync(templateDir)) {
-    throw new Error(`${chk.cyan(name)} not found!`)
-  }
-
-  const template = { AWSTemplateFormatVersion: '2010-09-09' }
-
-  glob.sync(`${templateDir}/*`).forEach((dir) => {
-    const isDir = fs.lstatSync(dir).isDirectory()
-    const cfnProp = exports.getCfnPropType(dir)
-
-    // if it's not a directory and it's not the Description, it's a json object
-    if (!isDir && cfnProp !== 'Description') {
-      template[cfnProp] = require(path.resolve(dir))
-
-    // otherwise if it's not a dir but it is Description then we have the description.json
-    } else if (!isDir && cfnProp === 'Description') {
-      template[cfnProp] = require(path.resolve(dir)).Description
-
-    // otherwise it's a dir, and it's named Description which is invalid
-    } else if (isDir && cfnProp === 'Description') {
-      throw new Error(`${chk.red('error')}: Description should be contained in "description.json" with one property "Description" and with a string value.`)
-
-    // otherwise, it's a whole thing of of related json, so smash it together
-    } else {
-      template[cfnProp] = exports.reduceTemplateProps(dir)
-    }
-  })
-
-  return template
-}
-
 exports.validateJSON = (j) => {
   let check
 
@@ -257,4 +222,39 @@ exports.getTemplateFiles = (name) => {
   if (!files || !files.length) throw new Error(`${chk.cyan(name)} has no files in it!`)
 
   return files
+}
+
+exports.getTemplateAsObject = (name, dir) => {
+  const cwd = dir || `${process.cwd()}/src`
+  const templateDir = `${cwd}/${name}`
+
+  if (!fs.existsSync(templateDir)) {
+    throw new Error(`${chk.cyan(name)} not found!`)
+  }
+
+  const template = { AWSTemplateFormatVersion: '2010-09-09' }
+
+  glob.sync(`${templateDir}/*`).forEach((dir) => {
+    const isDir = fs.lstatSync(dir).isDirectory()
+    const cfnProp = exports.getCfnPropType(dir)
+
+    // if it's not a directory and it's not the Description, it's a json object
+    if (!isDir && cfnProp !== 'Description') {
+      template[cfnProp] = require(path.resolve(dir))
+
+      // otherwise if it's not a dir but it is Description then we have the description.json
+    } else if (!isDir && cfnProp === 'Description') {
+      template[cfnProp] = require(path.resolve(dir)).Description
+
+      // otherwise it's a dir, and it's named Description which is invalid
+    } else if (isDir && cfnProp === 'Description') {
+      throw new Error(`${chk.red('error')}: Description should be contained in "description.json" with one property "Description" and with a string value.`)
+
+      // otherwise, it's a whole thing of of related json, so smash it together
+    } else {
+      template[cfnProp] = exports.reduceTemplateProps(dir)
+    }
+  })
+
+  return template
 }
