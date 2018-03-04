@@ -1,6 +1,8 @@
 const expect = require('chai').expect
 const sinon = require('sinon')
+const glob = require('glob')
 const chk = require('chalk')
+const fs = require('fs-extra')
 const utils = require('../../src/utils/index.js')
 
 describe('Utility Functions', () => {
@@ -57,6 +59,51 @@ and description.json
 `
       const result = () => utils.getCfnPropType('invalid')
       expect(result).to.throw().with.property('message', msg)
+    })
+  })
+
+  describe('#reduceTemplateProps', () => {
+    it('should return all json and js files paths', () => {
+      utils.reduceTemplateProps(`${__dirname}/../../src/tpls/vpc/outputs/`)
+    })
+  })
+
+  describe('#getTemplateFiles', () => {
+    let existsSync
+    let globSync
+
+    beforeEach(() => {
+      existsSync = sinon.stub(fs, 'existsSync')
+      globSync = sinon.stub(glob, 'sync')
+    })
+
+    afterEach(() => {
+      existsSync.restore()
+      globSync.restore()
+    })
+
+    it('should return all files that match the glob', () => {
+      existsSync.returns(true)
+      globSync.returns('files')
+
+      expect(utils.getTemplateFiles('name')).to.equal('files')
+    })
+
+    it('should throw an error if the directory does not exist', () => {
+      existsSync.returns(false)
+
+      const result = () => utils.getTemplateFiles('name')
+
+      expect(result).to.throw().with.property('message', `${chk.cyan('name')} not found!`)
+    })
+
+    it('should throw an error if no files are found', () => {
+      existsSync.returns(true)
+      globSync.returns([])
+
+      const result = () => utils.getTemplateFiles('name')
+
+      expect(result).to.throw().with.property('message', `${chk.cyan('name')} has no files in it!`)
     })
   })
 

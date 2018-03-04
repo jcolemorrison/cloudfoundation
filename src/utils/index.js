@@ -82,18 +82,6 @@ exports.reduceTemplateProps = dir => (
   ), {})
 )
 
-exports.getTemplateFiles = (name) => {
-  const templateDir = `${process.cwd()}/src/${name}`
-
-  if (!fs.existsSync(templateDir)) throw new Error(`${chk.cyan(name)} not found!`)
-
-  const files = glob.sync(`${templateDir}/*`)
-
-  if (!files) throw new Error(`${chk.cyan(name)} has no files in it!`)
-
-  return files
-}
-
 exports.getTemplateAsObject = (name) => {
   const templateDir = `${process.cwd()}/src/${name}`
 
@@ -256,4 +244,16 @@ exports.getValidTemplateName = async (templateName, message) => {
   else tplName = await exports.inquireTemplateName(message)
 
   return tplName
+}
+
+exports.getTemplateFiles = (name) => {
+  const templateDir = `${process.cwd()}/src/${name}`
+
+  if (!fs.existsSync(templateDir)) throw new Error(`${chk.cyan(name)} not found!`)
+
+  const files = glob.sync(`${templateDir}/*`)
+
+  if (!files || !files.length) throw new Error(`${chk.cyan(name)} has no files in it!`)
+
+  return files
 }
