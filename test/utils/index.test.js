@@ -1,5 +1,6 @@
 const expect = require('chai').expect
 const sinon = require('sinon')
+const chk = require('chalk')
 const utils = require('../../src/utils/index.js')
 
 describe('Utility Functions', () => {
@@ -32,6 +33,33 @@ describe('Utility Functions', () => {
       })
     })
   })
+
+  describe('#getCfnPropType', () => {
+    it('should return the valid CFN Prop with the first letter upper cased', () => {
+      expect(utils.getCfnPropType('/path/src/resources')).to.equal('Resources')
+    })
+
+    it('should throw an error if no prop is passed', () => {
+      const result = () => utils.getCfnPropType()
+      expect(result).to.throw().with.property('message', 'a cloudformation property type is required')
+    })
+
+    it('should throw an error if an invalid prop is passed', () => {
+      const msg = `${chk.red('error')}: "invalid" is not a valid CFN top level template property.\n
+Template top level directory must be one of:\n
+conditions/ or conditions.json\n
+mappings/ or mappings.json\n
+metadata/ or metadata.json\n
+outputs/ or outputs.json\n
+parameters/ or parameters.json\n
+resources/ or resources.json\n
+and description.json
+`
+      const result = () => utils.getCfnPropType('invalid')
+      expect(result).to.throw().with.property('message', msg)
+    })
+  })
+
   describe('#createSaveSettings', () => {
     it('should properly structure the RC file with new settings', () => {
       const rc = {

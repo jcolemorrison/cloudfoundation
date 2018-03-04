@@ -62,15 +62,15 @@ exports.getCfnPropType = (prop) => {
 
   if (validProps.lastIndexOf(name) === -1) {
     throw new Error(`${chk.red('error')}: "${name}" is not a valid CFN top level template property.\n
-      Template top level directory must be one of:\n
-      conditions/ or conditions.json\n
-      description/ or description.json\n
-      mappings/ or mappings.json\n
-      metadata/ or metadata.json\n
-      outputs/ or outputs.json\n
-      parameters/ or parameters.json\n
-      resources/ or resources.json
-    `)
+Template top level directory must be one of:\n
+conditions/ or conditions.json\n
+mappings/ or mappings.json\n
+metadata/ or metadata.json\n
+outputs/ or outputs.json\n
+parameters/ or parameters.json\n
+resources/ or resources.json\n
+and description.json
+`)
   }
 
   return `${name.charAt(0).toUpperCase()}${name.slice(1)}`
