@@ -3,6 +3,35 @@ const sinon = require('sinon')
 const utils = require('../../src/utils/index.js')
 
 describe('Utility Functions', () => {
+  describe('#log', () => {
+    describe('#_b', () => {
+      it('should log all different line break cases', () => {
+        utils.log._b('test', 0)
+        utils.log._b('test', 1)
+        utils.log._b('test', 2)
+        utils.log._b('test', 3)
+        utils.log._b('test')
+      })
+    })
+
+    describe('#log.e', () => {
+      it('should log an error style message', () => {
+        utils.log.e('test error', 0)
+      })
+    })
+
+    describe('#log.s', () => {
+      it('should log an success style message', () => {
+        utils.log.s('test success', 0)
+      })
+    })
+
+    describe('#log.i', () => {
+      it('should log an info style message', () => {
+        utils.log.i('test info', 0)
+      })
+    })
+  })
   describe('#createSaveSettings', () => {
     it('should properly structure the RC file with new settings', () => {
       const rc = {
