@@ -123,6 +123,53 @@ and description.json
     })
   })
 
+  describe('#checkValidProject', () => {
+    const action = () => {
+      return {
+        catch: (cb) => { cb('error') },
+      }
+    }
+    let log
+    let existsSync
+
+    beforeEach(() => {
+      log = {
+        p: sinon.stub(utils.log, 'p'),
+        e: sinon.stub(utils.log, 'e'),
+        s: sinon.stub(utils.log, 's'),
+        i: sinon.stub(utils.log, 'i'),
+        m: sinon.stub(utils.log, 'm'),
+      }
+      existsSync = sinon.stub(fs, 'existsSync')
+    })
+
+    afterEach(() => {
+      log.p.restore()
+      log.e.restore()
+      log.s.restore()
+      log.i.restore()
+      log.m.restore()
+      existsSync.restore()
+    })
+
+    it('should catch an error if calling to the action fails', () => {
+      utils.checkValidProject('test', action, 'env', 'opts', true)
+      expect(log.p.called).to.be.true
+    })
+
+    it('should log an error if the command is not global and a project is not set up locally', () => {
+      existsSync.returns(false)
+      utils.checkValidProject('test', action, 'env', 'opts', false)
+      expect(log.e.firstCall.args[0]).to.equal(`${chk.cyan('cfdn test')} can only be run in a valid cfdn project`)
+    })
+
+    it('should run normally if a local project and no errors occur', () => {
+      existsSync.returns(true)
+      utils.checkValidProject('test', action, 'env', 'opts', false)
+      expect(log.p.called).to.be.true
+    })
+  })
+
   describe('#createSaveSettings', () => {
     it('should properly structure the RC file with new settings', () => {
       const rc = {

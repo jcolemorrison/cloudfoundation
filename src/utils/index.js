@@ -82,32 +82,19 @@ exports.reduceTemplateProps = dir => (
   ), {})
 )
 
-exports.validateJSON = (j) => {
-  let check
-
-  try {
-    check = JSON.parse(j)
-    if (check && typeof check === 'object') throw new Error(`${check} is not valid JSON`)
-  } catch (error) {
-    throw error
-  }
-
-  return check
-}
-
 exports.checkValidProject = (cmd, action, env, opts, isGlobal) => {
   if (!isGlobal) {
     try {
       if (!fs.existsSync(`${process.cwd()}/.cfdnrc`)) throw new Error(`${chk.cyan(`cfdn ${cmd}`)} can only be run in a valid cfdn project`)
     } catch (error) {
-      return this.log.e(error.message)
+      return exports.log.e(error.message)
     }
   }
 
   return action(env, opts).catch((e) => {
     e.message = chk.red(e.message)
     error(e)
-    log()
+    exports.log.p()
   })
 }
 
