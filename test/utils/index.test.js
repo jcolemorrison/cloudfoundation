@@ -196,6 +196,99 @@ and description.json
     })
   })
 
+  describe('#checkValidTemplate', () => {
+    let existsSync
+
+    beforeEach(() => {
+      existsSync = sinon.stub(fs, 'existsSync')
+    })
+
+    afterEach(() => {
+      existsSync.restore()
+    })
+
+    it('should return the name of the template if it exists', () => {
+      existsSync.returns(true)
+      const result = utils.checkValidTemplate('name')
+      expect(result).to.equal('name')
+    })
+
+    it('should throw an error if the template does not exist', () => {
+      existsSync.returns(false)
+      const result = () => utils.checkValidTemplate('name')
+      expect(result).to.throw().with.property('message', `Template ${chk.cyan('name')} does not exist!`)
+    })
+  })
+
+  describe('#writeRcFile', () => {
+    let writeFileSync
+
+    beforeEach(() => {
+      writeFileSync = sinon.stub(fs, 'writeFileSync')
+    })
+
+    afterEach(() => {
+      writeFileSync.restore()
+    })
+
+    it('should write the stringified json to the RC file', () => {
+      const result = utils.writeRcFile(false, {})
+      expect(result).to.equal(undefined)
+    })
+  })
+
+  describe('#selectRegion', () => {
+    let inqPrompt
+
+    beforeEach(() => {
+      inqPrompt = sinon.stub(inq, 'prompt')
+    })
+
+    afterEach(() => {
+      inqPrompt.restore()
+    })
+
+    it('should return the selected region', () => {
+      inqPrompt.returns({ selected: 'us-east-1' })
+
+      return utils.selectRegion({ region: 'us-west-2' }, 'select a region').then((d) => {
+        expect(d).to.equal('us-east-1')
+      })
+    })
+
+    it('should return the selected region and set the default region to us-east-1 if none is passed', () => {
+      inqPrompt.returns({ selected: 'us-east-1' })
+
+      return utils.selectRegion(undefined, 'select a region').then((d) => {
+        expect(d).to.equal('us-east-1')
+      })
+    })
+  })
+
+  describe('#hasConfiguredCfdn', () => {
+    let existsSync
+
+    beforeEach(() => {
+      existsSync = sinon.stub(fs, 'existsSync')
+    })
+
+    afterEach(() => {
+      existsSync.restore()
+    })
+
+    it('should return true if the cfdn directory exists', () => {
+      existsSync.returns(true)
+      const result = utils.hasConfiguredCfdn()
+      expect(result).to.equal(true)
+    })
+
+    it('should return true if the cfdn directory exists and a homedir is passed', () => {
+      existsSync.returns(true)
+      const result = utils.hasConfiguredCfdn('/home')
+      expect(result).to.equal(true)
+    })
+  })
+
   describe('#createSaveSettings', () => {
     it('should properly structure the RC file with new settings', () => {
       const rc = {

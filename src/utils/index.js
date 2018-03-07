@@ -98,58 +98,12 @@ exports.checkValidProject = (cmd, action, env, opts, isGlobal) => {
   })
 }
 
-exports.inquireTemplateName = async (message) => {
-  const templates = glob.sync(`${process.cwd()}/src/*`).map((s) => {
-    const p = s.split('/')
-    return p[p.length - 1]
-  })
-
-  const prompt = await inq.prompt([
-    {
-      type: 'list',
-      name: 'templatename',
-      message,
-      choices: templates,
-    },
-  ])
-
-  return prompt.templatename
-}
-
 exports.checkValidTemplate = (name) => {
   const template = fs.existsSync(`${process.cwd()}/src/${name}`)
 
   if (!template) throw new Error(`Template ${chk.cyan(name)} does not exist!`)
 
   return name
-}
-
-exports.getStackFile = (templateDir) => {
-  const stackPath = `${templateDir}/.stacks`
-  let stackFile = {}
-
-  const stackFileExists = fs.existsSync(stackPath)
-
-  if (!stackFileExists) throw new Error(`Stack file at ${stackPath} does not exist!`)
-
-  try {
-    stackFile = fs.readJsonSync(stackPath)
-    return stackFile
-  } catch (error) {
-    throw error
-  }
-}
-
-exports.writeStackFile = (templateDir, stack) => {
-  const stackPath = `${templateDir}/.stacks`
-
-  fs.ensureFileSync(stackPath)
-
-  try {
-    fs.writeFileSync(stackPath, JSON.stringify(stack, null, 2), 'utf8')
-  } catch (error) {
-    throw error
-  }
 }
 
 exports.writeRcFile = (dir, rc) => {
@@ -160,7 +114,7 @@ exports.writeRcFile = (dir, rc) => {
 }
 
 
-exports.selectRegion = async (profile, message) => {
+exports.selectRegion = async (profile = {}, message) => {
   const region = await inq.prompt([
     {
       type: 'list',
@@ -244,4 +198,22 @@ exports.getTemplateAsObject = (name, dir) => {
   })
 
   return template
+}
+
+exports.inquireTemplateName = async (message) => {
+  const templates = glob.sync(`${process.cwd()}/src/*`).map((s) => {
+    const p = s.split('/')
+    return p[p.length - 1]
+  })
+
+  const prompt = await inq.prompt([
+    {
+      type: 'list',
+      name: 'templatename',
+      message,
+      choices: templates,
+    },
+  ])
+
+  return prompt.templatename
 }
