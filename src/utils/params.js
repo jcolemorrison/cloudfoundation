@@ -582,7 +582,7 @@ exports.volumeInquiryChoices = (aws, region, name, type, defaults) => async () =
   const res = await ec2.describeVolumes().promise()
 
   const choices = res.Volumes.map((v) => {
-    const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
+    const tagname = v.Tags && v.Tags.find(t => t.Key === 'Name')
     const subname = tagname ? ` (${tagname.Value})` : ''
     let choice = { name: `${v.VolumeId}${subname}`, value: v.VolumeId }
 
@@ -614,84 +614,88 @@ exports.volumeInquiryChoices = (aws, region, name, type, defaults) => async () =
 //   return inquiry
 // }
 
-exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
-  const {
-    Default,
-    Description,
-  } = param
+exports.vpcInquiryChoices = (aws, region, name, type, defaults) => async () => {
+  const ec2 = new aws.EC2({ region })
 
-  const inquiry = {
-    type,
-    name,
-    message: exports.baseInqMsg(name, Description),
-    default: prevParam || Default,
-  }
+  utils.log.i(`fetching VPCs for parameter ${name}...`, 2)
 
-  inquiry.choices = async () => {
-    const ec2 = new aws.EC2({ region })
+  const res = await ec2.describeVpcs().promise()
 
-    utils.log.i(`fetching VPCs for parameter ${name}...`, 2)
+  const choices = res.Vpcs.map((v) => {
+    const tagname = v.Tags && v.Tags.find(t => t.Key === 'Name')
+    const subname = tagname ? ` (${tagname.Value})` : ''
 
-    const res = await ec2.describeVpcs().promise()
+    let choice = { name: `${v.VpcId}${subname}`, value: v.VpcId }
 
-    const choices = res.Vpcs.map((v) => {
-      const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
-      const subname = tagname ? ` (${tagname.Value})` : ''
+    if (type === 'checkbox') choice = exports.checkboxDefault(choice, defaults)
 
-      let choice = { name: `${v.VpcId}${subname}`, value: v.VpcId }
+    return choice
+  })
 
-      if (type === 'checkbox') choice = exports.checkboxDefault(choice, inquiry.default)
-
-      return choice
-    })
-
-    return choices
-  }
-
-  if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
-
-  return inquiry
+  return choices
 }
 
-exports.buildHostedZoneInquiry = (param, name, region, aws, type, prevParam) => {
-  const {
-    Default,
-    Description,
-  } = param
+// exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
+//   const {
+//     Default,
+//     Description,
+//   } = param
 
-  const inquiry = {
-    type,
-    name,
-    message: exports.baseInqMsg(name, Description),
-    default: prevParam || Default,
-  }
+//   const inquiry = {
+//     type,
+//     name,
+//     message: exports.baseInqMsg(name, Description),
+//     default: prevParam || Default,
+//   }
 
-  inquiry.choices = async () => {
-    const r53 = new aws.Route53({ region })
+//   inquiry.choices = exports.vpcInquiryChoices(aws, region, name, type, inquiry.default)
 
-    utils.log.i(`fetching EC2 Volume IDs for parameter ${name}...`, 2)
+//   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
 
-    const res = await r53.listHostedZones().promise()
+//   return inquiry
+// }
 
-    const choices = res.HostedZones.map((z) => {
-      const id = z.Id.split('/')[2]
-      let choice = {
-        name: `${z.Name} (${id})`,
-        value: id, // CFN requires only the number from `/hostedzone/:number`
-      }
+exports.hostedZoneInquiryChoices = (aws, region, name, type, defaults) => async () => {
+  const r53 = new aws.Route53({ region })
 
-      if (type === 'checkbox') choice = exports.checkboxDefault(choice, inquiry.default)
+  utils.log.i(`fetching Hosted Zone IDs for parameter ${name}...`, 2)
 
-      return choice
-    })
+  const res = await r53.listHostedZones().promise()
 
-    return choices
-  }
+  const choices = res.HostedZones.map((z) => {
+    const id = z.Id.split('/')[2]
+    let choice = {
+      name: `${z.Name} (${id})`,
+      value: id, // CFN requires only the number from `/hostedzone/:number`
+    }
 
-  if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
+    if (type === 'checkbox') choice = exports.checkboxDefault(choice, defaults)
 
-  return inquiry
+    return choice
+  })
+
+  return choices
 }
+
+// exports.buildHostedZoneInquiry = (param, name, region, aws, type, prevParam) => {
+//   const {
+//     Default,
+//     Description,
+//   } = param
+
+//   const inquiry = {
+//     type,
+//     name,
+//     message: exports.baseInqMsg(name, Description),
+//     default: prevParam || Default,
+//   }
+
+//   inquiry.choices = exports.hostedZoneInquiryChoices(aws, region, name, type, inquiry.default)
+
+//   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
+
+//   return inquiry
+// }
 
 
 // Accepts an Object in the form of an AWS CFN Parameter i.e.
@@ -767,11 +771,11 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::VPC::Id':
-      inquiry = exports.buildVpcInquiry(param, name, region, aws, 'list', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'list', prevParam, exports.vpcInquiryChoices)
       break
 
     case 'AWS::Route53::HostedZone::Id':
-      inquiry = exports.buildHostedZoneInquiry(param, name, region, aws, 'list', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'list', prevParam, exports.hostedZoneInquiryChoices)
       break
 
     case 'List<AWS::EC2::AvailabilityZone::Name>':

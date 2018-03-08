@@ -608,7 +608,193 @@ describe('Params AWS', () => {
     })
   })
 
-  describe('#buildSubnetInquiry', () => {
-    
+  describe('#volumeInquiryChoices', () => {
+    const Volumes = [
+      {
+        Tags: [{ Key: 'Name', Value: 'First Volume' }],
+        VolumeId: 'volume-abc',
+      },
+      {
+        VolumeId: 'volume-xyz',
+      },
+      {
+        Tags: [],
+        VolumeId: 'volume-qwe',
+      },
+    ]
+    let aws
+    let complete
+    let describeVolumes
+
+    let checkboxDefault
+
+    beforeEach(() => {
+      checkboxDefault = sinon.stub(params, 'checkboxDefault')
+      complete = sinon.stub()
+      describeVolumes = sinon.stub()
+      aws = {
+        EC2: sinon.stub().returns({ describeVolumes }),
+      }
+    })
+
+    afterEach(() => {
+      checkboxDefault.restore()
+    })
+
+    it('should return the choices as type list', () => {
+      complete.returns({ Volumes })
+      describeVolumes.returns({ promise: complete })
+
+      const fn = params.volumeInquiryChoices(aws, 'us-east-1', 'ParamVolume', 'list', undefined)
+
+      return fn().then((d) => {
+        expect(d).to.deep.equal([
+          { name: 'volume-abc (First Volume)', value: 'volume-abc' },
+          { name: 'volume-xyz', value: 'volume-xyz' },
+          { name: 'volume-qwe', value: 'volume-qwe' },
+        ])
+      })
+    })
+
+    it('should return the choices as type checkbox with defaults set', () => {
+      complete.returns({ Volumes })
+      describeVolumes.returns({ promise: complete })
+      checkboxDefault.callsFake(c => c)
+
+      const fn = params.volumeInquiryChoices(aws, 'us-east-1', 'ParamVolume', 'checkbox', 'default,values')
+
+      return fn().then((d) => {
+        expect(d).to.deep.equal([
+          { name: 'volume-abc (First Volume)', value: 'volume-abc' },
+          { name: 'volume-xyz', value: 'volume-xyz' },
+          { name: 'volume-qwe', value: 'volume-qwe' },
+        ])
+      })
+    })
+  })
+
+  describe('#vpcInquiryChoices', () => {
+    const Vpcs = [
+      {
+        Tags: [{ Key: 'Name', Value: 'First Vpc' }],
+        VpcId: 'vpc-abc',
+      },
+      {
+        VpcId: 'vpc-xyz',
+      },
+      {
+        Tags: [],
+        VpcId: 'vpc-qwe',
+      },
+    ]
+    let aws
+    let complete
+    let describeVpcs
+
+    let checkboxDefault
+
+    beforeEach(() => {
+      checkboxDefault = sinon.stub(params, 'checkboxDefault')
+      complete = sinon.stub()
+      describeVpcs = sinon.stub()
+      aws = {
+        EC2: sinon.stub().returns({ describeVpcs }),
+      }
+    })
+
+    afterEach(() => {
+      checkboxDefault.restore()
+    })
+
+    it('should return the choices as type list', () => {
+      complete.returns({ Vpcs })
+      describeVpcs.returns({ promise: complete })
+
+      const fn = params.vpcInquiryChoices(aws, 'us-east-1', 'ParamVpc', 'list', undefined)
+
+      return fn().then((d) => {
+        expect(d).to.deep.equal([
+          { name: 'vpc-abc (First Vpc)', value: 'vpc-abc' },
+          { name: 'vpc-xyz', value: 'vpc-xyz' },
+          { name: 'vpc-qwe', value: 'vpc-qwe' },
+        ])
+      })
+    })
+
+    it('should return the choices as type checkbox with defaults set', () => {
+      complete.returns({ Vpcs })
+      describeVpcs.returns({ promise: complete })
+      checkboxDefault.callsFake(c => c)
+
+      const fn = params.vpcInquiryChoices(aws, 'us-east-1', 'ParamVpc', 'checkbox', 'default,values')
+
+      return fn().then((d) => {
+        expect(d).to.deep.equal([
+          { name: 'vpc-abc (First Vpc)', value: 'vpc-abc' },
+          { name: 'vpc-xyz', value: 'vpc-xyz' },
+          { name: 'vpc-qwe', value: 'vpc-qwe' },
+        ])
+      })
+    })
+  })
+
+  describe('#hostedZoneInquiryChoices', () => {
+    const HostedZones = [
+      {
+        Name: 'abc.com',
+        Id: '/hostedzone/abc',
+      },
+      {
+        Name: 'xyz.com',
+        Id: '/hostedzone/xyz',
+      },
+    ]
+    let aws
+    let complete
+    let listHostedZones
+
+    let checkboxDefault
+
+    beforeEach(() => {
+      checkboxDefault = sinon.stub(params, 'checkboxDefault')
+      complete = sinon.stub()
+      listHostedZones = sinon.stub()
+      aws = {
+        Route53: sinon.stub().returns({ listHostedZones }),
+      }
+    })
+
+    afterEach(() => {
+      checkboxDefault.restore()
+    })
+
+    it('should return the choices as type list', () => {
+      complete.returns({ HostedZones })
+      listHostedZones.returns({ promise: complete })
+
+      const fn = params.hostedZoneInquiryChoices(aws, 'us-east-1', 'ParamHostedZone', 'list', undefined)
+
+      return fn().then((d) => {
+        expect(d).to.deep.equal([
+          { name: 'abc.com (abc)', value: 'abc' },
+          { name: 'xyz.com (xyz)', value: 'xyz' },
+        ])
+      })
+    })
+
+    it('should return the choices as type checkbox with defaults set', () => {
+      complete.returns({ HostedZones })
+      listHostedZones.returns({ promise: complete })
+      checkboxDefault.callsFake(c => c)
+
+      const fn = params.hostedZoneInquiryChoices(aws, 'us-east-1', 'ParamHostedZone', 'checkbox', 'default,values')
+
+      return fn().then((d) => {
+        expect(d).to.deep.equal([
+          { name: 'abc.com (abc)', value: 'abc' },
+          { name: 'xyz.com (xyz)', value: 'xyz' },
+        ])
+      })
+    })
   })
 })
