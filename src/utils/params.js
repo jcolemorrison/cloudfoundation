@@ -6,6 +6,8 @@ const utils = require('./index.js')
 // All params, when passed via CFN SDK, must be a string.
 exports.stringFilter = input => input.toString()
 
+exports.stringTrim = input => input.trim()
+
 exports.stringFilterNoSpace = input => input.toString().replace(/\s/g, '')
 
 exports.joinArrayFilter = input => input.join(',')
@@ -66,6 +68,23 @@ exports.buildNumberInquiry = (param, name, prevParam) => {
   return inquiry
 }
 
+exports.stringInquiryValidate = (ConstraintDescription, name, MinLength, MaxLength, AllowedPattern) => (input) => {
+  if (MaxLength && input.length > parseInt(MaxLength, 10)) {
+    return `${name} length can be no greater than ${MaxLength} characters!`
+  }
+
+  if (MinLength && input.length < parseInt(MinLength, 10)) {
+    return `${name} length can be no less than ${MinLength} characters!`
+  }
+
+  if (AllowedPattern) {
+    const r = new RegExp(AllowedPattern, 'g')
+    if (!r.test(input)) return ConstraintDescription || `${name} must match pattern ${AllowedPattern}`
+  }
+
+  return true
+}
+
 exports.buildStringInquiry = (param, name, prevParam) => {
   const {
     AllowedPattern,
@@ -94,25 +113,12 @@ exports.buildStringInquiry = (param, name, prevParam) => {
   }
 
   // TODO: deal with edge case where NoEcho + List type
-  if (NoEcho && prevParam) inquiry.default = `****${prevParam.slice(-4)}`
+  if (NoEcho && prevParam) {
+    inquiry.default = '****'
+  }
 
   if (type === 'input' || type === 'password') {
-    inquiry.validate = (input) => {
-      if (MaxLength && input.length > parseInt(MaxLength, 10)) {
-        return `${name} can be no greater than ${MaxLength}!`
-      }
-
-      if (MinLength && input.length < parseInt(MinLength, 10)) {
-        return `${name} can be no less than ${MinLength}!`
-      }
-
-      if (AllowedPattern) {
-        const r = new RegExp(AllowedPattern, 'g')
-        if (!r.test(input)) return ConstraintDescription || `${name} must match ${AllowedPattern}`
-      }
-
-      return true
-    }
+    inquiry.validate = exports.stringInquiryValidate(ConstraintDescription, name, MinLength, MaxLength, AllowedPattern)
   }
 
   inquiry.type = type
@@ -124,65 +130,76 @@ exports.buildStringInquiry = (param, name, prevParam) => {
 // if you ever upload a template with AllowedValues + Defaults on a List<Number>
 // you just get an error
 // UNUSED:
-exports.buildNumberListInquiryWithCheckbox = (param, name, prevParam) => {
-  const {
-    AllowedValues,
-    ConstraintDescription,
-    Default,
-    Description,
-  } = param
+// exports.buildNumberListInquiryWithCheckbox = (param, name, prevParam) => {
+//   const {
+//     AllowedValues,
+//     ConstraintDescription,
+//     Default,
+//     Description,
+//   } = param
 
-  const type = AllowedValues ? 'checkbox' : 'input'
+//   const type = AllowedValues ? 'checkbox' : 'input'
 
-  const inquiry = {
-    type,
-    name,
-    message: exports.baseInqMsg(name, Description),
-    default: prevParam || Default,
-  }
+//   const inquiry = {
+//     type,
+//     name,
+//     message: exports.baseInqMsg(name, Description),
+//     default: prevParam || Default,
+//   }
 
-  if (type === 'input') {
-    if (Default) inquiry.default = Default
+//   if (type === 'input') {
+//     if (Default) inquiry.default = Default
 
-    inquiry.validate = (input) => {
-      if (!input) return true
+//     inquiry.validate = (input) => {
+//       if (!input) return true
 
-      const r = /^(?:\s*-?\d+(?:\.\d+)?)(?:\s*,\s*-?\d+(?:\.\d+)?)*$/g
-      if (!r.test(input)) {
-        return ConstraintDescription || `${name} must be a comma separated list of numbers i.e 1,2,3.14,-5`
-      }
+//       const r = /^(?:\s*-?\d+(?:\.\d+)?)(?:\s*,\s*-?\d+(?:\.\d+)?)*$/g
+//       if (!r.test(input)) {
+//         return ConstraintDescription || `${name} must be a comma separated list of numbers i.e 1,2,3.14,-5`
+//       }
 
-      return true
+//       return true
+//     }
+
+//     inquiry.filter = exports.stringFilterNoSpace
+//   }
+
+//   if (type === 'checkbox') {
+//     let defaults
+
+//     if (Default) {
+//       if (!isNaN(parseFloat(Default)) && isFinite(Default)) {
+//         defaults = [parseFloat(Default)]
+//       } else {
+//         defaults = Default && Default.split(',').map(d => parseFloat(d))
+//       }
+//     }
+
+//     inquiry.choices = AllowedValues.reduce((sum, val) => {
+//       val = parseFloat(val)
+//       const result = {
+//         name: val,
+//         value: val,
+//       }
+//       if (defaults && defaults.indexOf(val) > -1) result.checked = true
+//       return sum.concat(result)
+//     }, [])
+
+//     inquiry.filter = exports.joinArrayFilter
+//   }
+
+//   return inquiry
+// }
+
+exports.numberListInquiryValidate = (ConstraintDescription, name) => (input) => {
+  if (input) {
+    const r = /^(?:\s*-?\d+(?:\.\d+)?)(?:\s*,\s*-?\d+(?:\.\d+)?)*$/g
+    if (!r.test(input)) {
+      return ConstraintDescription || `${name} must be a comma separated list of numbers i.e 1,2,3.14,-5`
     }
-
-    inquiry.filter = exports.stringFilterNoSpace
   }
 
-  if (type === 'checkbox') {
-    let defaults
-
-    if (Default) {
-      if (!isNaN(parseFloat(Default)) && isFinite(Default)) {
-        defaults = [parseFloat(Default)]
-      } else {
-        defaults = Default && Default.split(',').map(d => parseFloat(d))
-      }
-    }
-
-    inquiry.choices = AllowedValues.reduce((sum, val) => {
-      val = parseFloat(val)
-      const result = {
-        name: val,
-        value: val,
-      }
-      if (defaults && defaults.indexOf(val) > -1) result.checked = true
-      return sum.concat(result)
-    }, [])
-
-    inquiry.filter = exports.joinArrayFilter
-  }
-
-  return inquiry
+  return true
 }
 
 exports.buildNumberListInquiry = (param, name, prevParam) => {
@@ -199,16 +216,7 @@ exports.buildNumberListInquiry = (param, name, prevParam) => {
     default: prevParam || Default,
   }
 
-  inquiry.validate = (input) => {
-    if (!input) return true
-
-    const r = /^(?:\s*-?\d+(?:\.\d+)?)(?:\s*,\s*-?\d+(?:\.\d+)?)*$/g
-    if (!r.test(input)) {
-      return ConstraintDescription || `${name} must be a comma separated list of numbers i.e 1,2,3.14,-5`
-    }
-
-    return true
-  }
+  inquiry.validate = exports.numberListInquiryValidate(ConstraintDescription, name)
 
   inquiry.filter = exports.stringFilterNoSpace
 
@@ -219,56 +227,66 @@ exports.buildNumberListInquiry = (param, name, prevParam) => {
 // If you specify them both, you'd expect to be able to select from a number of them.
 // Instead specifying AllowedValues only allows you to set ONE option as a Default.
 // UNUSED
-exports.buildCommaListInquiryWithCheckbox = (param, name) => {
-  const {
-    AllowedValues,
-    ConstraintDescription,
-    Default,
-    Description,
-  } = param
+// exports.buildCommaListInquiryWithCheckbox = (param, name) => {
+//   const {
+//     AllowedValues,
+//     ConstraintDescription,
+//     Default,
+//     Description,
+//   } = param
 
-  const type = AllowedValues ? 'checkbox' : 'input'
+//   const type = AllowedValues ? 'checkbox' : 'input'
 
-  const inquiry = {
-    type,
-    name,
-    message: exports.baseInqMsg(name, Description),
-  }
+//   const inquiry = {
+//     type,
+//     name,
+//     message: exports.baseInqMsg(name, Description),
+//   }
 
-  if (type === 'input') {
-    if (Default) inquiry.default = Default
+//   if (type === 'input') {
+//     if (Default) inquiry.default = Default
 
-    inquiry.validate = (input) => {
-      if (input) {
-        const r = /^(?:[-\w.@]+)(?:,\s*[-\w.@]+)*$/g
-        if (!r.test(input)) {
-          return ConstraintDescription || `${name} must be a comma delimited list of strings i.e. testA,testB,testC`
-        }
-      }
-      return true
+//     inquiry.validate = (input) => {
+//       if (input) {
+//         const r = /^(?:[-\w.@]+)(?:,\s*[-\w.@]+)*$/g
+//         if (!r.test(input)) {
+//           return ConstraintDescription || `${name} must be a comma delimited list of strings i.e. testA,testB,testC`
+//         }
+//       }
+//       return true
+//     }
+
+//     inquiry.filter = exports.stringFilterNoSpace
+//   }
+
+//   if (type === 'checkbox') {
+//     const defaults = Default && Default.toString().replace(/\s/g, '').split(',')
+
+//     inquiry.choices = AllowedValues.reduce((sum, val) => {
+//       const choice = {
+//         name: val,
+//         value: val,
+//       }
+
+//       if (defaults && defaults.indexOf(val) > -1) choice.checked = true
+
+//       return sum.concat(choice)
+//     }, [])
+
+//     inquiry.filter = exports.joinArrayFilter
+//   }
+
+//   return inquiry
+// }
+
+exports.commaListInquiryValidate = (ConstraintDescription, name) => (input) => {
+  if (input) {
+    const r = /^(?:[-\w.@]+)(?:,\s*[-\w.@]+)*$/g
+    if (!r.test(input)) {
+      return ConstraintDescription || `${name} must be a comma delimited list of strings i.e. testA,testB,testC`
     }
-
-    inquiry.filter = exports.stringFilterNoSpace
   }
-
-  if (type === 'checkbox') {
-    const defaults = Default && Default.toString().replace(/\s/g, '').split(',')
-
-    inquiry.choices = AllowedValues.reduce((sum, val) => {
-      const choice = {
-        name: val,
-        value: val,
-      }
-
-      if (defaults && defaults.indexOf(val) > -1) choice.checked = true
-
-      return sum.concat(choice)
-    }, [])
-
-    inquiry.filter = exports.joinArrayFilter
-  }
-
-  return inquiry
+  return true
 }
 
 // TODO: Handle weird AllowedValues + Defaults.
@@ -289,15 +307,7 @@ exports.buildCommaListInquiry = (param, name, prevParam) => {
     default: prevParam || Default,
   }
 
-  inquiry.validate = (input) => {
-    if (input) {
-      const r = /^(?:[-\w.@]+)(?:,\s*[-\w.@]+)*$/g
-      if (!r.test(input)) {
-        return ConstraintDescription || `${name} must be a comma delimited list of strings i.e. testA,testB,testC`
-      }
-    }
-    return true
-  }
+  inquiry.validate = exports.commaListInquiryValidate(ConstraintDescription, name)
 
   inquiry.filter = exports.stringFilterNoSpace
 
@@ -310,6 +320,48 @@ exports.checkboxDefault = (choice, defaults) => {
 }
 
 /* AWS Inquiries */
+
+exports.buildAWSParamInquiry = (param, name, region, aws, type, prevParam, choices) => {
+  const {
+    Default,
+    Description,
+  } = param
+
+  const inquiry = {
+    type,
+    name,
+    message: exports.baseInqMsg(name, Description),
+    default: prevParam || Default,
+  }
+
+  inquiry.choices = choices(aws, region, name, type, inquiry.default)
+
+  if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
+
+  return inquiry
+}
+
+exports.AZInquiryChoices = (aws, region, name, type, defaults) => async () => {
+  const ec2 = new aws.EC2({ region })
+
+  utils.log.i(`fetching Availability Zones for parameter ${name}...`, 2)
+
+  const zones = await ec2.describeAvailabilityZones().promise()
+
+  const choices = zones.AvailabilityZones.map((z) => {
+    let choice = {
+      name: z.ZoneName,
+      value: z.ZoneName,
+      disabled: z.State === 'available' ? false : z.State,
+    }
+
+    if (type === 'checkbox') choice = exports.checkboxDefault(choice, defaults)
+
+    return choice
+  })
+
+  return choices
+}
 
 exports.buildAZInquiry = (param, name, region, aws, type, prevParam) => {
   const {
@@ -324,25 +376,7 @@ exports.buildAZInquiry = (param, name, region, aws, type, prevParam) => {
     default: prevParam || Default,
   }
 
-  inquiry.choices = async () => {
-    const ec2 = new aws.EC2({ region })
-
-    utils.log.i(`fetching Availability Zones for parameter ${name}...`, 2)
-
-    const zones = await ec2.describeAvailabilityZones().promise()
-
-    const choices = zones.AvailabilityZones.map((z) => {
-      if (!z.State === 'available') return undefined
-
-      let choice = { name: z.ZoneName, value: z.ZoneName }
-
-      if (type === 'checkbox') choice = exports.checkboxDefault(choice, inquiry.default)
-
-      return choice
-    })
-
-    return choices
-  }
+  inquiry.choices = exports.AZInquiryChoices(aws, region, name, type, inquiry.default)
 
   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
 
@@ -374,12 +408,35 @@ exports.buildImageInquiry = (param, name, prevParam) => {
   }
 
   if (type === 'input' || type === 'password') {
-    inquiry.filter = input => input.trim()
+    inquiry.filter = exports.stringTrim
   }
 
   inquiry.type = type
 
   return inquiry
+}
+
+exports.instanceInquiryChoices = (aws, region, name, type, defaults) => async () => {
+  const ec2 = new aws.EC2({ region })
+
+  utils.log.i(`fetching EC2 Instance IDs for parameter ${name}...`, 2)
+
+  const instances = await ec2.describeInstances().promise()
+
+  const choices = instances.Reservations.reduce((sum, reservation) => {
+    const instances = reservation.Instances.map((i) => {
+      const tagname = i.Tags && i.Tags.find(t => t.Key === 'Name')
+      const subname = tagname ? ` (${tagname.Value})` : ''
+      let choice = { name: `${i.InstanceId}${subname}`, value: i.InstanceId }
+
+      if (type === 'checkbox') choice = exports.checkboxDefault(choice, defaults)
+
+      return choice
+    })
+    return sum.concat(instances)
+  }, [])
+
+  return choices
 }
 
 exports.buildInstanceInquiry = (param, name, region, aws, type, prevParam) => {
@@ -395,32 +452,23 @@ exports.buildInstanceInquiry = (param, name, region, aws, type, prevParam) => {
     default: prevParam || Default,
   }
 
-  inquiry.choices = async () => {
-    const ec2 = new aws.EC2({ region })
-
-    utils.log.i(`fetching EC2 Instance IDs for parameter ${name}...`, 2)
-
-    const instances = await ec2.describeInstances().promise()
-
-    const choices = instances.Reservations.reduce((sum, reservation) => {
-      const instances = reservation.Instances.map((i) => {
-        const tagname = i.Tags && i.Tags.filter(t => t.Key === 'Name')[0]
-        const subname = tagname ? ` (${tagname.Value})` : ''
-        let choice = { name: `${i.InstanceId}${subname}`, value: i.InstanceId }
-
-        if (type === 'checkbox') choice = exports.checkboxDefault(choice, inquiry.default)
-
-        return choice
-      })
-      return sum.concat(instances)
-    }, [])
-
-    return choices
-  }
+  inquiry.choices = exports.instanceInquiryChoices(aws, region, name, type, inquiry.default)
 
   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
 
   return inquiry
+}
+
+exports.keyPairInquiryChoices = (aws, region, name) => async () => {
+  const ec2 = new aws.EC2({ region })
+
+  utils.log.i(`fetching EC2 Key Pairs for parameter ${name}...`, 2)
+
+  const res = await ec2.describeKeyPairs().promise()
+
+  const choices = res.KeyPairs.map(k => k.KeyName)
+
+  return choices
 }
 
 exports.buildKeyPairInquiry = (param, name, region, aws, prevParam) => {
@@ -436,18 +484,33 @@ exports.buildKeyPairInquiry = (param, name, region, aws, prevParam) => {
     default: prevParam || Default,
   }
 
-  inquiry.choices = async () => {
-    const ec2 = new aws.EC2({ region })
+  inquiry.choices = exports.keyPairInquiryChoices(aws, region, name)
 
-    utils.log.i(`fetching EC2 Key Pairs for parameter ${name}...`, 2)
-
-    const res = await ec2.describeKeyPairs().promise()
-
-    const choices = res.KeyPairs.map(k => k.KeyName)
-
-    return choices
-  }
   return inquiry
+}
+
+exports.securityGroupInquiryChoices = (aws, region, property, name, type, defaults) => async () => {
+  const ec2 = new aws.EC2({ region })
+
+  utils.log.i(`fetching EC2 Security Group ${property} for parameter ${name}...`, 2)
+
+  const res = await ec2.describeSecurityGroups().promise()
+
+  const choices = res.SecurityGroups.map((sg) => {
+    let choice
+
+    if (property === 'GroupId') {
+      choice = { name: `${sg[property]} (${sg.GroupName})`, value: sg[property] }
+    } else {
+      choice = { name: `${sg[property]} (${sg.GroupId})`, value: sg[property] }
+    }
+
+    if (type === 'checkbox') choice = exports.checkboxDefault(choice, defaults)
+
+    return choice
+  })
+
+  return choices
 }
 
 exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type, prevParam) => {
@@ -463,111 +526,93 @@ exports.buildSecurityGroupInquiry = (param, name, region, aws, property, type, p
     default: prevParam || Default,
   }
 
-  inquiry.choices = async () => {
-    const ec2 = new aws.EC2({ region })
-
-    utils.log.i(`fetching EC2 Security Group ${property} for parameter ${name}...`, 2)
-
-    const res = await ec2.describeSecurityGroups().promise()
-
-    const choices = res.SecurityGroups.map((sg) => {
-      let choice
-
-      if (property === 'GroupId') {
-        choice = { name: `${sg[property]} (${sg.GroupName})`, value: sg[property] }
-      } else {
-        choice = { name: `${sg[property]} (${sg.GroupId})`, value: sg[property] }
-      }
-
-      if (type === 'checkbox') choice = exports.checkboxDefault(choice, inquiry.default)
-
-      return choice
-    })
-
-    return choices
-  }
+  inquiry.choices = exports.securityGroupInquiryChoices(aws, region, property, name, type, inquiry.default)
 
   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
 
   return inquiry
+}
+
+exports.subnetInquiryChoices = (aws, region, name, type, defaults) => async () => {
+  const ec2 = new aws.EC2({ region })
+
+  utils.log.i(`fetching VPC Subnets for parameter ${name}...`, 2)
+
+  const res = await ec2.describeSubnets().promise()
+
+  const choices = res.Subnets.map((s) => {
+    const tagname = s.Tags && s.Tags.find(t => t.Key === 'Name')
+    const subname = tagname ? ` (${tagname.Value})` : ''
+    let choice = { name: `${s.SubnetId}${subname} | ${s.VpcId}`, value: s.SubnetId }
+
+    if (type === 'checkbox') choice = exports.checkboxDefault(choice, defaults)
+
+    return choice
+  })
+
+  return choices
 }
 
 // TODO: Allow for Allowed Values
-exports.buildSubnetInquiry = (param, name, region, aws, type, prevParam) => {
-  const {
-    Default,
-    Description,
-  } = param
+// exports.buildSubnetInquiry = (param, name, region, aws, type, prevParam) => {
+//   const {
+//     Default,
+//     Description,
+//   } = param
 
-  const inquiry = {
-    type,
-    name,
-    message: exports.baseInqMsg(name, Description),
-    default: prevParam || Default,
-  }
+//   const inquiry = {
+//     type,
+//     name,
+//     message: exports.baseInqMsg(name, Description),
+//     default: prevParam || Default,
+//   }
 
-  inquiry.choices = async () => {
-    const ec2 = new aws.EC2({ region })
+//   inquiry.choices = exports.subnetInquiryChoices(aws, region, name, type, inquiry.default)
 
-    utils.log.i(`fetching VPC Subnets for parameter ${name}...`, 2)
+//   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
 
-    const res = await ec2.describeSubnets().promise()
+//   return inquiry
+// }
 
-    const choices = res.Subnets.map((s) => {
-      const tagname = s.Tags && s.Tags.filter(t => t.Key === 'Name')[0]
-      const subname = tagname ? ` (${tagname.Value})` : ''
-      let choice = { name: `${s.SubnetId}${subname} | ${s.VpcId}`, value: s.SubnetId }
+exports.volumeInquiryChoices = (aws, region, name, type, defaults) => async () => {
+  const ec2 = new aws.EC2({ region })
 
-      if (type === 'checkbox') choice = exports.checkboxDefault(choice, inquiry.default)
+  utils.log.i(`fetching EC2 Volume IDs for parameter ${name}...`, 2)
 
-      return choice
-    })
+  const res = await ec2.describeVolumes().promise()
 
-    return choices
-  }
+  const choices = res.Volumes.map((v) => {
+    const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
+    const subname = tagname ? ` (${tagname.Value})` : ''
+    let choice = { name: `${v.VolumeId}${subname}`, value: v.VolumeId }
 
-  if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
+    if (type === 'checkbox') choice = exports.checkboxDefault(choice, defaults)
 
-  return inquiry
+    return choice
+  })
+
+  return choices
 }
 
-exports.buildVolumeInquiry = (param, name, region, aws, type, prevParam) => {
-  const {
-    Default,
-    Description,
-  } = param
+// exports.buildVolumeInquiry = (param, name, region, aws, type, prevParam) => {
+//   const {
+//     Default,
+//     Description,
+//   } = param
 
-  const inquiry = {
-    type,
-    name,
-    message: exports.baseInqMsg(name, Description),
-    default: prevParam || Default,
-  }
+//   const inquiry = {
+//     type,
+//     name,
+//     message: exports.baseInqMsg(name, Description),
+//     default: prevParam || Default,
+//   }
 
-  inquiry.choices = async () => {
-    const ec2 = new aws.EC2({ region })
+//   inquiry.choices = exports.volumeInquiryChoices(aws, region, name, type, inquiry.default)
 
-    utils.log.i(`fetching EC2 Volume IDs for parameter ${name}...`, 2)
+//   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
 
-    const res = await ec2.describeVolumes().promise()
-
-    const choices = res.Volumes.map((v) => {
-      const tagname = v.Tags && v.Tags.filter(t => t.Key === 'Name')[0]
-      const subname = tagname ? ` (${tagname.Value})` : ''
-      let choice = { name: `${v.VolumeId}${subname}`, value: v.VolumeId }
-
-      if (type === 'checkbox') choice = exports.checkboxDefault(choice, inquiry.default)
-
-      return choice
-    })
-
-    return choices
-  }
-
-  if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
-
-  return inquiry
-}
+//   return inquiry
+// }
 
 exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
   const {
@@ -690,7 +735,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::AvailabilityZone::Name':
-      inquiry = exports.buildAZInquiry(param, name, region, aws, 'list', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'list', prevParam, exports.AZInquiryChoices)
       break
 
     case 'AWS::EC2::Image::Id':
@@ -698,7 +743,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::Instance::Id':
-      inquiry = exports.buildInstanceInquiry(param, name, region, aws, 'list', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'list', prevParam, exports.instanceInquiryChoices)
       break
 
     case 'AWS::EC2::KeyPair::KeyName':
@@ -714,11 +759,11 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'AWS::EC2::Subnet::Id':
-      inquiry = exports.buildSubnetInquiry(param, name, region, aws, 'list', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'list', prevParam, exports.subnetInquiryChoices)
       break
 
     case 'AWS::EC2::Volume::Id':
-      inquiry = exports.buildVolumeInquiry(param, name, region, aws, 'list', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'list', prevParam, exports.volumeInquiryChoices)
       break
 
     case 'AWS::EC2::VPC::Id':
