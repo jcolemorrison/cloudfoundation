@@ -1,7 +1,7 @@
 const inq = require('inquirer')
 const chk = require('chalk')
 
-const { log } = require('./index')
+const utils = require('./index')
 
 exports.addTag = async () => {
   const tagName = await inq.prompt({
@@ -45,13 +45,15 @@ exports.addIamRole = async (defaultVal) => {
   return role.arn ? role.arn : false
 }
 
+exports.SNSTopicValidate = i => (i ? true : 'name required!')
+
 exports.createSNSTopic = async (region, aws) => {
   const topic = await inq.prompt([
     {
       type: 'input',
       message: 'Name of SNS Topic:',
       name: 'name',
-      validate: i => (i ? true : 'name required!'),
+      validate: exports.SNSTopicValidate,
     },
     {
       type: 'list',
@@ -76,8 +78,11 @@ exports.createSNSTopic = async (region, aws) => {
   ])
 
   const sns = new aws.SNS({ region })
-  log.i('creating SNS Topic...')
+
+  utils.log.i('creating SNS Topic...')
+
   const { TopicArn } = await sns.createTopic({ Name: topic.name }).promise()
+
   await sns.subscribe({ TopicArn, Protocol: topic.protocol, Endpoint: topic.endpoint }).promise()
 
   return { TopicArn }
@@ -109,6 +114,13 @@ exports.setStackSNS = async (region, aws, prev) => {
   return sns.TopicArn
 }
 
+exports.stackTimeoutValidate = (i) => {
+  if (i) {
+    if (!/^([+-]?[1-9]\d*|0)$/.test(i)) return 'Value must be an integer'
+  }
+  return true
+}
+
 exports.selectAdvancedStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   const options = {}
 
@@ -119,7 +131,7 @@ exports.selectAdvancedStackOptions = async (region, aws, prevOpts = {}, isUpdate
     name: 'add',
   })
 
-  if (sns) {
+  if (sns.add) {
     sns = await exports.setStackSNS(region, aws, prevOpts.snsTopicArn)
 
     if (sns) options.snsTopicArn = sns
@@ -148,12 +160,7 @@ exports.selectAdvancedStackOptions = async (region, aws, prevOpts = {}, isUpdate
     type: 'input',
     message: `Set timeout in minutes before stack creation fails ${chk.gray('leave blank for none')}:`,
     name: 'minutes',
-    validate: (i) => {
-      if (i) {
-        if (!/^([+-]?[1-9]\d*|0)$/.test(i)) return 'Value must be an integer'
-      }
-      return true
-    },
+    validate: exports.stackTimeoutValidate,
   })
 
   if (timeout.minutes) options.timeout = parseInt(timeout.minutes, 10)
@@ -184,9 +191,9 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
 
   // Use or Reuse Tags
   if (prevOpts.tags) {
-    log.p()
-    log.p(exports.displayTags(prevOpts.tags))
-    log.i('Previous tags found.', 3)
+    utils.log.p()
+    utils.log.p(exports.displayTags(prevOpts.tags))
+    utils.log.i('Previous tags found.', 3)
 
     const reuse = await inq.prompt({
       type: 'confirm',
@@ -199,7 +206,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   }
 
   if (!tags) {
-    log.p()
+    utils.log.p()
     tags = await inq.prompt({
       type: 'confirm',
       message: 'Would you like to add tags to this stack?',
@@ -214,9 +221,9 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
 
   // Use or Reuse IAM Role
   if (prevOpts.iamRole) {
-    log.p()
-    log.p(exports.displayIamRole(prevOpts.iamRole))
-    log.i('Previous IAM Role settings found.', 3)
+    utils.log.p()
+    utils.log.p(exports.displayIamRole(prevOpts.iamRole))
+    utils.log.i('Previous IAM Role settings found.', 3)
 
     const reuse = await inq.prompt({
       type: 'confirm',
@@ -229,7 +236,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   }
 
   if (!iamRole) {
-    log.p()
+    utils.log.p()
     iamRole = await inq.prompt({
       type: 'confirm',
       message: 'Would you like to use a separate IAM role to create / update this stack?',
@@ -244,9 +251,9 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
 
   // Use and Reuse Advanced Settings
   if (prevOpts.advanced) {
-    log.p()
-    log.p(exports.displayAdvanced(prevOpts.advanced))
-    log.i('Previous Advanced settings found.', 3)
+    utils.log.p()
+    utils.log.p(exports.displayAdvanced(prevOpts.advanced))
+    utils.log.i('Previous Advanced settings found.', 3)
 
     const reuse = await inq.prompt({
       type: 'confirm',
@@ -259,7 +266,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   }
 
   if (!advanced) {
-    log.p()
+    utils.log.p()
     advanced = await inq.prompt({
       type: 'confirm',
       message: 'Would you like to configure advanced options for your stack? i.e. notifications',
@@ -273,9 +280,9 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   if (advanced) options.advanced = { ...advanced }
 
   if (prevOpts.capabilityIam) {
-    log.p()
-    log.p(exports.displayIamCapability(prevOpts.capabilityIam))
-    log.i('Previous IAM Capability settings found.', 3)
+    utils.log.p()
+    utils.log.p(exports.displayIamCapability(prevOpts.capabilityIam))
+    utils.log.i('Previous IAM Capability settings found.', 3)
 
     const reuse = await inq.prompt({
       type: 'confirm',
@@ -288,7 +295,7 @@ exports.selectStackOptions = async (region, aws, prevOpts = {}, isUpdate) => {
   }
 
   if (!capabilityIam) {
-    log.p()
+    utils.log.p()
     capabilityIam = await inq.prompt({
       type: 'confirm',
       message: 'Allow stack to create IAM resources?',
@@ -463,12 +470,12 @@ Region: ${region}
 ${params}`
   info.push(paramInfo)
 
-  log.p(info.join('\n'))
+  utils.log.p(info.join('\n'))
 
-  if (message) log.p(`${chk.green(message)} ${chk.gray('(scroll up to see all)')}`)
+  if (message) utils.log.p(`${chk.green(message)} ${chk.gray('(scroll up to see all)')}`)
   if (action === 'Update') {
-    log.i('Termination Protection, Timeout in Minutes, and On Failure Behavior can only be set on creation of stacks.')
-    log.i('Stack Name, Profile, and Region cannot be changed on a stack once deployed.', 2)
+    utils.log.i('Termination Protection, Timeout in Minutes, and On Failure Behavior can only be set on creation of stacks.')
+    utils.log.i('Stack Name, Profile, and Region cannot be changed on a stack once deployed.', 2)
   }
 }
 
@@ -578,7 +585,7 @@ Description: ${Description}
 
   if (!columns || columns.outputs) display.push(exports.displayStackOutputs(Outputs))
 
-  return log.p(display.join('\n'))
+  return utils.log.p(display.join('\n'))
 }
 
 // ultimately return a valid stackname

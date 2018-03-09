@@ -553,27 +553,6 @@ exports.subnetInquiryChoices = (aws, region, name, type, defaults) => async () =
   return choices
 }
 
-// TODO: Allow for Allowed Values
-// exports.buildSubnetInquiry = (param, name, region, aws, type, prevParam) => {
-//   const {
-//     Default,
-//     Description,
-//   } = param
-
-//   const inquiry = {
-//     type,
-//     name,
-//     message: exports.baseInqMsg(name, Description),
-//     default: prevParam || Default,
-//   }
-
-//   inquiry.choices = exports.subnetInquiryChoices(aws, region, name, type, inquiry.default)
-
-//   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
-
-//   return inquiry
-// }
-
 exports.volumeInquiryChoices = (aws, region, name, type, defaults) => async () => {
   const ec2 = new aws.EC2({ region })
 
@@ -593,26 +572,6 @@ exports.volumeInquiryChoices = (aws, region, name, type, defaults) => async () =
 
   return choices
 }
-
-// exports.buildVolumeInquiry = (param, name, region, aws, type, prevParam) => {
-//   const {
-//     Default,
-//     Description,
-//   } = param
-
-//   const inquiry = {
-//     type,
-//     name,
-//     message: exports.baseInqMsg(name, Description),
-//     default: prevParam || Default,
-//   }
-
-//   inquiry.choices = exports.volumeInquiryChoices(aws, region, name, type, inquiry.default)
-
-//   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
-
-//   return inquiry
-// }
 
 exports.vpcInquiryChoices = (aws, region, name, type, defaults) => async () => {
   const ec2 = new aws.EC2({ region })
@@ -635,26 +594,6 @@ exports.vpcInquiryChoices = (aws, region, name, type, defaults) => async () => {
   return choices
 }
 
-// exports.buildVpcInquiry = (param, name, region, aws, type, prevParam) => {
-//   const {
-//     Default,
-//     Description,
-//   } = param
-
-//   const inquiry = {
-//     type,
-//     name,
-//     message: exports.baseInqMsg(name, Description),
-//     default: prevParam || Default,
-//   }
-
-//   inquiry.choices = exports.vpcInquiryChoices(aws, region, name, type, inquiry.default)
-
-//   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
-
-//   return inquiry
-// }
-
 exports.hostedZoneInquiryChoices = (aws, region, name, type, defaults) => async () => {
   const r53 = new aws.Route53({ region })
 
@@ -676,27 +615,6 @@ exports.hostedZoneInquiryChoices = (aws, region, name, type, defaults) => async 
 
   return choices
 }
-
-// exports.buildHostedZoneInquiry = (param, name, region, aws, type, prevParam) => {
-//   const {
-//     Default,
-//     Description,
-//   } = param
-
-//   const inquiry = {
-//     type,
-//     name,
-//     message: exports.baseInqMsg(name, Description),
-//     default: prevParam || Default,
-//   }
-
-//   inquiry.choices = exports.hostedZoneInquiryChoices(aws, region, name, type, inquiry.default)
-
-//   if (type === 'checkbox') inquiry.filter = exports.joinArrayFilter
-
-//   return inquiry
-// }
-
 
 // Accepts an Object in the form of an AWS CFN Parameter i.e.
 /*
@@ -779,7 +697,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::EC2::AvailabilityZone::Name>':
-      inquiry = exports.buildAZInquiry(param, name, region, aws, 'checkbox', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'checkbox', prevParam, exports.AZInquiryChoices)
       break
 
     // Needs to be the same as comma delimited list, since the CFN console also doesn't show all images
@@ -788,7 +706,7 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::EC2::Instance::Id>':
-      inquiry = exports.buildInstanceInquiry(param, name, region, aws, 'checkbox', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'checkbox', prevParam, exports.instanceInquiryChoices)
       break
 
     case 'List<AWS::EC2::SecurityGroup::GroupName>':
@@ -800,23 +718,23 @@ exports.buildParamInquiry = (param, name, region, aws, prevParam) => {
       break
 
     case 'List<AWS::EC2::Subnet::Id>':
-      inquiry = exports.buildSubnetInquiry(param, name, region, aws, 'checkbox', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'checkbox', prevParam, exports.subnetInquiryChoices)
       break
 
     case 'List<AWS::EC2::Volume::Id>':
-      inquiry = exports.buildVolumeInquiry(param, name, region, aws, 'checkbox', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'checkbox', prevParam, exports.volumeInquiryChoices)
       break
 
     case 'List<AWS::EC2::VPC::Id>':
-      inquiry = exports.buildVpcInquiry(param, name, region, aws, 'checkbox', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'checkbox', prevParam, exports.vpcInquiryChoices)
       break
 
     case 'List<AWS::Route53::HostedZone::Id>':
-      inquiry = exports.buildHostedZoneInquiry(param, name, region, aws, 'checkbox', prevParam)
+      inquiry = exports.buildAWSParamInquiry(param, name, region, aws, 'checkbox', prevParam, exports.hostedZoneInquiryChoices)
       break
 
     default:
-      throw new Error(`Invalid type ${param.Type}`)
+      throw new Error(`Invalid CloudFormation Param type '${param.Type}'`)
   }
 
   return inquiry
