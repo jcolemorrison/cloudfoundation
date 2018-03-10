@@ -341,11 +341,11 @@ ${tagsDisplay}`
 
 exports.displayIamRole = (iamRole) => {
   const role = iamRole || 'Profile IAM Permissions'
-  const optionsInfo = `${chk.green('IAM Role')}
+  const iamInfo = `${chk.green('IAM Role')}
 ------------------------
 IamRole: ${role}
 `
-  return optionsInfo
+  return iamInfo
 }
 
 exports.displayIamCapability = (iam) => {
@@ -357,13 +357,14 @@ Create IAM Resources: ${capabilityIam}
   return optionsInfo
 }
 
-exports.displayAdvanced = (advanced) => {
+// Displays Advanced Options from Stacks File
+exports.displayAdvanced = (advanced = {}) => {
   const {
     snsTopicArn,
     terminationProtection,
     timeout,
     onFailure,
-  } = advanced || {}
+  } = advanced
 
   let advancedInfo = `${chk.green('Advanced')}
 ------------------------
@@ -410,6 +411,7 @@ Creation Time: ${new Date(CreationTime).toLocaleString()}
 Last Updated Time: ${new Date(LastUpdatedTime).toLocaleString()}
 `)
 
+// Displays Advanced Options from AWS Response
 exports.displayStackOptions = (NotificationARNs, TimeoutInMinutes, Capabilities, EnableTerminationProtection) => {
   let display = `${chk.green('Options')}
 ------------------------
@@ -418,7 +420,7 @@ exports.displayStackOptions = (NotificationARNs, TimeoutInMinutes, Capabilities,
   if (NotificationARNs) display += `SNS Notification Topic ARN: ${NotificationARNs[0]}\n`
   if (TimeoutInMinutes) display += `Timeout in Minutes: ${TimeoutInMinutes}\n`
   if (Capabilities) display += `IAM Capabilities: ${Capabilities.length > 1 ? Capabilities.join(', ') : Capabilities[0]}\n`
-  if (EnableTerminationProtection) display += `Enable Termination Protection: ${EnableTerminationProtection ? 'True' : 'False'}\n`
+  if (EnableTerminationProtection) display += `Enable Termination Protection: ${EnableTerminationProtection}\n`
 
   return display
 }
@@ -477,6 +479,8 @@ ${params}`
     utils.log.i('Termination Protection, Timeout in Minutes, and On Failure Behavior can only be set on creation of stacks.')
     utils.log.i('Stack Name, Profile, and Region cannot be changed on a stack once deployed.', 2)
   }
+
+  return info
 }
 
 exports.confirmStack = async (templateName, name, stack, message, action) => {

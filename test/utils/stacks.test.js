@@ -298,6 +298,976 @@ describe('Stack Utility Functions', () => {
     })
   })
 
+  describe('#selectStackOptions', () => {
+    let displayTags
+    let addTags
+    let displayIamRole
+    let addIamRole
+    let displayAdvanced
+    let selectAdvancedStackOptions
+    let displayIamCapability
+
+    beforeEach(() => {
+      displayTags = sinon.stub(stackUtils, 'displayTags')
+      addTags = sinon.stub(stackUtils, 'addTags')
+      displayIamRole = sinon.stub(stackUtils, 'displayIamRole')
+      addIamRole = sinon.stub(stackUtils, 'addIamRole')
+      displayAdvanced = sinon.stub(stackUtils, 'displayAdvanced')
+      selectAdvancedStackOptions = sinon.stub(stackUtils, 'selectAdvancedStackOptions')
+      displayIamCapability = sinon.stub(stackUtils, 'displayIamCapability')
+    })
+
+    afterEach(() => {
+      displayTags.restore()
+      addTags.restore()
+      displayIamRole.restore()
+      addIamRole.restore()
+      displayAdvanced.restore()
+      selectAdvancedStackOptions.restore()
+      displayIamCapability.restore()
+    })
+
+    it('should return all selected options if no previous options are passed AND if they use every single option', () => {
+      inqPrompt.onCall(0).returns({ add: true })
+      addTags.returns([{ Key: 'Name', Value: 'Test' }])
+
+      inqPrompt.onCall(1).returns({ add: true })
+      addIamRole.returns('iamRole')
+
+      inqPrompt.onCall(2).returns({ add: true })
+      selectAdvancedStackOptions.returns({ advanced: 'option' })
+
+      inqPrompt.onCall(3).returns({ add: true })
+
+      return stackUtils.selectStackOptions('us-east-1', 'aws').then((d) => {
+        expect(d).to.deep.equal({
+          tags: [{ Key: 'Name', Value: 'Test' }],
+          iamRole: 'iamRole',
+          advanced: { advanced: 'option' },
+          capabilityIam: true,
+        })
+      })
+    })
+
+    it('should return all selected options if no previous options are passed AND if they use all but capabilityIam', () => {
+      inqPrompt.onCall(0).returns({ add: true })
+      addTags.returns([{ Key: 'Name', Value: 'Test' }])
+
+      inqPrompt.onCall(1).returns({ add: true })
+      addIamRole.returns('iamRole')
+
+      inqPrompt.onCall(2).returns({ add: true })
+      selectAdvancedStackOptions.returns({ advanced: 'option' })
+
+      inqPrompt.onCall(3).returns({ add: false })
+
+      return stackUtils.selectStackOptions('us-east-1', 'aws').then((d) => {
+        expect(d).to.deep.equal({
+          tags: [{ Key: 'Name', Value: 'Test' }],
+          iamRole: 'iamRole',
+          advanced: { advanced: 'option' },
+        })
+      })
+    })
+
+    it('should return all selected options if no previous options are passed AND if they use all but capabilityIam and advanced options', () => {
+      inqPrompt.onCall(0).returns({ add: true })
+      addTags.returns([{ Key: 'Name', Value: 'Test' }])
+
+      inqPrompt.onCall(1).returns({ add: true })
+      addIamRole.returns('iamRole')
+
+      inqPrompt.onCall(2).returns({ add: false })
+
+      inqPrompt.onCall(3).returns({ add: false })
+
+      return stackUtils.selectStackOptions('us-east-1', 'aws').then((d) => {
+        expect(d).to.deep.equal({
+          tags: [{ Key: 'Name', Value: 'Test' }],
+          iamRole: 'iamRole',
+        })
+      })
+    })
+
+    it('should return all selected options if no previous options are passed AND if they use all but capabilityIam, advanced options, and iam role', () => {
+      inqPrompt.onCall(0).returns({ add: true })
+      addTags.returns([{ Key: 'Name', Value: 'Test' }])
+
+      inqPrompt.onCall(1).returns({ add: false })
+
+      inqPrompt.onCall(2).returns({ add: false })
+
+      inqPrompt.onCall(3).returns({ add: false })
+
+      return stackUtils.selectStackOptions('us-east-1', 'aws').then((d) => {
+        expect(d).to.deep.equal({
+          tags: [{ Key: 'Name', Value: 'Test' }],
+        })
+      })
+    })
+
+    it('should return all selected options if no previous options are passed AND if they use no options', () => {
+      inqPrompt.returns({ add: false })
+
+      return stackUtils.selectStackOptions('us-east-1', 'aws').then((d) => {
+        expect(d).to.deep.equal({})
+      })
+    })
+
+    it('should return all selected options if previous options are passed AND if they use every single option', () => {
+      const prev = {
+        tags: [{ Key: 'Name', Value: 'Test' }],
+        iamRole: 'iamRole',
+        advanced: { advanced: 'option' },
+        capabilityIam: true,
+      }
+
+      inqPrompt.onCall(0).returns({ tags: true })
+
+      inqPrompt.onCall(1).returns({ iamRole: true })
+
+      inqPrompt.onCall(2).returns({ advanced: true })
+
+      inqPrompt.onCall(3).returns({ capability: true })
+
+      return stackUtils.selectStackOptions('us-east-1', 'aws', prev).then((d) => {
+        expect(d).to.deep.equal({
+          tags: [{ Key: 'Name', Value: 'Test' }],
+          iamRole: 'iamRole',
+          advanced: { advanced: 'option' },
+          capabilityIam: true,
+        })
+      })
+    })
+  })
+
+  describe('#selectStackName', () => {
+    it('should return the stack name if includeAll is not added', () => {
+      const stacks = {
+        testOne: {},
+        testTwo: {},
+      }
+      inqPrompt.returns({ name: 'testOne' })
+
+      return stackUtils.selectStackName('template', stacks, false).then((d) => {
+        expect(d).to.equal('testOne')
+      })
+    })
+
+    it('should return the stack name if includeAll is added', () => {
+      const stacks = {
+        testOne: {},
+        testTwo: {},
+      }
+      inqPrompt.returns({ name: 'testOne' })
+
+      return stackUtils.selectStackName('template', stacks, true).then((d) => {
+        expect(d).to.equal('testOne')
+      })
+    })
+  })
+
+  describe('#displayTags', () => {
+    it('should return the formatted display tags string', () => {
+      const tags = [
+        { Key: 'Name', Value: 'Test' },
+        { Key: 'Other', Value: 'Test' },
+      ]
+
+      const result = stackUtils.displayTags(tags)
+
+      expect(result).to.equal(`${chk.green('Tags (Name, Value)')}
+------------------------
+Name, Test
+Other, Test
+`)
+    })
+  })
+
+  describe('#displayIamRole', () => {
+    it('should return the formatted display iam role string', () => {
+      const result = stackUtils.displayIamRole('iamRole')
+
+      expect(result).to.equal(`${chk.green('IAM Role')}
+------------------------
+IamRole: iamRole
+`)
+    })
+
+    it('should return the formatted display iam role string if no iam role is passed', () => {
+      const result = stackUtils.displayIamRole()
+
+      expect(result).to.equal(`${chk.green('IAM Role')}
+------------------------
+IamRole: Profile IAM Permissions
+`)
+    })
+  })
+
+  describe('#displayIamCapability', () => {
+    it('should return the formatted display iam capability permissions string if true', () => {
+      const result = stackUtils.displayIamCapability('iamRole')
+
+      expect(result).to.equal(`${chk.green('IAM Capabilties')}
+------------------------
+Create IAM Resources: true
+`)
+    })
+
+    it('should return the formatted display iam capability permissions string if true', () => {
+      const result = stackUtils.displayIamCapability()
+
+      expect(result).to.equal(`${chk.green('IAM Capabilties')}
+------------------------
+Create IAM Resources: false
+`)
+    })
+  })
+
+  describe('#displayAdvanced', () => {
+    it('should return the formatted advanced options if all options are present', () => {
+      const advanced = {
+        snsTopicArn: 'SNS:Arn',
+        terminationProtection: true,
+        timeout: 100,
+        onFailure: 'ROLLBACK',
+      }
+      const result = stackUtils.displayAdvanced(advanced)
+
+      expect(result).to.equal(`${chk.green('Advanced')}
+------------------------
+SNS Notification Topic ARN: SNS:Arn
+Termination Protection Enabled: true
+Timeout in Minutes: 100
+On Failure Behavior: ROLLBACK
+`)
+    })
+
+    it('should return the formatted advanced options if all but onFailure is present', () => {
+      const advanced = {
+        snsTopicArn: 'SNS:Arn',
+        terminationProtection: true,
+        timeout: 100,
+      }
+      const result = stackUtils.displayAdvanced(advanced)
+
+      expect(result).to.equal(`${chk.green('Advanced')}
+------------------------
+SNS Notification Topic ARN: SNS:Arn
+Termination Protection Enabled: true
+Timeout in Minutes: 100
+`)
+    })
+
+    it('should return the formatted advanced options if all but onFailure and timeout are present', () => {
+      const advanced = {
+        snsTopicArn: 'SNS:Arn',
+        terminationProtection: true,
+      }
+      const result = stackUtils.displayAdvanced(advanced)
+
+      expect(result).to.equal(`${chk.green('Advanced')}
+------------------------
+SNS Notification Topic ARN: SNS:Arn
+Termination Protection Enabled: true
+`)
+    })
+
+    it('should return the formatted advanced options if all but onFailure, timeout and temrination are present', () => {
+      const advanced = {
+        snsTopicArn: 'SNS:Arn',
+      }
+      const result = stackUtils.displayAdvanced(advanced)
+
+      expect(result).to.equal(`${chk.green('Advanced')}
+------------------------
+SNS Notification Topic ARN: SNS:Arn
+`)
+    })
+
+    it('should return the formatted advanced options if none are present', () => {
+      const result = stackUtils.displayAdvanced()
+
+      expect(result).to.equal(`${chk.green('Advanced')}
+------------------------
+`)
+    })
+  })
+
+  describe('#displayStackParameters', () => {
+    it('should return the formatted display parameters string', () => {
+      const params = [
+        { ParameterKey: 'ParamName', ParameterValue: 'Test' },
+        { ParameterKey: 'ParamOther', ParameterValue: 'Test' },
+      ]
+
+      const result = stackUtils.displayStackParameters(params)
+
+      expect(result).to.equal(`${chk.green('Parameters')}
+------------------------
+ParamName = Test
+ParamOther = Test
+`)
+    })
+  })
+
+  describe('#displayStackOutputs', () => {
+    it('should return the formatted display outputs string', () => {
+      const outputs = [
+        { OutputKey: 'OutputName', OutputValue: 'Test', Description: 'description one' },
+        { OutputKey: 'OutputOther', OutputValue: 'Test', Description: 'description two' },
+      ]
+
+      const result = stackUtils.displayStackOutputs(outputs)
+
+      expect(result).to.equal(`${chk.green('Outputs')}
+------------------------
+OutputName = Test ${chk.gray('(description one)')}
+OutputOther = Test ${chk.gray('(description two)')}
+`)
+    })
+  })
+
+  describe('#displayStackStatus', () => {
+    it('should return the formatted display outputs string', () => {
+      const CreationTime = 'Fri Mar 09 2018 11:37:48 GMT-0800'
+      const LastUpdatedTime = 'Fri Mar 09 2018 11:37:48 GMT-0800'
+      const result = stackUtils.displayStackStatus('StackStatus', CreationTime, LastUpdatedTime)
+
+      expect(result).to.equal(`${chk.green('Status')}
+------------------------
+Stack Status: StackStatus
+Creation Time: 2018-3-9 11:37:48
+Last Updated Time: 2018-3-9 11:37:48
+`)
+    })
+  })
+
+  describe('#displayStackOptions', () => {
+    it('should return the formatted advanced options if all options are present', () => {
+      const result = stackUtils.displayStackOptions(['SNS:Arn'], 100, ['CAPABILITY_IAM', 'OTHER'], true)
+
+      expect(result).to.equal(`${chk.green('Options')}
+------------------------
+SNS Notification Topic ARN: SNS:Arn
+Timeout in Minutes: 100
+IAM Capabilities: CAPABILITY_IAM, OTHER
+Enable Termination Protection: true
+`)
+    })
+
+    it('should return the formatted advanced options if all options are present with only 1 IAM Capability and no Termination Protection', () => {
+      const result = stackUtils.displayStackOptions(['SNS:Arn'], 100, ['CAPABILITY_IAM'], false)
+
+      expect(result).to.equal(`${chk.green('Options')}
+------------------------
+SNS Notification Topic ARN: SNS:Arn
+Timeout in Minutes: 100
+IAM Capabilities: CAPABILITY_IAM
+`)
+    })
+
+    it('should return the formatted advanced options if all but capabilities and termination are present', () => {
+      const result = stackUtils.displayStackOptions(['SNS:Arn'], 100)
+
+      expect(result).to.equal(`${chk.green('Options')}
+------------------------
+SNS Notification Topic ARN: SNS:Arn
+Timeout in Minutes: 100
+`)
+    })
+
+    it('should return the formatted advanced options if only SNS is present', () => {
+      const result = stackUtils.displayStackOptions(['SNS:Arn'])
+
+      expect(result).to.equal(`${chk.green('Options')}
+------------------------
+SNS Notification Topic ARN: SNS:Arn
+`)
+    })
+
+    it('should return the formatted advanced options no options are present', () => {
+      const result = stackUtils.displayStackOptions()
+
+      expect(result).to.equal(`${chk.green('Options')}
+------------------------
+`)
+    })
+  })
+
+  describe('#reviewStackInfo', () => {
+    let stack
+    let displayIamRole
+    let displayIamCapability
+    let displayTags
+    let displayAdvanced
+
+    beforeEach(() => {
+      stack = {
+        profile: 'profile',
+        region: 'us-east-1',
+        options: {
+          iamRole: 'iam',
+          capabilityIam: true,
+          tags: 'tags',
+          advanced: {
+            sns: 'topic',
+            termination: 'protection',
+          },
+        },
+        parameters: {
+          ParamOne: 'one',
+          ParamTwo: 'two',
+        },
+      }
+      displayIamRole = sinon.stub(stackUtils, 'displayIamRole').returns('iam')
+      displayIamCapability = sinon.stub(stackUtils, 'displayIamCapability').returns('CAPABILITY_IAM')
+      displayTags = sinon.stub(stackUtils, 'displayTags').returns('Tags')
+      displayAdvanced = sinon.stub(stackUtils, 'displayAdvanced').returns('Advanced')
+    })
+
+    afterEach(() => {
+      displayIamRole.restore()
+      displayIamCapability.restore()
+      displayTags.restore()
+      displayAdvanced.restore()
+    })
+
+    it('should return the complete info for a stack with all options and advanced options', () => {
+      const result = stackUtils.reviewStackInfo('stackName', stack, 'message', 'Deploy')
+
+      expect(result).to.deep.equal([
+        `
+${chk.green('General')}
+------------------------
+Stack Name: stackName
+Profile: profile
+Region: us-east-1
+`,
+        'iam',
+        'CAPABILITY_IAM',
+        'Tags',
+        'Advanced',
+        `${chk.green('Parameters')}
+------------------------
+ParamOne = one
+ParamTwo = two
+`,
+      ])
+    })
+
+    it('should return the complete info for a stack with all but advanced options', () => {
+      delete stack.options.advanced
+
+      const result = stackUtils.reviewStackInfo('stackName', stack, 'message', 'Deploy')
+
+      expect(result).to.deep.equal([
+        `
+${chk.green('General')}
+------------------------
+Stack Name: stackName
+Profile: profile
+Region: us-east-1
+`,
+        'iam',
+        'CAPABILITY_IAM',
+        'Tags',
+        `${chk.green('Parameters')}
+------------------------
+ParamOne = one
+ParamTwo = two
+`,
+      ])
+    })
+
+    it('should return the complete info for a stack with all but advanced and tags options', () => {
+      delete stack.options.advanced
+      delete stack.options.tags
+
+      const result = stackUtils.reviewStackInfo('stackName', stack, 'message', 'Deploy')
+
+      expect(result).to.deep.equal([
+        `
+${chk.green('General')}
+------------------------
+Stack Name: stackName
+Profile: profile
+Region: us-east-1
+`,
+        'iam',
+        'CAPABILITY_IAM',
+        `${chk.green('Parameters')}
+------------------------
+ParamOne = one
+ParamTwo = two
+`,
+      ])
+    })
+
+    it('should return the complete info for a stack with no options', () => {
+      delete stack.options
+
+      const result = stackUtils.reviewStackInfo('stackName', stack, 'message', 'Deploy')
+
+      expect(result).to.deep.equal([
+        `
+${chk.green('General')}
+------------------------
+Stack Name: stackName
+Profile: profile
+Region: us-east-1
+`,
+        'iam',
+        'CAPABILITY_IAM',
+        `${chk.green('Parameters')}
+------------------------
+ParamOne = one
+ParamTwo = two
+`,
+      ])
+    })
+
+    it('should return a message if passed and log for Updates', () => {
+      const result = stackUtils.reviewStackInfo('stackName', stack, false, 'Update')
+
+      expect(result).to.deep.equal([
+        `
+${chk.green('General')}
+------------------------
+Stack Name: stackName
+Profile: profile
+Region: us-east-1
+`,
+        'iam',
+        'CAPABILITY_IAM',
+        'Tags',
+        'Advanced',
+        `${chk.green('Parameters')}
+------------------------
+ParamOne = one
+ParamTwo = two
+`,
+      ])
+    })
+  })
+
+  describe('#confirmStack', () => {
+    let reviewStackInfo
+
+    beforeEach(() => {
+      reviewStackInfo = sinon.stub(stackUtils, 'reviewStackInfo')
+    })
+
+    afterEach(() => {
+      reviewStackInfo.restore()
+    })
+
+    it('should show the user the existing stack info and prompt them whether or not to use it', () => {
+      inqPrompt.returns({ stack: true })
+      return stackUtils.confirmStack('template', 'stackName', 'stack', 'message', 'Deploy').then((d) => {
+        expect(d).to.be.true
+      })
+    })
+  })
+
+  describe('#createStack', () => {
+    let template
+    let stack
+    let aws
+    let complete
+    let createStack
+
+    beforeEach(() => {
+      template = {
+        AWSTemplateFormatVersion: '2010-09-09',
+        Description: 'Test',
+        Conditions: {},
+        Mappings: {},
+        Metadata: {},
+        Outputs: {},
+        Parameters: {},
+        Resources: {},
+      }
+      stack = {
+        region: 'us-east-1',
+        parameters: {
+          ParamOne: 'ParamOne',
+          ParamTwo: 'ParamTwo',
+        },
+        options: {
+          tags: [
+            { Key: 'Name', Value: 'Test' },
+            { Key: 'Other', Value: 'Test' },
+          ],
+          iamRole: 'iamRole',
+          capabilityIam: true,
+          advanced: {
+            snsTopicArn: 'sns:topic',
+            onFailure: 'ROLLBACK',
+            terminationProtection: true,
+            timeout: 100,
+          },
+        },
+      }
+      complete = sinon.stub()
+      createStack = sinon.stub()
+      aws = {
+        CloudFormation: sinon.stub().returns({ createStack }),
+      }
+    })
+
+    it('should call to the CloudFormation createStack API with ALL opts selected', () => {
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but advanced timeout selected', () => {
+      delete stack.options.advanced.timeout
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but advanced onFailure selected', () => {
+      delete stack.options.advanced.onFailure
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but advanced terminationProtection selected', () => {
+      delete stack.options.advanced.terminationProtection
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but advanced snsTopic selected', () => {
+      delete stack.options.advanced.snsTopicArn
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but advanced options selected', () => {
+      delete stack.options.advanced
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but capabilityIam option is selected', () => {
+      delete stack.options.capabilityIam
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but iamRole option is selected', () => {
+      delete stack.options.iamRole
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but tags option is selected', () => {
+      delete stack.options.tags
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API with ALL but options is selected', () => {
+      delete stack.options
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation createStack API without parameters passed', () => {
+      delete stack.options
+      delete stack.parameters
+      complete.returns({ StackId: 'stack:id' })
+      createStack.returns({ promise: complete })
+
+      return stackUtils.createStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+  })
+
+  describe('#updateStack', () => {
+    let template
+    let stack
+    let aws
+    let complete
+    let updateStack
+
+    beforeEach(() => {
+      template = {
+        AWSTemplateFormatVersion: '2010-09-09',
+        Description: 'Test',
+        Conditions: {},
+        Mappings: {},
+        Metadata: {},
+        Outputs: {},
+        Parameters: {},
+        Resources: {},
+      }
+      stack = {
+        region: 'us-east-1',
+        parameters: {
+          ParamOne: 'ParamOne',
+          ParamTwo: 'ParamTwo',
+        },
+        options: {
+          tags: [
+            { Key: 'Name', Value: 'Test' },
+            { Key: 'Other', Value: 'Test' },
+          ],
+          iamRole: 'iamRole',
+          capabilityIam: true,
+          advanced: {
+            snsTopicArn: 'sns:topic',
+            onFailure: 'ROLLBACK',
+            terminationProtection: true,
+            timeout: 100,
+          },
+        },
+      }
+      complete = sinon.stub()
+      updateStack = sinon.stub()
+      aws = {
+        CloudFormation: sinon.stub().returns({ updateStack }),
+      }
+    })
+
+    it('should call to the CloudFormation updateStack API with ALL opts selected', () => {
+      complete.returns({ StackId: 'stack:id' })
+      updateStack.returns({ promise: complete })
+
+      return stackUtils.updateStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation updateStack API with ALL but advanced SNS opts selected', () => {
+      delete stack.options.advanced.snsTopicArn
+      complete.returns({ StackId: 'stack:id' })
+      updateStack.returns({ promise: complete })
+
+      return stackUtils.updateStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation updateStack API with ALL but advanced opts passed', () => {
+      delete stack.options.advanced
+      complete.returns({ StackId: 'stack:id' })
+      updateStack.returns({ promise: complete })
+
+      return stackUtils.updateStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation updateStack API with ALL but the capabilityIam option passed', () => {
+      delete stack.options.capabilityIam
+      complete.returns({ StackId: 'stack:id' })
+      updateStack.returns({ promise: complete })
+
+      return stackUtils.updateStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation updateStack API with ALL but the iamRole option passed', () => {
+      delete stack.options.iamRole
+      complete.returns({ StackId: 'stack:id' })
+      updateStack.returns({ promise: complete })
+
+      return stackUtils.updateStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation updateStack API with ALL but the tags option passed', () => {
+      delete stack.options.tags
+      complete.returns({ StackId: 'stack:id' })
+      updateStack.returns({ promise: complete })
+
+      return stackUtils.updateStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation updateStack API with ALL but the options passed', () => {
+      delete stack.options
+      complete.returns({ StackId: 'stack:id' })
+      updateStack.returns({ promise: complete })
+
+      return stackUtils.updateStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+
+    it('should call to the CloudFormation updateStack API if no parameters are passed', () => {
+      delete stack.parameters
+      complete.returns({ StackId: 'stack:id' })
+      updateStack.returns({ promise: complete })
+
+      return stackUtils.updateStack(template, 'stackName', stack, aws).then((d) => {
+        expect(d).to.equal('stack:id')
+      })
+    })
+  })
+
+  describe('#displayStack', () => {
+    let stack
+    let displayStackStatus
+    let displayStackParameters
+    let displayStackOptions
+    let displayTags
+    let displayStackOutputs
+
+    beforeEach(() => {
+      stack = {
+        StackName: 'name',
+        StackId: 'stack:id',
+        Description: 'stack description',
+        Parameters: 'Parameters',
+        CreationTime: 'CreationTime',
+        LastUpdatedTime: 'LastUpdatedTime',
+        StackStatus: 'StackStatus',
+        NotificationARNs: 'StackStatus',
+        TimeoutInMinutes: 'TimeoutInMinutes',
+        Capabilities: 'Capabilities',
+        Outputs: 'Outputs',
+        Tags: 'Tags',
+        EnableTerminationProtection: true,
+      }
+      displayStackStatus = sinon.stub(stackUtils, 'displayStackStatus').returns('status')
+      displayStackParameters = sinon.stub(stackUtils, 'displayStackParameters').returns('parameters')
+      displayStackOptions = sinon.stub(stackUtils, 'displayStackOptions').returns('stackOptions')
+      displayTags = sinon.stub(stackUtils, 'displayTags').returns('tags')
+      displayStackOutputs = sinon.stub(stackUtils, 'displayStackOutputs').returns('outputs')
+    })
+
+    afterEach(() => {
+      displayStackStatus.restore()
+      displayStackParameters.restore()
+      displayStackOptions.restore()
+      displayTags.restore()
+      displayStackOutputs.restore()
+    })
+
+    it('should display all outputs if no columns are passed', () => {
+      stackUtils.displayStack(stack)
+      const result = `${chk.cyan('Stack name Info')}
+------------------------
+Stack Id: stack:id
+Description: stack description
+
+status
+parameters
+stackOptions
+tags
+outputs`
+      expect(log.p.lastCall.args[0]).to.equal(result)
+    })
+
+    it('should only display the status column if passed', () => {
+      stackUtils.displayStack(stack, { status: true })
+      const result = `${chk.cyan('Stack name Info')}
+------------------------
+Stack Id: stack:id
+Description: stack description
+
+status`
+
+      expect(log.p.lastCall.args[0]).to.equal(result)
+    })
+
+    it('should only display the parameters column if passed', () => {
+      stackUtils.displayStack(stack, { parameters: true })
+      const result = `${chk.cyan('Stack name Info')}
+------------------------
+Stack Id: stack:id
+Description: stack description
+
+parameters`
+
+      expect(log.p.lastCall.args[0]).to.equal(result)
+    })
+
+    it('should only display the stackOptions column if the info flag passed', () => {
+      stackUtils.displayStack(stack, { info: true })
+      const result = `${chk.cyan('Stack name Info')}
+------------------------
+Stack Id: stack:id
+Description: stack description
+
+stackOptions`
+
+      expect(log.p.lastCall.args[0]).to.equal(result)
+    })
+
+    it('should only display the tags column if passed', () => {
+      stackUtils.displayStack(stack, { tags: true })
+      const result = `${chk.cyan('Stack name Info')}
+------------------------
+Stack Id: stack:id
+Description: stack description
+
+tags`
+
+      expect(log.p.lastCall.args[0]).to.equal(result)
+    })
+
+    it('should only display the outputs column if passed', () => {
+      stackUtils.displayStack(stack, { outputs: true })
+      const result = `${chk.cyan('Stack name Info')}
+------------------------
+Stack Id: stack:id
+Description: stack description
+
+outputs`
+
+      expect(log.p.lastCall.args[0]).to.equal(result)
+    })
+  })
+
   describe('#checkStackExists', () => {
     it('should return the stack if it exists', () => {
       const rc = {
