@@ -5,3 +5,4 @@ jsconfig.json
 .vscode
 .nyc_output
 notes
+test/

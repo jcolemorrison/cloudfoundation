@@ -78,7 +78,7 @@ exports.stringInquiryValidate = (ConstraintDescription, name, MinLength, MaxLeng
   }
 
   if (AllowedPattern) {
-    const r = new RegExp(AllowedPattern, 'g')
+    const r = new RegExp(`^${AllowedPattern}$`, 'g')
     if (!r.test(input)) return ConstraintDescription || `${name} must match pattern ${AllowedPattern}`
   }
 

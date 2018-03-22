@@ -17,7 +17,7 @@ const { checkValidProject } = require('./utils')
 
 
 cmd.version('1.0.0')
-  .description('a tool and foundation for building production cloudformation templates')
+  .description('A tool and foundation for building large, production cloudformation templates.')
 
 cmd.on('--help', help)
 
@@ -88,7 +88,7 @@ cmd
   .command('list-profiles')
   .option('-l, --local', 'list profiles local to the current project')
   .option('-g, --global', 'list profiles available for global use')
-  .description('list all profiles configured to use cfdn with AWS')
+  .description('list all configured profiles for cfdn usage')
   .action((e, o) => checkValidProject('list-profiles [name]', listProfiles, e, o, true))
 
 cmd

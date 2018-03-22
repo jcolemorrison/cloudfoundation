@@ -79,7 +79,7 @@ exports.createSNSTopic = async (region, aws) => {
 
   const sns = new aws.SNS({ region })
 
-  utils.log.i('creating SNS Topic...')
+  utils.log.i('creating SNS Topic...', 2)
 
   const { TopicArn } = await sns.createTopic({ Name: topic.name }).promise()
 
