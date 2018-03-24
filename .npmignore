@@ -6,3 +6,4 @@ jsconfig.json
 .nyc_output
 notes
 test/
+README.md
