@@ -52,7 +52,7 @@ module.exports = async function init () {
 
   const pkgjson = Object.assign({ name: project.name }, pkgTpl)
   fs.writeJsonSync(`${cwd}/package.json`, pkgjson, { spaces: 2, errorOnExist: true })
-  fs.copySync(`${__dirname}/../tpls/base/src`, cwd, { errorOnExist: true })
+  fs.ensureDirSync(`${cwd}/src`)
   fs.copySync(`${__dirname}/../tpls/base/README.md`, `${cwd}/README.md`, { errorOnExist: true })
   fs.copySync(`${__dirname}/../tpls/base/gitignore`, `${cwd}/.gitignore`, { errorOnExist: true })
 
