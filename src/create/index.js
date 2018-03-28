@@ -27,10 +27,10 @@ module.exports = async function create (env) {
   fs.copySync(`${__dirname}/../tpls/new`, dir, { errorOnExist: true })
 
   const desc = {
-    Description: `${settings.templatename} cloudformation template template`,
+    Description: `${settings.templatename} cloudformation template`,
   }
 
   fs.writeJsonSync(`${dir}/description.json`, desc, { spaces: 2 })
 
-  return utils.log.s(`Template ${chk.cyan(`${settings.templatename}`)} template created!`, 2)
+  return utils.log.s(`Template ${chk.cyan(`${settings.templatename}`)} created!`, 2)
 }

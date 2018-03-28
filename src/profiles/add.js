@@ -28,7 +28,7 @@ module.exports.addProfile = async function addProfile (env, opts = {}) {
       name: 'type',
       message: 'Which type of profile would you like to add?',
       choices: [
-        { name: 'Setup a CFDN Profile', value: 'cfdn' },
+        { name: 'Set up a CFDN Profile', value: 'cfdn' },
         { name: 'Import an AWS Profile', value: 'aws' },
       ],
     })
