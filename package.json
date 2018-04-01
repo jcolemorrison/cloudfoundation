@@ -1,6 +1,6 @@
 {
   "name": "cloudfoundation",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "The CLI tool for creating, managing, and deploying large CloudFormation templates and projects.",
   "main": "src/index.js",
   "author": "J Cole Morrison",
