@@ -641,6 +641,18 @@ Creation Time: ${new Date(CreationTime).toLocaleString()}
 Last Updated Time: ${new Date(LastUpdatedTime).toLocaleString()}
 `)
     })
+    it('should return N/A for the Last Updated Time if there is no value', () => {
+      const CreationTime = 'Fri Mar 09 2018 11:37:48 GMT-0800'
+      const LastUpdatedTime = false
+      const result = stackUtils.displayStackStatus('StackStatus', CreationTime, LastUpdatedTime)
+
+      expect(result).to.equal(`${chk.green('Status')}
+------------------------
+Stack Status: StackStatus
+Creation Time: ${new Date(CreationTime).toLocaleString()}
+Last Updated Time: N/A
+`)
+    })
   })
 
   describe('#displayStackOptions', () => {

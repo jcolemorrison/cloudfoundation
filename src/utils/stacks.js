@@ -408,7 +408,7 @@ exports.displayStackStatus = (StackStatus, CreationTime, LastUpdatedTime) => (`$
 ------------------------
 Stack Status: ${StackStatus}
 Creation Time: ${new Date(CreationTime).toLocaleString()}
-Last Updated Time: ${new Date(LastUpdatedTime).toLocaleString()}
+Last Updated Time: ${LastUpdatedTime ? new Date(LastUpdatedTime).toLocaleString() : 'N/A'}
 `)
 
 // Displays Advanced Options from AWS Response
