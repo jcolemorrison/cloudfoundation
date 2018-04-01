@@ -1,7 +1,6 @@
 <div align="center">
-  <h1>
-    <img src="https://s3-us-west-1.amazonaws.com/www.jcolemorrison.com/cloudfoundation/images/cfdn-logo-t.png" width="400" alt="CloudFoundation: The CLI tool for creating, managing, and deploying large CloudFormation templates and projects." />
-  </h1>
+  <img src="https://s3-us-west-1.amazonaws.com/www.jcolemorrison.com/cloudfoundation/images/cfdn-logo-t.png" width="400" alt="CloudFoundation: The CLI tool for creating, managing, and deploying large CloudFormation templates and projects." />
+  <br /><br />
   <img src="https://circleci.com/gh/jcolemorrison/cloudfoundation.svg?style=svg" />
   <br />
   <p align="center">The CLI tool for creating, managing, and deploying large CloudFormation templates and projects.</p>
