@@ -637,8 +637,8 @@ OutputOther = Test ${chk.gray('(description two)')}
       expect(result).to.equal(`${chk.green('Status')}
 ------------------------
 Stack Status: StackStatus
-Creation Time: 2018-3-9 11:37:48
-Last Updated Time: 2018-3-9 11:37:48
+Creation Time: ${new Date(CreationTime).toLocaleString()}
+Last Updated Time: ${new Date(LastUpdatedTime).toLocaleString()}
 `)
     })
   })
