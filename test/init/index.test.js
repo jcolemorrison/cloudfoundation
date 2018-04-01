@@ -1,4 +1,4 @@
-0onst expect = require('chai').expect
+const expect = require('chai').expect
 const sinon = require('sinon')
 const fs = require('fs-extra')
 const chk = require('chalk')
