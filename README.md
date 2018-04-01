@@ -1,4 +1,4 @@
-<img src="https://s3-us-west-1.amazonaws.com/www.jcolemorrison.com/cloudfoundation/images/cfdn-logo-t.png" style="display: block; height: auto; width: 100%; max-width: 400px; margin: 1.5rem auto;" alt="CloudFoundation: The CLI tool for creating, managing, and deploying large CloudFormation templates and projects." />
+<img src="https://s3-us-west-1.amazonaws.com/www.jcolemorrison.com/cloudfoundation/images/cfdn-logo-t.png" style="display: block; height: auto; width: 100%; max-width: 400px; margin: 1.5rem auto;" width="400" alt="CloudFoundation: The CLI tool for creating, managing, and deploying large CloudFormation templates and projects." />
 
 <img src="https://circleci.com/gh/jcolemorrison/cloudfoundation.svg?style=svg" />
 
