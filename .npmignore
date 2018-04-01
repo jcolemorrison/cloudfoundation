@@ -6,4 +6,5 @@ jsconfig.json
 .nyc_output
 notes
 test/
+.circleci/
 README.md

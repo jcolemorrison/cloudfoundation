@@ -1,0 +1,60 @@
+version: 2
+
+defaults: &defaults
+  working_directory: ~/repo
+  docker:
+    - image: circleci/node:8.11
+
+jobs:
+  test:
+    <<: *defaults  
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - npm-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+          - npm-cache-{{ .Branch }}
+          - npm-cache
+
+      - run: yarn install
+      - run:
+          name: Run tests
+          command: yarn test
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: npm-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+  deploy:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+      - run:
+          name: Publish package
+          command: npm publish
+            
+workflows:
+  version: 2
+  test-deploy:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /^v.*/
+      - deploy:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
