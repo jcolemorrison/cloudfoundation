@@ -60,8 +60,12 @@ exports.validate = async (env, opts) => {
   if (!name) name = await utils.inquireTemplateName('Which template would you like to validate?')
   else utils.checkValidTemplate(name)
 
-  if (!profile) profile = await profileUtils.selectFromAllProfiles()
-  else profile = profileUtils.getFromAllProfiles(profile)
+  if (!profile) {
+    profile = await profileUtils.selectFromAllProfiles()
+    utils.log.p()
+  } else {
+    profile = profileUtils.getFromAllProfiles(profile)
+  }
 
   const aws = awsUtils.configAWS(profile)
   const templateFiles = utils.getTemplateFiles(name)
@@ -86,7 +90,7 @@ exports.validate = async (env, opts) => {
     return utils.log.e(`${ecount} syntax errors found across ${errors.length} files.  Please fix before continuing.`, 3)
   }
 
-  utils.log.s(`No syntax errors found across ${templateFiles.length} files for ${chk.cyan(name)} template!`)
+  utils.log.s(`No syntax errors found across ${templateFiles.length} files for ${chk.cyan(name)} template!`, 0)
   utils.log.i('Beginning Cloudformation Template Validation...')
 
   // Run Template through CloudFormation
