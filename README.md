@@ -19,6 +19,7 @@
     * [build-all](#cfdn-build-all)
     * [validate](#cfdn-validate-options-template-name)
     * [deploy](#cfdn-deploy-options-template-name)
+    * [update](#cfdn-update-options-template-name)
     * [describe](#cfdn-describe-options-template-name)
     * [describe-all](#cfdn-describe-all-options-template-name)
     * [delete](#cfdn-delete-options-template-name)
@@ -237,7 +238,7 @@ Upon successful deploy, if you opt to save your settings, the `.cfdnrc` file is 
 
 You can also pre-define all options in your stack for a template and then deploy it without going through all of the inquries.  Example:
 
-```json
+```js
 {
   "project": "cloudfoundation-project",
   "profiles": {
