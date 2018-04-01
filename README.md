@@ -674,7 +674,7 @@ In the above example, the different CloudFormation resources are split amongst v
 
 `vpc.json`:
 
-```json
+```js
 {
   "VPC": {
     "Type": "AWS::EC2::VPC",
@@ -687,7 +687,7 @@ In the above example, the different CloudFormation resources are split amongst v
 
 `internet-gateway.json`:
 
-```json
+```js
 {
   "InternetGateway": {
     "Type": "AWS::EC2::InternetGateway",
@@ -718,7 +718,7 @@ project
 
 `index.json`:
 
-```json
+```js
 {
   "VPC": {
     "Type": "AWS::EC2::VPC",
@@ -753,7 +753,7 @@ A `.cfdnrc` file is created for every new CloudFoundation project.  It tracks tw
 
 It's structure is the following:
 
-```json
+```js
 {
   "project": "name-of-project",
   "profiles": {
@@ -792,7 +792,7 @@ Nested under the `templates` keys, `stacks` are all of the options, settings, an
 
 #### Example `.cfdnrc`
 
-```json
+```js
 {
   "project": "cloudfoundation-project",
   "profiles": {
@@ -968,7 +968,7 @@ src
 
 In `instance.json`:
 
-```json
+```js
 {
   "EC2Instance": {
     "Type": "AWS::EC2::Instance",
