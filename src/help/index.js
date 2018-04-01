@@ -1,4 +1,5 @@
+const utils = require('../utils/index.js')
 
 module.exports = function help () {
-  console.log()
+  utils.log.p()
 }

@@ -114,6 +114,6 @@ exports.deploy = async function deploy (env, opts = {}) {
     utils.writeRcFile(cwd, settings)
   }
 
-  utils.log.s(`Stack ${chk.cyan(stackName)} successfully deployed!`)
+  utils.log.s(`Stack ${chk.cyan(stackName)} is deploying!`)
   return utils.log.i(`StackId: ${chk.cyan(stackId)}`, 3)
 }

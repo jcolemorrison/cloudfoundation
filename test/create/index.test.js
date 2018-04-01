@@ -62,11 +62,11 @@ describe('Create Template Function', () => {
 
       expect(writeDescription[0].includes('description.json')).to.be.true
       expect(writeDescription[1]).to.deep.equal({
-        Description: 'main cloudformation template template',
+        Description: 'main cloudformation template',
       })
       expect(writeDescription[2]).to.deep.equal({ spaces: 2 })
 
-      expect(log.s.lastCall.args[0]).to.equal(`Template ${chk.cyan('main')} template created!`, 2)
+      expect(log.s.lastCall.args[0]).to.equal(`Template ${chk.cyan('main')} created!`, 2)
     })
   })
 

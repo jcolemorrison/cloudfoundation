@@ -115,5 +115,5 @@ exports.update = async function update (env, opts = {}) {
   // Deploy the update
   await stackUtils.updateStack(template, stackName, stack, aws)
 
-  return utils.log.s(`Stack ${chk.cyan(stackName)} successfully updated!`, 2)
+  return utils.log.s(`Stack ${chk.cyan(stackName)} is updating!`, 2)
 }

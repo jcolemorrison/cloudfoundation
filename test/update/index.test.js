@@ -127,7 +127,7 @@ describe('Update Functions', () => {
 
       return cmd.update().then(() => {
         expect(log.s.lastCall.args).to.deep.equal([
-          `Stack ${chk.cyan('testStackName')} successfully updated!`,
+          `Stack ${chk.cyan('testStackName')} is updating!`,
           2,
         ])
       })
@@ -148,7 +148,7 @@ describe('Update Functions', () => {
 
       return cmd.update().then(() => {
         expect(log.s.lastCall.args).to.deep.equal([
-          `Stack ${chk.cyan('testStackName')} successfully updated!`,
+          `Stack ${chk.cyan('testStackName')} is updating!`,
           2,
         ])
       })
