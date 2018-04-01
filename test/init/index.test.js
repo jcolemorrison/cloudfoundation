@@ -1,4 +1,4 @@
-const expect = require('chai').expect
+0onst expect = require('chai').expect
 const sinon = require('sinon')
 const fs = require('fs-extra')
 const chk = require('chalk')
@@ -96,7 +96,7 @@ describe('Init Function', () => {
         `${cwd}/package.json`,
         {
           name: 'test-project',
-          version: '1.0.0',
+          version: '0.1.0',
           description: 'A CloudFormation project - generated with CloudFoundation',
           cloudfoundation: true,
         },
