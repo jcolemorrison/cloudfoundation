@@ -36,7 +36,8 @@
     * [DB Template Details](#db-template-details)
 9. [Suggested Template Management Strategy](#suggested-template-management-strategy)
 10. [Using JS instead of JSON](#using-js-instead-of-json)
-11. [Contributing](#contributing)
+11. [Parameter Enforcement](#parameter-enforcement)
+12. [Contributing](#contributing)
 
 ## Intro
 
@@ -1008,6 +1009,36 @@ module.exports = {
 Both the included [vpc](#vpc-template) and [db](#db-template) templates have examples of using JS to export dynamic resource definitions.
 
 ## Parameter Enforcement
+
+CloudFoundation will enforce any rules you've set on your Stack Parameters.  For example, given the following parameter:
+
+```json
+{
+  "SSHLocation": {
+    "Description": " The IP address range that can be used to SSH to the EC2 instances",
+    "Type": "String",
+    "MinLength": "9",
+    "MaxLength": "18",
+    "Default": "0.0.0.0/0",
+    "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+    "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+  }
+}
+``` 
+
+Input is validated against the `AllowedPattern`, `MinLength`, `MaxLength`, and `Type`.  If the `Type` is one of the [AWS-Specific Parameter Types](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#aws-specific-parameter-types), CloudFoundation will use the profile to pull relevant values from AWS.  Given the following parameter:
+
+```json
+{
+  "KeyName": {
+    "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+    "Type": "AWS::EC2::KeyPair::KeyName",
+    "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+  }
+}
+```
+
+CloudFoundation will use the stack's profile to grab all KeyPair options available and allow you to select one.
 
 ## Contributing
 
