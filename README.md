@@ -4,7 +4,7 @@
   </h1>
   <img src="https://circleci.com/gh/jcolemorrison/cloudfoundation.svg?style=svg" />
   <br />
-  <p align="center">The CLI tool for creating, managing, and deploying large CloudFormation templates and projects.</p>
+  <h4 align="center">The CLI tool for creating, managing, and deploying large CloudFormation templates and projects.</h4>
 </div>
 
 ## Table of Contents
