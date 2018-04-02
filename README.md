@@ -882,6 +882,8 @@ The VPC template does the following:
 - structured following the [template management strategy](#suggested-template-management-strategy)
 - outputs all needed values to use the VPC in other templates for [cross-stack reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/walkthrough-crossstackref.html)
 
+You can [view the VPC Template here](https://github.com/jcolemorrison/cloudfoundation/tree/master/src/tpls/vpc).
+
 ### DB Template Details
 
 The DB template deploys an encrypted, multi-az RDS Aurora Database to the VPC created from the VPC template.  It includes an optional read-replica and also sets up a variety of CloudWatch dashboards for easy monitoring.
@@ -895,6 +897,7 @@ The DB template deploys an encrypted, multi-az RDS Aurora Database to the VPC cr
 
 The last point means that if you have a current RDS Aurora compatible snapshot, you can use that to create this DB instead of creating a new one.
 
+You can [view the DB Template here](https://github.com/jcolemorrison/cloudfoundation/tree/master/src/tpls/db)
 
 ## Suggested Template Management Strategy
 
