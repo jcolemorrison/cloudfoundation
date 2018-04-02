@@ -6,11 +6,6 @@ const awslogsConf = fs.readFileSync(`${__dirname}/../files/awslogs.conf`, 'utf-8
 const cfnHupConf = fs.readFileSync(`${__dirname}/../files/cfn-hup.conf`, 'utf-8')
 const cfnAutoReloaderConf = fs.readFileSync(`${__dirname}/../files/cfn-auto-reloader.conf`, 'utf-8')
 
-// If you wanted your bastion to have access to, for example, the mysql client,
-// you'd add it to the "packages" list.  Right now it only pulls in the
-// most recent version of awslogs.
-// If you update the CloudFormation init, the instance will update itself.  Without
-// the usage of cfn-hup, updating the init will do nothing.
 module.exports = {
   "BastionInstanceProfile": {
     "Type":"AWS::IAM::InstanceProfile",
