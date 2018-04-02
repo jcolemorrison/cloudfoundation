@@ -12,7 +12,7 @@
 1. [Intro](#intro)
 2. [Getting Started](#getting-started)
 3. [Quick Start Guide](#quick-start-guide)
-4. [In-Deoth User GUide](#in-depth-user-guide)
+4. [In-Depth User GUide](#in-depth-user-guide)
 5. [Usage](#usage)
     * [init](#cfdn-init)
     * [create](#cfdn-create-template-name)
