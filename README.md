@@ -12,7 +12,8 @@
 1. [Intro](#intro)
 2. [Getting Started](#getting-started)
 3. [Quick Start Guide](#quick-start-guide)
-4. [Usage](#usage)
+4. [In-Deoth User GUide](#in-depth-user-guide)
+5. [Usage](#usage)
     * [init](#cfdn-init)
     * [create](#cfdn-create-template-name)
     * [build](#cfdn-build-template-name)
@@ -23,21 +24,21 @@
     * [describe](#cfdn-describe-options-template-name)
     * [describe-all](#cfdn-describe-all-options-template-name)
     * [delete](#cfdn-delete-options-template-name)
-5. [Profiles](#profiles)
+6. [Profiles](#profiles)
     * [add-profile](#cfdn-add-profile-options-profile-name)
     * [update-profile](#cfdn-update-profile-options-profile-name)
     * [remove-profile](#cfdn-remove-profile-options-profile-name)
     * [list-profiles](#cfdn-list-profiles-options)
     * [import-profiles](#cfdn-import-profiles)
-6. [Template Directories](#template-directories)
-7. [.cfdnrc File](#cfdnrc-file)
-8. [Included CloudFormation Templates](#included-cloudformation-templates)
+7. [Template Directories](#template-directories)
+8. [.cfdnrc File](#cfdnrc-file)
+9. [Included CloudFormation Templates](#included-cloudformation-templates)
     * [VPC Template Details](#vpc-template-details)
     * [DB Template Details](#db-template-details)
-9. [Suggested Template Management Strategy](#suggested-template-management-strategy)
-10. [Using JS instead of JSON](#using-js-instead-of-json)
-11. [Parameter Enforcement](#parameter-enforcement)
-12. [Contributing](#contributing)
+10. [Suggested Template Management Strategy](#suggested-template-management-strategy)
+11. [Using JS instead of JSON](#using-js-instead-of-json)
+12. [Parameter Enforcement](#parameter-enforcement)
+13. [Contributing](#contributing)
 
 ## Intro
 
@@ -106,6 +107,12 @@ cfdn deploy
 ```
 
 Note: `deploy` requires set up of [profiles](#profiles)
+
+## In-Depth User Guide
+
+An extended write up on using CloudFoundation to build, manage, and deploy a template can be found here:
+
+[CloudFoundation: Build, Manage, and Deploy CloudFormation Templates](https://start.jcolemorrison.com/cloudfoundation-build-manage-and-deploy-cloudformation-templates/)
 
 ## Usage
 
