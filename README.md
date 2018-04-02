@@ -244,7 +244,7 @@ When deploying, a series prompts are inquired to gather the following informatio
 
 Upon successful deploy, if you opt to save your settings, the `.cfdnrc` file is appended with your stack settings for later use.  **The `.cfdnrc` file is `.gitignore`'d by default AND SHOULD NOT be checked in to version control.**
 
-You can also pre-define all options in your stack for a template and then deploy it without going through all of the inquries.  Example:
+You can also pre-define all options in your stack for a template and then deploy it without going through all of the inquiries.  Example:
 
 ```js
 {
@@ -326,7 +326,7 @@ When updating an existing stack created from a template, the values defined in t
 
 If you choose to not reuse the values in the `.cfdnrc` file, you'll be given the option to go through the inquiry prompts and select / create new values.
 
-Upon successful upate, the new values that the stack is updated with will be saved ot the `.cfdnrc` file.
+Upon successful update, the new values that the stack is updated with will be saved ot the `.cfdnrc` file.
 
 #### Examples
 
@@ -380,7 +380,7 @@ This fetches stack information from CloudFormation and displays it.  If no optio
 cfdn describe -ai
 ```
 
-This will propmt you for the template name, the stack of the template and then output only the stack status and tag information.
+This will prompt you for the template name, the stack of the template and then output only the stack status and tag information.
 
 #### Examples
 
@@ -398,7 +398,7 @@ cfdn describe -po
 
 ### `cfdn describe-all [options] [template name]`
 
-Describe all a stacks created from `[template name]` template for a given profile and region. A valid [profile](#profiles) is required to describe stacks on CloudFormation.
+Describe all stacks created from `[template name]` template for a given profile and region. A valid [profile](#profiles) is required to describe stacks on CloudFormation.
 
 #### Options
 
@@ -462,7 +462,7 @@ Profiles are kept either contained to the local project's `.cfdnrc` file or in y
 
 ##### Using AWS CLI Credentials without CloudFoundation Profiles
 
-Though using AWS CLI Shared Credentials directly with CloudFoundation isn't currently supported for `deploy` and `update`, you can use them to `validate` your templates.  To do so, without configuring a CloudFoundation profile, ensure that your AWS CLI has a default profile set up and make an AWS region available in yoru shell via:
+Though using AWS CLI Shared Credentials directly with CloudFoundation isn't currently supported for `deploy` and `update`, you can use them to `validate` your templates.  To do so, without configuring a CloudFoundation profile, ensure that your AWS CLI has a default profile set up and make an AWS region available in your shell via:
 
 ```
 export AWS_REGION=us-east-1
@@ -593,7 +593,7 @@ cfdn list-profiles
 
 ### `cfdn import-profiles`
 
-Import all profiles from AWS CLI to be used globslly with CloudFoundation.
+Import all profiles from AWS CLI to be used globally with CloudFoundation.
 
 _Note: this does not affect credentials set up for the AWS CLI in anyway._
 
@@ -714,7 +714,7 @@ In the above example, the different CloudFormation resources are split amongst v
 
 This is the would be the same as keeping all resources in one file or folder.
 
-Example of tempalte resources in one folder and file:
+Example of template resources in one folder and file:
 
 ```
 project
@@ -749,7 +749,7 @@ project
 }
 ```
 
-For an indepth example, take a look at the [included templates](#included-cloudformation-templates).
+For an in-depth example, take a look at the [included templates](#included-cloudformation-templates).
 
 ## .cfdnrc file
 
