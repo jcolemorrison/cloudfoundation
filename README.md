@@ -94,7 +94,7 @@ To create a new template:
 cfdn create [name of template]
 ```
 
-The resulting project of `cfdn init` and `cfdn create` can be seen [in this repo](https://github.com/jcolemorrison/cfdn-init).
+**The resulting project of `cfdn init` and `cfdn create` can be seen [in this repo](https://github.com/jcolemorrison/cfdn-init).**
 
 To build the template:
 
