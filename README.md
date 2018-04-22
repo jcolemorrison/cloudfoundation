@@ -38,7 +38,8 @@
 10. [Suggested Template Management Strategy](#suggested-template-management-strategy)
 11. [Using JS instead of JSON](#using-js-instead-of-json)
 12. [Parameter Enforcement](#parameter-enforcement)
-13. [Contributing](#contributing)
+13. [Examples](#examples)
+14. [Contributing](#contributing)
 
 ## Intro
 
@@ -1051,6 +1052,12 @@ Input is validated against the `AllowedPattern`, `MinLength`, `MaxLength`, and `
 ```
 
 CloudFoundation will use the stack's profile to grab all KeyPair options available and allow you to select one.
+
+## Examples
+
+[cfdn-init](https://github.com/jcolemorrison/cfdn-init) - A base CloudFoundation project that includes the production VPC and RDS Aurora templates.
+
+[cfdn-lamp](https://github.com/jcolemorrison/cfdn-lamp) - Includes an EC2 LAMP stack template.
 
 ## Contributing
 
