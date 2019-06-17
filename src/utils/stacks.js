@@ -509,7 +509,7 @@ exports.createStack = async (template, name, stack, aws) => {
     const { tags, iamRole, advanced, capabilityIam } = options
 
     if (tags) opts.Tags = tags
-    if (iamRole) opts.RoleArn = iamRole
+    if (iamRole) opts.RoleARN = iamRole
     if (capabilityIam) opts.Capabilities = ['CAPABILITY_NAMED_IAM']
 
     if (advanced) {
@@ -540,7 +540,7 @@ exports.updateStack = async (template, name, stack, aws) => {
     const { tags, iamRole, advanced, capabilityIam } = options
 
     if (tags) opts.Tags = tags
-    if (iamRole) opts.RoleArn = iamRole
+    if (iamRole) opts.RoleARN = iamRole
     if (capabilityIam) opts.Capabilities = ['CAPABILITY_NAMED_IAM']
 
     if (advanced) {
